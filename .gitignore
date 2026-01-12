@@ -49,3 +49,12 @@ previews/
 *.pem
 *.key
 credentials.json
+
+# Claude Code
+.claude/
+
+# Playwright MCP screenshots
+.playwright-mcp/
+
+# Gallery runtime data
+apps/gallery/data/

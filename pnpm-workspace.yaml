@@ -1,0 +1,6 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'actors/builtin/*'
+  - 'actors/community/*'
+  - 'tools/*'

@@ -1,0 +1,37 @@
+{
+  "name": "art-installation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Interactive digital art installation for Cloudfest Hackathon 2026",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @art/runtime dev",
+    "dev:gallery": "pnpm --filter @art/gallery dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "test:watch": "pnpm -r --parallel test:watch",
+    "validate:actors": "pnpm -r --filter './actors/**' validate",
+    "new:actor": "pnpm --filter @art/actor-template create"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "keywords": [
+    "art",
+    "installation",
+    "hackathon",
+    "pixi.js",
+    "generative-art"
+  ],
+  "author": "Cloudfest Hackathon 2026",
+  "license": "MIT"
+}

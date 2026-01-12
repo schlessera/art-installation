@@ -1,0 +1,38 @@
+{
+  "name": "@art/actor-devtools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Development tools for actor creation and testing",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "actor-validate": "./bin/validate-actor.ts"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "validate": "tsx bin/validate-actor.ts"
+  },
+  "dependencies": {
+    "@art/types": "workspace:*",
+    "pixi.js": "^8.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

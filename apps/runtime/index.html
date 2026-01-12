@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Art Installation - Cloudfest Hackathon 2026</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+
+      #app {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #canvas-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+
+      #canvas-container canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      #qr-overlay {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      #qr-overlay img {
+        display: block;
+        width: 120px;
+        height: 120px;
+      }
+
+      #qr-label {
+        text-align: center;
+        font-family: system-ui, sans-serif;
+        font-size: 12px;
+        color: #333;
+        margin-top: 6px;
+      }
+
+      #debug-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #0f0;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 12px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        pointer-events: none;
+        display: none;
+        min-width: 180px;
+      }
+
+      #debug-panel.visible {
+        display: block;
+      }
+
+      #debug-panel .label {
+        color: #888;
+        display: inline-block;
+        width: 80px;
+      }
+
+      #debug-panel .value {
+        color: #0f0;
+      }
+
+      #cycle-section {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      #cycle-progress-container {
+        margin-top: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        height: 8px;
+        overflow: hidden;
+      }
+
+      #cycle-progress {
+        background: linear-gradient(90deg, #22c55e, #3b82f6);
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s ease;
+        border-radius: 4px;
+      }
+
+      #actor-info {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        font-family: system-ui, sans-serif;
+        font-size: 14px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        max-width: 300px;
+      }
+
+      #actor-info h3 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.7;
+        margin-bottom: 8px;
+      }
+
+      #actor-list {
+        list-style: none;
+      }
+
+      #actor-list li {
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      #actor-list li:last-child {
+        border-bottom: none;
+      }
+
+      .loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #fff;
+        font-family: system-ui, sans-serif;
+        font-size: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="canvas-container">
+        <div class="loading">Initializing art installation...</div>
+      </div>
+      <div id="qr-overlay" style="display: none">
+        <img id="qr-code" alt="QR Code to Gallery" />
+        <div id="qr-label">View Gallery</div>
+      </div>
+      <div id="debug-panel">
+        <div><span class="label">FPS:</span> <span class="value" id="fps">0</span></div>
+        <div><span class="label">Frame:</span> <span class="value" id="frame-count">0</span></div>
+        <div><span class="label">Actors:</span> <span class="value" id="active-actors">0</span></div>
+        <div><span class="label">Draw calls:</span> <span class="value" id="draw-calls">0</span></div>
+        <div id="cycle-section">
+          <div><span class="label">Cycle:</span> <span class="value" id="cycle-number">0</span></div>
+          <div id="cycle-progress-container">
+            <div id="cycle-progress"></div>
+          </div>
+        </div>
+      </div>
+      <div id="actor-info" style="display: none">
+        <h3>Active Artists</h3>
+        <ul id="actor-list"></ul>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

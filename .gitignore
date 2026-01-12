@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Test outputs
+coverage/
+test-results/
+__snapshots__/
+*.snap
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Cache
+.cache/
+.turbo/
+.eslintcache
+
+# Generated files
+*.generated.*
+artworks/
+previews/
+
+# Secrets
+*.pem
+*.key
+credentials.json

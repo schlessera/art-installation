@@ -1,0 +1,22 @@
+{
+  "name": "@art/actor-audio-reactive",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pulsing visualizations that react to audio frequencies and beats",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "npx open-cli http://localhost:3000?actor=audio-reactive",
+    "build": "vite build",
+    "preview": "vite preview",
+    "validate": "tsx ../../../packages/actor-devtools/bin/validate-actor.ts src/index.ts"
+  },
+  "dependencies": {
+    "@art/types": "workspace:*",
+    "@art/actor-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  }
+}

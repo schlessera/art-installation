@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Actor Preview - Art Installation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0a0a0f;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #canvas-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #111;
+      position: relative;
+    }
+
+    #canvas-container canvas {
+      max-width: 100%;
+      max-height: 100%;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+    }
+
+    #debug-panel {
+      width: 320px;
+      background: #1a1a2e;
+      padding: 16px;
+      overflow-y: auto;
+      border-left: 1px solid #2a2a4e;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .debug-section {
+      background: #222244;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .debug-section h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #333366;
+      padding-bottom: 6px;
+    }
+
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 4px 0;
+    }
+
+    .stat-label {
+      color: #999;
+    }
+
+    .stat-value {
+      font-family: 'Monaco', 'Menlo', monospace;
+      color: #4fd1c5;
+    }
+
+    .stat-value.warning {
+      color: #f6ad55;
+    }
+
+    .stat-value.error {
+      color: #fc8181;
+    }
+
+    #fps-graph {
+      width: 100%;
+      height: 60px;
+      background: #1a1a3e;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    .control-group {
+      margin-bottom: 12px;
+    }
+
+    .control-group label {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .control-group input[type="range"] {
+      width: 100%;
+    }
+
+    .control-group select,
+    .control-group button {
+      width: 100%;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+      background: #333366;
+      color: #e0e0e0;
+      cursor: pointer;
+    }
+
+    .control-group button:hover {
+      background: #4444aa;
+    }
+
+    .call-log {
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 10px;
+      max-height: 150px;
+      overflow-y: auto;
+      background: #1a1a3e;
+      border-radius: 4px;
+      padding: 8px;
+    }
+
+    .call-log-entry {
+      padding: 2px 0;
+      border-bottom: 1px solid #2a2a4e;
+      color: #888;
+    }
+
+    .call-log-entry .method {
+      color: #9f7aea;
+    }
+
+    .call-log-entry .args {
+      color: #4fd1c5;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    #loading .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #333;
+      border-top-color: #4fd1c5;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="loading">
+      <div class="spinner"></div>
+      <div>Loading actor...</div>
+    </div>
+  </div>
+
+  <div id="debug-panel">
+    <div class="debug-section">
+      <h3>Performance</h3>
+      <div class="stat">
+        <span class="stat-label">FPS</span>
+        <span class="stat-value" id="fps">--</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Frame Time</span>
+        <span class="stat-value" id="frame-time">--ms</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Memory</span>
+        <span class="stat-value" id="memory">--MB</span>
+      </div>
+      <canvas id="fps-graph"></canvas>
+    </div>
+
+    <div class="debug-section">
+      <h3>Actor Info</h3>
+      <div class="stat">
+        <span class="stat-label">ID</span>
+        <span class="stat-value" id="actor-id">--</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Name</span>
+        <span class="stat-value" id="actor-name">--</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Frame</span>
+        <span class="stat-value" id="frame-count">0</span>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <h3>Context Controls</h3>
+      <div class="control-group">
+        <label>Time Speed</label>
+        <input type="range" id="time-speed" min="0" max="10" value="1" step="0.1">
+      </div>
+      <div class="control-group">
+        <label>Weather</label>
+        <select id="weather-preset">
+          <option value="clear">Clear</option>
+          <option value="clouds">Cloudy</option>
+          <option value="rain">Rainy</option>
+          <option value="thunderstorm">Storm</option>
+          <option value="snow">Snow</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <button id="simulate-beat">Simulate Beat</button>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <h3>Brush Calls</h3>
+      <div class="call-log" id="brush-log"></div>
+    </div>
+
+    <div class="debug-section">
+      <h3>Actions</h3>
+      <div class="control-group">
+        <button id="clear-canvas">Clear Canvas</button>
+      </div>
+      <div class="control-group">
+        <button id="restart-actor">Restart Actor</button>
+      </div>
+      <div class="control-group">
+        <button id="take-snapshot">Take Snapshot</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./preview.ts"></script>
+</body>
+</html>

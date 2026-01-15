@@ -38,8 +38,8 @@ interface RGB {
   b: number;
 }
 
-// Color palettes for ghosts
-const GHOST_PALETTES: { name: string; colors: RGB[] }[] = [
+// Color palettes for ghosts - dark mode (high lightness)
+const GHOST_PALETTES_DARK: { name: string; colors: RGB[] }[] = [
   {
     name: 'Ethereal',
     colors: [
@@ -74,6 +74,42 @@ const GHOST_PALETTES: { name: string; colors: RGB[] }[] = [
   },
 ];
 
+// Color palettes for ghosts - light mode (low lightness, higher saturation)
+const GHOST_PALETTES_LIGHT: { name: string; colors: RGB[] }[] = [
+  {
+    name: 'Ethereal',
+    colors: [
+      { r: 40, g: 60, b: 120 },
+      { r: 50, g: 70, b: 140 },
+      { r: 60, g: 80, b: 160 },
+    ],
+  },
+  {
+    name: 'Spectral',
+    colors: [
+      { r: 30, g: 100, b: 50 },
+      { r: 40, g: 120, b: 60 },
+      { r: 50, g: 140, b: 70 },
+    ],
+  },
+  {
+    name: 'Phantom',
+    colors: [
+      { r: 120, g: 40, b: 60 },
+      { r: 140, g: 50, b: 70 },
+      { r: 160, g: 60, b: 80 },
+    ],
+  },
+  {
+    name: 'Wraith',
+    colors: [
+      { r: 80, g: 40, b: 120 },
+      { r: 100, g: 50, b: 140 },
+      { r: 120, g: 60, b: 160 },
+    ],
+  },
+];
+
 // Ghost trail point for circular buffer
 interface TrailPoint {
   x: number;
@@ -83,9 +119,10 @@ interface TrailPoint {
   age: number;
 }
 
-// Motion region tracking
+// Motion region tracking with animated ellipse
 interface MotionRegion {
   active: boolean;
+  wasActive: boolean; // Track if was active last frame for lerp vs snap
   x: number;
   y: number;
   width: number;
@@ -94,6 +131,11 @@ interface MotionRegion {
   dx: number;
   dy: number;
   color: RGB;
+  // Animated ellipse state (current interpolated values)
+  ellipseCx: number;
+  ellipseCy: number;
+  ellipseRx: number;
+  ellipseRy: number;
 }
 
 interface GhostState {
@@ -104,7 +146,7 @@ interface GhostState {
   // Motion regions
   regions: MotionRegion[];
   // Settings
-  palette: { name: string; colors: RGB[] };
+  paletteIndex: number; // Store index to switch palettes based on mode
   canvasWidth: number;
   canvasHeight: number;
   chromaticIntensity: number;
@@ -118,6 +160,9 @@ interface GhostState {
   simulatedVy: number;
   // Time
   time: number;
+  // Pre-rendered glow textures for dark and light modes
+  glowTextureDark: string;
+  glowTextureLight: string;
 }
 
 const MAX_TRAIL_POINTS = 100;
@@ -128,7 +173,7 @@ let state: GhostState = {
   trailHead: 0,
   trailLength: 0,
   regions: [],
-  palette: GHOST_PALETTES[0],
+  paletteIndex: 0,
   canvasWidth: 0,
   canvasHeight: 0,
   chromaticIntensity: 5,
@@ -140,6 +185,8 @@ let state: GhostState = {
   simulatedVx: 0,
   simulatedVy: 0,
   time: 0,
+  glowTextureDark: '',
+  glowTextureLight: '',
 };
 
 function rgbToNumeric(color: RGB): number {
@@ -159,6 +206,7 @@ function createTrailPoint(): TrailPoint {
 function createMotionRegion(): MotionRegion {
   return {
     active: false,
+    wasActive: false,
     x: 0,
     y: 0,
     width: 50,
@@ -167,6 +215,11 @@ function createMotionRegion(): MotionRegion {
     dx: 0,
     dy: 0,
     color: { r: 200, g: 220, b: 255 },
+    // Ellipse state
+    ellipseCx: 0,
+    ellipseCy: 0,
+    ellipseRx: 25,
+    ellipseRy: 25,
   };
 }
 
@@ -193,8 +246,8 @@ const actor: Actor = {
     state.canvasWidth = width;
     state.canvasHeight = height;
 
-    // Random palette
-    state.palette = GHOST_PALETTES[Math.floor(Math.random() * GHOST_PALETTES.length)];
+    // Random palette index (used to pick from mode-appropriate palettes)
+    state.paletteIndex = Math.floor(Math.random() * GHOST_PALETTES_DARK.length);
 
     // Random settings
     state.chromaticIntensity = 2 + Math.random() * 6;
@@ -224,14 +277,57 @@ const actor: Actor = {
 
     state.time = 0;
 
+    // Create pre-rendered glow textures for both modes
+    const textureSize = 64;
+    const center = textureSize / 2;
+
+    // Dark mode: white glow (for additive blending)
+    const canvasDark = document.createElement('canvas');
+    canvasDark.width = textureSize;
+    canvasDark.height = textureSize;
+    const ctxDark = canvasDark.getContext('2d')!;
+    const gradientDark = ctxDark.createRadialGradient(center, center, 0, center, center, center);
+    gradientDark.addColorStop(0, 'rgba(255,255,255,1)');
+    gradientDark.addColorStop(0.3, 'rgba(255,255,255,0.6)');
+    gradientDark.addColorStop(0.6, 'rgba(255,255,255,0.2)');
+    gradientDark.addColorStop(1, 'rgba(255,255,255,0)');
+    ctxDark.fillStyle = gradientDark;
+    ctxDark.fillRect(0, 0, textureSize, textureSize);
+    state.glowTextureDark = canvasDark.toDataURL();
+
+    // Light mode: dark glow (for multiply blending)
+    const canvasLight = document.createElement('canvas');
+    canvasLight.width = textureSize;
+    canvasLight.height = textureSize;
+    const ctxLight = canvasLight.getContext('2d')!;
+    const gradientLight = ctxLight.createRadialGradient(center, center, 0, center, center, center);
+    gradientLight.addColorStop(0, 'rgba(0,0,0,1)');
+    gradientLight.addColorStop(0.3, 'rgba(0,0,0,0.6)');
+    gradientLight.addColorStop(0.6, 'rgba(0,0,0,0.2)');
+    gradientLight.addColorStop(1, 'rgba(0,0,0,0)');
+    ctxLight.fillStyle = gradientLight;
+    ctxLight.fillRect(0, 0, textureSize, textureSize);
+    state.glowTextureLight = canvasLight.toDataURL();
+
+    const paletteName = GHOST_PALETTES_DARK[state.paletteIndex].name;
     console.log(
-      `[motion-ghost] Setup: palette=${state.palette.name}, chromatic=${state.chromaticIntensity.toFixed(1)}`
+      `[motion-ghost] Setup: palette=${paletteName}, chromatic=${state.chromaticIntensity.toFixed(1)}`
     );
   },
 
   update(api: ActorUpdateAPI, frame: FrameContext): void {
     const dt = frame.deltaTime / 1000;
     state.time += dt;
+
+    // Get display mode for adaptive rendering
+    const isDarkMode = api.context.display.isDarkMode();
+    const palette = isDarkMode
+      ? GHOST_PALETTES_DARK[state.paletteIndex]
+      : GHOST_PALETTES_LIGHT[state.paletteIndex];
+    const glowTexture = isDarkMode ? state.glowTextureDark : state.glowTextureLight;
+    const blendMode = isDarkMode ? 'add' : 'multiply';
+    // Light mode needs slightly lower alpha for better visibility
+    const alphaMultiplier = isDarkMode ? 1.0 : 0.7;
 
     // Check for video/motion availability
     const videoAvailable = api.context.video.isAvailable();
@@ -246,6 +342,9 @@ const actor: Actor = {
       }
     }
 
+    // Ellipse animation lerp factor (0 = no change, 1 = instant snap)
+    const ellipseLerp = 0.12;
+
     // Update motion regions from video or simulation
     if (motionData && motionData.regions.length > 0) {
       // Use real motion data
@@ -253,6 +352,7 @@ const actor: Actor = {
         const region = state.regions[i];
         if (i < motionData.regions.length) {
           const src = motionData.regions[i];
+          const wasActive = region.wasActive;
           region.active = true;
           region.x = src.x;
           region.y = src.y;
@@ -261,7 +361,27 @@ const actor: Actor = {
           region.intensity = motionData.intensity;
           region.dx = motionData.direction.x;
           region.dy = motionData.direction.y;
-          region.color = dominantColor || state.palette.colors[0];
+          region.color = dominantColor || palette.colors[0];
+
+          // Target ellipse from bounding box
+          const targetCx = src.x + src.width / 2;
+          const targetCy = src.y + src.height / 2;
+          const targetRx = Math.max(src.width / 2, 20); // Minimum radius
+          const targetRy = Math.max(src.height / 2, 20);
+
+          if (!wasActive) {
+            // Snap to position on first activation
+            region.ellipseCx = targetCx;
+            region.ellipseCy = targetCy;
+            region.ellipseRx = targetRx;
+            region.ellipseRy = targetRy;
+          } else {
+            // Lerp ellipse towards target
+            region.ellipseCx += (targetCx - region.ellipseCx) * ellipseLerp;
+            region.ellipseCy += (targetCy - region.ellipseCy) * ellipseLerp;
+            region.ellipseRx += (targetRx - region.ellipseRx) * ellipseLerp;
+            region.ellipseRy += (targetRy - region.ellipseRy) * ellipseLerp;
+          }
         } else {
           region.active = false;
         }
@@ -290,6 +410,7 @@ const actor: Actor = {
 
       // Create single simulated region
       const region = state.regions[0];
+      const wasActive = region.wasActive;
       region.active = true;
       region.x = state.simulatedX - 30;
       region.y = state.simulatedY - 30;
@@ -298,7 +419,20 @@ const actor: Actor = {
       region.intensity = 0.5 + Math.sin(state.time * 2) * 0.3;
       region.dx = state.simulatedVx / 100;
       region.dy = state.simulatedVy / 100;
-      region.color = state.palette.colors[Math.floor(state.time) % state.palette.colors.length];
+      region.color = palette.colors[Math.floor(state.time) % palette.colors.length];
+
+      // Snap or lerp ellipse for simulated region
+      if (!wasActive) {
+        region.ellipseCx = state.simulatedX;
+        region.ellipseCy = state.simulatedY;
+        region.ellipseRx = 30;
+        region.ellipseRy = 30;
+      } else {
+        region.ellipseCx += (state.simulatedX - region.ellipseCx) * ellipseLerp;
+        region.ellipseCy += (state.simulatedY - region.ellipseCy) * ellipseLerp;
+        region.ellipseRx += (30 - region.ellipseRx) * ellipseLerp;
+        region.ellipseRy += (30 - region.ellipseRy) * ellipseLerp;
+      }
 
       // Deactivate other regions
       for (let i = 1; i < MAX_REGIONS; i++) {
@@ -306,19 +440,30 @@ const actor: Actor = {
       }
     }
 
-    // Add trail points from active regions
+    // Update wasActive for next frame
+    for (const region of state.regions) {
+      region.wasActive = region.active;
+    }
+
+    // Add trail points distributed across active regions (within animated ellipse)
     for (const region of state.regions) {
       if (!region.active) continue;
 
-      // Add point at region center
-      const cx = region.x + region.width / 2;
-      const cy = region.y + region.height / 2;
-      const size = Math.max(region.width, region.height) * 0.5 * region.intensity;
+      // Add multiple points spread across the ellipse
+      const pointsPerRegion = 15; // Number of points to add per region per frame
+      const size = 24; // Point size
 
-      addTrailPoint(cx, cy, size);
+      for (let i = 0; i < pointsPerRegion; i++) {
+        // Random position within ellipse (uniform distribution)
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random()); // sqrt for uniform area distribution
+        const x = region.ellipseCx + r * Math.cos(angle) * region.ellipseRx;
+        const y = region.ellipseCy + r * Math.sin(angle) * region.ellipseRy;
+        addTrailPoint(x, y, size);
+      }
     }
 
-    // Age and draw trail points (oldest to newest)
+    // Age and draw trail points (oldest to newest) using pre-rendered texture
     for (let i = 0; i < state.trailLength; i++) {
       const idx = (state.trailHead - state.trailLength + i + MAX_TRAIL_POINTS) % MAX_TRAIL_POINTS;
       const point = state.trailBuffer[idx];
@@ -326,111 +471,22 @@ const actor: Actor = {
       point.age += dt;
       point.alpha = Math.max(0, 1 - point.age * 2); // Fade over 0.5 seconds
 
-      if (point.alpha <= 0) continue;
+      if (point.alpha < 0.05) continue; // Skip nearly invisible points
 
       const progress = i / state.trailLength;
-      const colorIdx = Math.floor(progress * state.palette.colors.length);
-      const color = state.palette.colors[Math.min(colorIdx, state.palette.colors.length - 1)];
-
-      // Draw ghost glow layers
-      const glowLayers = 3;
+      const colorIdx = Math.floor(progress * palette.colors.length);
+      const color = palette.colors[Math.min(colorIdx, palette.colors.length - 1)];
       const colorNumeric = rgbToNumeric(color);
-      for (let g = glowLayers - 1; g >= 0; g--) {
-        const glowRadius = point.size * (1 + g * 0.8);
-        const glowAlpha = point.alpha * state.glowIntensity / (g + 1);
 
-        api.brush.circle(point.x, point.y, glowRadius, {
-          fill: colorNumeric,
-          alpha: glowAlpha,
-          blendMode: 'add',
-        });
-      }
-
-      // Core ghost shape
-      api.brush.circle(point.x, point.y, point.size * 0.5, {
-        fill: colorNumeric,
-        alpha: point.alpha * state.trailOpacity,
-        blendMode: 'add',
+      // Draw using pre-rendered glow texture with tinting
+      const size = point.size * 3; // Texture size for the glow
+      api.brush.image(glowTexture, point.x, point.y, {
+        width: size,
+        height: size,
+        tint: colorNumeric,
+        alpha: point.alpha * state.glowIntensity * alphaMultiplier,
+        blendMode: blendMode,
       });
-    }
-
-    // Draw active region halos
-    for (const region of state.regions) {
-      if (!region.active) continue;
-
-      const cx = region.x + region.width / 2;
-      const cy = region.y + region.height / 2;
-      const radius = Math.max(region.width, region.height) * 0.5;
-
-      // Chromatic halo effect
-      const chromaticOffset = state.chromaticIntensity * region.intensity;
-
-      // Red channel offset
-      api.brush.circle(cx - chromaticOffset, cy, radius * 0.8, {
-        fill: 0xff6464,  // { r: 255, g: 100, b: 100 }
-        alpha: 0.15 * region.intensity,
-        blendMode: 'add',
-      });
-
-      // Blue channel offset
-      api.brush.circle(cx + chromaticOffset, cy, radius * 0.8, {
-        fill: 0x6464ff,  // { r: 100, g: 100, b: 255 }
-        alpha: 0.15 * region.intensity,
-        blendMode: 'add',
-      });
-
-      // Central white glow
-      api.brush.circle(cx, cy, radius * 0.6, {
-        fill: 0xffffff,
-        alpha: 0.2 * region.intensity,
-        blendMode: 'add',
-      });
-    }
-
-    // ============ Apply filters (with performance optimization) ============
-    //
-    // Filter cost reference:
-    // - motionBlur: HIGH cost (multi-pass directional blur)
-    // - glow: HIGH cost (blur + blend operation)
-    //
-    // Optimization: Both filters are expensive. Apply them conditionally:
-    // - motionBlur: Only when there's significant motion (increased threshold)
-    // - glow: Only when there are enough trail points AND at reduced intensity
-    //
-    // Note: Using both filters together may cause performance issues on
-    // lower-end hardware. Consider reducing filter quality or making
-    // them mutually exclusive if performance problems occur.
-
-    // Apply motion blur only when motion is significant
-    // Increased threshold from 0.1 to 0.3 for better performance
-    const MOTION_BLUR_THRESHOLD = 0.3;
-    const MIN_BLUR_MAGNITUDE = 2; // Increased from 1 for performance
-    if (motionData && motionData.intensity > MOTION_BLUR_THRESHOLD) {
-      const blurX = motionData.direction.x * state.blurKernel * motionData.intensity;
-      const blurY = motionData.direction.y * state.blurKernel * motionData.intensity;
-      const blurMagnitude = Math.sqrt(blurX * blurX + blurY * blurY);
-      if (blurMagnitude > MIN_BLUR_MAGNITUDE) {
-        // Reduce kernel size from 5 to 3 for better performance
-        api.filter.motionBlur([blurX, blurY], 3);
-      }
-    }
-
-    // Apply glow only when there are enough active trail points
-    // and scale intensity with trail density for visual consistency
-    const GLOW_TRAIL_THRESHOLD = 20; // Increased from 10
-    if (state.trailLength > GLOW_TRAIL_THRESHOLD) {
-      // Scale glow intensity based on trail density (more trails = stronger glow)
-      const trailDensity = Math.min(1, (state.trailLength - GLOW_TRAIL_THRESHOLD) / (MAX_TRAIL_POINTS - GLOW_TRAIL_THRESHOLD));
-      const effectiveGlowIntensity = state.glowIntensity * 0.3 * trailDensity;
-      // Reduce glow radius from 20 to 15 for better performance
-      // Note: api.filter.glow() expects string color, not numeric
-      const glowColor = state.palette.colors[0];
-      const glowColorStr = `rgb(${glowColor.r}, ${glowColor.g}, ${glowColor.b})`;
-      api.filter.glow(
-        glowColorStr,
-        effectiveGlowIntensity,
-        15
-      );
     }
   },
 
@@ -440,6 +496,8 @@ const actor: Actor = {
     state.trailLength = 0;
     state.regions = [];
     state.time = 0;
+    state.glowTextureDark = '';
+    state.glowTextureLight = '';
     console.log('[motion-ghost] Teardown complete');
   },
 };

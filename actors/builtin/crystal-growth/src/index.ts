@@ -41,8 +41,8 @@ const SYMMETRY_TYPES = [
   { name: 'Trigonal', arms: 3, angle: (Math.PI * 2) / 3 },
 ];
 
-// Color palettes
-const CRYSTAL_PALETTES = [
+// Color palettes for dark mode (high lightness)
+const CRYSTAL_PALETTES_DARK = [
   {
     name: 'Ice',
     colors: [
@@ -68,6 +68,37 @@ const CRYSTAL_PALETTES = [
       [200, 220, 240],   // Gray blue
       [240, 250, 255],   // Ice white
       [180, 200, 220],   // Steel
+    ],
+  },
+];
+
+// Color palettes for light mode (low lightness)
+const CRYSTAL_PALETTES_LIGHT = [
+  {
+    name: 'Ice',
+    colors: [
+      [30, 60, 100],     // Dark ice blue
+      [20, 50, 90],      // Deep sky blue
+      [40, 70, 110],     // Dark cyan
+      [50, 50, 70],      // Dark gray-blue
+    ],
+  },
+  {
+    name: 'Aurora',
+    colors: [
+      [20, 80, 60],      // Dark aqua
+      [30, 50, 90],      // Dark blue
+      [50, 30, 80],      // Dark lavender
+      [70, 40, 70],      // Dark pink
+    ],
+  },
+  {
+    name: 'Frost',
+    colors: [
+      [60, 80, 100],     // Dark blue-gray
+      [50, 60, 80],      // Steel gray
+      [70, 90, 110],     // Slate
+      [40, 50, 60],      // Charcoal
     ],
   },
 ];
@@ -104,7 +135,10 @@ interface CrystalState {
   seeds: Seed[];
   width: number;
   height: number;
-  palette: typeof CRYSTAL_PALETTES[0];
+  palette: typeof CRYSTAL_PALETTES_DARK[0];
+  paletteDark: typeof CRYSTAL_PALETTES_DARK[0];
+  paletteLight: typeof CRYSTAL_PALETTES_LIGHT[0];
+  paletteIndex: number;
   time: number;
   spawnTimer: number;
   spawnInterval: number;
@@ -114,7 +148,10 @@ let state: CrystalState = {
   seeds: [],
   width: 0,
   height: 0,
-  palette: CRYSTAL_PALETTES[0],
+  palette: CRYSTAL_PALETTES_DARK[0],
+  paletteDark: CRYSTAL_PALETTES_DARK[0],
+  paletteLight: CRYSTAL_PALETTES_LIGHT[0],
+  paletteIndex: 0,
   time: 0,
   spawnTimer: 0,
   spawnInterval: 3,
@@ -232,8 +269,11 @@ const actor: Actor = {
     state.width = width;
     state.height = height;
 
-    // Random palette
-    state.palette = CRYSTAL_PALETTES[Math.floor(Math.random() * CRYSTAL_PALETTES.length)];
+    // Random palette (store index to switch between dark/light versions)
+    state.paletteIndex = Math.floor(Math.random() * CRYSTAL_PALETTES_DARK.length);
+    state.paletteDark = CRYSTAL_PALETTES_DARK[state.paletteIndex];
+    state.paletteLight = CRYSTAL_PALETTES_LIGHT[state.paletteIndex];
+    state.palette = state.paletteDark;
 
     // Pre-allocate seeds and branches
     state.seeds = [];
@@ -268,7 +308,7 @@ const actor: Actor = {
     state.spawnTimer = 0;
     state.spawnInterval = 4 + Math.random() * 3;
 
-    console.log(`[crystal-growth] Setup: palette: ${state.palette.name}`);
+    console.log(`[crystal-growth] Setup: palette: ${state.paletteDark.name}`);
   },
 
   update(api: ActorUpdateAPI, frame: FrameContext): void {
@@ -276,7 +316,13 @@ const actor: Actor = {
     state.time += dt;
     state.spawnTimer += dt;
 
-    const { width, height, seeds, palette } = state;
+    // Select palette based on display mode
+    const isDarkMode = api.context.display.isDarkMode();
+    const palette = isDarkMode ? state.paletteDark : state.paletteLight;
+    const blendMode = isDarkMode ? 'add' : 'multiply';
+    const alphaMultiplier = isDarkMode ? 1.0 : 0.8;
+
+    const { width, height, seeds } = state;
 
     // Maybe spawn new seed
     if (state.spawnTimer >= state.spawnInterval) {
@@ -339,38 +385,46 @@ const actor: Actor = {
         const color = palette.colors[branch.colorIndex];
         const colorNumeric = rgbArrayToNumeric(color);
 
+        // Apply alpha multiplier for mode
+        const finalAlpha = alpha * alphaMultiplier;
+
         // Main crystal line
         api.brush.line(startX, startY, endX, endY, {
           color: colorNumeric,
-          alpha: alpha,
+          alpha: finalAlpha,
           width: branch.thickness,
-          blendMode: 'add',
+          blendMode: blendMode,
         });
 
         // Glow effect
         if (branch.depth < 2) {
           api.brush.line(startX, startY, endX, endY, {
             color: colorNumeric,
-            alpha: alpha * 0.2,
+            alpha: finalAlpha * (isDarkMode ? 0.2 : 0.15),
             width: branch.thickness * 3,
-            blendMode: 'add',
+            blendMode: blendMode,
           });
         }
 
         // Occasional prismatic glint at tip
         if (branch.currentLength >= branch.targetLength && Math.sin(branch.shimmerPhase * 3) > 0.9) {
           const glintHue = (state.time * 100 + branch.shimmerPhase * 50) % 360;
-          // Approximate rainbow color (pre-computed numeric values)
-          const glintColors = [
+          // Approximate rainbow colors for dark mode (bright) and light mode (dark/saturated)
+          const glintColorsDark = [
             0xff6464, 0xffc864, 0xffff64,
             0x64ff64, 0x64c8ff, 0x9664ff,
           ];
+          const glintColorsLight = [
+            0x8b0000, 0x8b4500, 0x8b8b00,
+            0x006400, 0x00648b, 0x4b008b,
+          ];
+          const glintColors = isDarkMode ? glintColorsDark : glintColorsLight;
           const glintColor = glintColors[Math.floor(glintHue / 60) % 6];
 
           api.brush.circle(endX, endY, 3, {
             fill: glintColor,
-            alpha: alpha * 0.6,
-            blendMode: 'add',
+            alpha: finalAlpha * (isDarkMode ? 0.6 : 0.7),
+            blendMode: blendMode,
           });
         }
       }

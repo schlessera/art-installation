@@ -248,10 +248,31 @@ export interface FilterAPI {
 
   /**
    * Apply custom shader (advanced).
-   * @param fragmentShader - GLSL fragment shader code
-   * @param uniforms - Uniform values
+   * @param fragmentShader - GLSL fragment shader code (main function should write to finalColor)
+   * @param uniforms - Uniform values (number, vec2, vec3, vec4 as arrays)
+   *
+   * Built-in uniforms available in shader:
+   * - uTexture: sampler2D - the input texture
+   * - uTime: float - time in seconds
+   * - uResolution: vec2 - canvas resolution
+   * - vTextureCoord: vec2 - texture coordinates (0-1)
+   *
+   * @example
+   * ```glsl
+   * void main() {
+   *   vec2 uv = vTextureCoord;
+   *   vec4 color = texture(uTexture, uv);
+   *   finalColor = color;
+   * }
+   * ```
    */
   customShader(fragmentShader: string, uniforms?: Record<string, unknown>): void;
+
+  /**
+   * Update uniforms for an existing custom shader.
+   * @param uniforms - New uniform values
+   */
+  updateCustomShaderUniforms?(uniforms: Record<string, unknown>): void;
 
   /**
    * Chain multiple filters.

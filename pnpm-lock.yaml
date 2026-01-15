@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@mediapipe/tasks-vision':
+        specifier: 0.10.22-rc.20250304
+        version: 0.10.22-rc.20250304
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -21,7 +25,39 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  actors/builtin/architectural-patterns:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
   actors/builtin/audio-reactive:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/aurora-dreamscape:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -53,7 +89,87 @@ importers:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
 
+  actors/builtin/breathing-color:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/chromatic-pulse:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/color-cells:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
   actors/builtin/constellation-weaver:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/cross-stitch:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/crt-monitor:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -85,7 +201,87 @@ importers:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
 
+  actors/builtin/dream-sequence:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/ethereal-glow:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/face-reactor:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/film-grain:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
   actors/builtin/firefly-swarm:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/floating-orbs:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -133,7 +329,87 @@ importers:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
 
+  actors/builtin/gradient-sweep:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/grid-pulse:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/holographic-display:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/impressionist:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
   actors/builtin/ink-bloom:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/intelligent-painter:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -165,7 +441,55 @@ importers:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
 
+  actors/builtin/mosaic-tiles:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
   actors/builtin/motion-ghost:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/neon-edge:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/oil-impasto:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -197,7 +521,103 @@ importers:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
 
+  actors/builtin/pencil-sketch:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/plasma-waves:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/pointillism:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/psychedelic-distortion:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/ripple-rings:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
   actors/builtin/social-pulse:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/soft-noise:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -229,7 +649,151 @@ importers:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
 
+  actors/builtin/stained-glass:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/starfield-drift:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/stripe-scroll:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/sumi-ink:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
   actors/builtin/synthwave-horizon:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/thermal-vision:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/underwater-caustics:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/vhs-tracking:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/vintage-film:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+
+  actors/builtin/watercolor-wash:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -277,87 +841,7 @@ importers:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
 
-  actors/community/architectural-patterns:
-    dependencies:
-      '@art/actor-sdk':
-        specifier: workspace:*
-        version: link:../../../packages/actor-sdk
-      '@art/types':
-        specifier: workspace:*
-        version: link:../../../packages/types
-    devDependencies:
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.0.0
-        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
-
-  actors/community/aurora-dreamscape:
-    dependencies:
-      '@art/actor-sdk':
-        specifier: workspace:*
-        version: link:../../../packages/actor-sdk
-      '@art/types':
-        specifier: workspace:*
-        version: link:../../../packages/types
-    devDependencies:
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.0.0
-        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
-
-  actors/community/face-reactor:
-    dependencies:
-      '@art/actor-sdk':
-        specifier: workspace:*
-        version: link:../../../packages/actor-sdk
-      '@art/types':
-        specifier: workspace:*
-        version: link:../../../packages/types
-    devDependencies:
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.0.0
-        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
-
-  actors/community/intelligent-painter:
-    dependencies:
-      '@art/actor-sdk':
-        specifier: workspace:*
-        version: link:../../../packages/actor-sdk
-      '@art/types':
-        specifier: workspace:*
-        version: link:../../../packages/types
-    devDependencies:
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.0.0
-        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
-
-  actors/community/psychedelic-distortion:
-    dependencies:
-      '@art/actor-sdk':
-        specifier: workspace:*
-        version: link:../../../packages/actor-sdk
-      '@art/types':
-        specifier: workspace:*
-        version: link:../../../packages/types
-    devDependencies:
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.0.0
-        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
-
-  actors/community/vintage-film:
+  actors/builtin/woodcut-print:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -1186,6 +1670,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@mediapipe/tasks-vision@0.10.22-rc.20250304':
+    resolution: {integrity: sha512-dElxVXMFGthshfIj+qAVm8KE2jmNo2p8oXFib8WzEjb7GNaX/ClWBc8UJfoSZwjEMVrdHJ4YUfa7P3ifl6MIWw==}
 
   '@mswjs/interceptors@0.40.0':
     resolution: {integrity: sha512-EFd6cVbHsgLa6wa4RljGj6Wk75qoHxUSyc5asLyyPSyuhIcdS2Q3Phw6ImS1q+CkALthJRShiYfKANcQMuMqsQ==}
@@ -3172,6 +3659,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@mediapipe/tasks-vision@0.10.22-rc.20250304': {}
 
   '@mswjs/interceptors@0.40.0':
     dependencies:

@@ -4,7 +4,7 @@
  * Defines the context APIs that provide environmental data to actors.
  */
 
-import type { RGBA, Rectangle } from './canvas';
+import type { RGBA, Rectangle, Point } from './canvas';
 
 // ============ Time Context ============
 
@@ -235,6 +235,18 @@ export interface MotionData {
 }
 
 /**
+ * Facial landmarks from MediaPipe (6 keypoints).
+ */
+export interface FaceLandmarks {
+  leftEye: Point;
+  rightEye: Point;
+  noseTip: Point;
+  mouth: Point;
+  leftEarTragion: Point;
+  rightEarTragion: Point;
+}
+
+/**
  * Face detection data.
  */
 export interface FaceData {
@@ -246,6 +258,9 @@ export interface FaceData {
 
   /** Estimated emotion (if available) */
   emotion?: 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry';
+
+  /** Facial landmarks (6 keypoints from MediaPipe) */
+  landmarks?: FaceLandmarks;
 }
 
 /**
@@ -330,6 +345,12 @@ export interface SocialMention {
  */
 export interface SocialContext {
   /**
+   * Check if real social data is available.
+   * Returns false when using simulated/mock data.
+   */
+  isAvailable(): boolean;
+
+  /**
    * Get estimated number of people currently viewing.
    */
   viewerCount(): number;
@@ -368,6 +389,41 @@ export interface SocialContext {
   mentionCount(minutes: number): number;
 }
 
+// ============ Display Context ============
+
+/**
+ * Display mode type.
+ */
+export type DisplayMode = 'light' | 'dark';
+
+/**
+ * Display-related context API.
+ * Provides information about the current rendering mode (light/dark).
+ */
+export interface DisplayContext {
+  /**
+   * Check if the current cycle is rendering in dark mode.
+   */
+  isDarkMode(): boolean;
+
+  /**
+   * Get the current display mode.
+   */
+  mode(): DisplayMode;
+
+  /**
+   * Get the base color for the current mode.
+   * Returns 0x000000 for dark mode, 0xffffff for light mode.
+   */
+  baseColor(): number;
+
+  /**
+   * Get the accent color that contrasts with the current mode.
+   * Returns 0xffffff for dark mode, 0x000000 for light mode.
+   */
+  accentColor(): number;
+}
+
 // ============ Combined Context API ============
 
 /**
@@ -388,6 +444,9 @@ export interface ContextAPI {
 
   /** Social context */
   social: SocialContext;
+
+  /** Display context */
+  display: DisplayContext;
 }
 
 /**
@@ -413,5 +472,8 @@ export interface ContextSnapshot {
     viewerCount: number;
     sentiment: number;
     mentionCount: number;
+  };
+  display: {
+    mode: DisplayMode;
   };
 }

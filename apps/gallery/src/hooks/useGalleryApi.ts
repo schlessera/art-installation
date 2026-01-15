@@ -160,6 +160,9 @@ class MockGalleryApi extends GalleryApi {
           dayProgress: createdAt.getHours() / 24,
           season: 'winter',
         },
+        display: {
+          mode: Math.random() > 0.5 ? 'dark' : 'light',
+        },
       },
       cycleNumber: index + 1,
       cycleDuration: 60,

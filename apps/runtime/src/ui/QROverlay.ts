@@ -98,6 +98,18 @@ export class QROverlay {
     this.container.appendChild(this.label);
     parentElement.appendChild(this.container);
 
+    // Add click handler to open gallery in new tab
+    this.container.style.cursor = 'pointer';
+    this.container.addEventListener('click', () => {
+      window.open(this.config.galleryUrl, '_blank');
+    });
+    this.container.addEventListener('mouseenter', () => {
+      if (this.container) this.container.style.opacity = '1';
+    });
+    this.container.addEventListener('mouseleave', () => {
+      if (this.container) this.container.style.opacity = String(this.config.opacity);
+    });
+
     // Generate QR code
     this.generateQRCode();
 

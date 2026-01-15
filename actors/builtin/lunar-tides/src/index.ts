@@ -36,8 +36,8 @@ interface RGB {
   b: number;
 }
 
-// Color palettes
-const COLOR_PALETTES: { name: string; water: RGB[]; sky: RGB; moon: RGB }[] = [
+// Color palettes - dark mode versions (light colors for dark backgrounds)
+const COLOR_PALETTES_DARK: { name: string; water: RGB[]; sky: RGB; moon: RGB }[] = [
   {
     name: 'Ocean',
     water: [
@@ -80,6 +80,50 @@ const COLOR_PALETTES: { name: string; water: RGB[]; sky: RGB; moon: RGB }[] = [
   },
 ];
 
+// Color palettes - light mode versions (darker colors for light backgrounds)
+const COLOR_PALETTES_LIGHT: { name: string; water: RGB[]; sky: RGB; moon: RGB }[] = [
+  {
+    name: 'Ocean',
+    water: [
+      { r: 0, g: 70, b: 110 },
+      { r: 0, g: 90, b: 100 },
+      { r: 30, g: 140, b: 140 },
+    ],
+    sky: { r: 220, g: 235, b: 250 },
+    moon: { r: 60, g: 60, b: 50 },
+  },
+  {
+    name: 'Silver',
+    water: [
+      { r: 50, g: 60, b: 80 },
+      { r: 70, g: 80, b: 100 },
+      { r: 100, g: 110, b: 130 },
+    ],
+    sky: { r: 235, g: 235, b: 240 },
+    moon: { r: 80, g: 80, b: 90 },
+  },
+  {
+    name: 'Purple',
+    water: [
+      { r: 55, g: 0, b: 100 },
+      { r: 100, g: 30, b: 170 },
+      { r: 130, g: 60, b: 160 },
+    ],
+    sky: { r: 245, g: 240, b: 250 },
+    moon: { r: 70, g: 60, b: 90 },
+  },
+  {
+    name: 'Teal',
+    water: [
+      { r: 0, g: 90, b: 90 },
+      { r: 20, g: 120, b: 115 },
+      { r: 40, g: 150, b: 140 },
+    ],
+    sky: { r: 240, g: 250, b: 250 },
+    moon: { r: 50, g: 55, b: 45 },
+  },
+];
+
 // Wave layer for pre-allocation
 interface WaveLayer {
   baseY: number;
@@ -108,6 +152,7 @@ interface TidesState {
   stars: Star[];
   starCount: number;
   palette: { name: string; water: RGB[]; sky: RGB; moon: RGB };
+  paletteIndex: number;
   canvasWidth: number;
   canvasHeight: number;
   moonX: number;
@@ -129,7 +174,8 @@ let state: TidesState = {
   waveCount: 0,
   stars: [],
   starCount: 0,
-  palette: COLOR_PALETTES[0],
+  palette: COLOR_PALETTES_DARK[0],
+  paletteIndex: 0,
   canvasWidth: 0,
   canvasHeight: 0,
   moonX: 0,
@@ -169,20 +215,25 @@ function createStar(): Star {
   };
 }
 
-function drawMoon(api: ActorUpdateAPI, phase: number, nightFactor: number): void {
+function drawMoon(api: ActorUpdateAPI, phase: number, nightFactor: number, isDarkMode: boolean): void {
   const { moonX, moonY, moonRadius, moonGlowIntensity } = state;
+
+  // Mode-aware blend mode for glow effects
+  const glowBlendMode = isDarkMode ? 'add' : 'multiply';
 
   // Moon glow (multiple layers)
   const glowColor = state.palette.moon;
   const glowColorNumeric = rgbToNumeric(glowColor);
   for (let g = 4; g >= 0; g--) {
     const glowRadius = moonRadius * (1.5 + g * 0.5);
-    const glowAlpha = (moonGlowIntensity * nightFactor * 0.1) / (g + 1);
+    // Light mode needs slightly lower alpha for glow
+    const baseGlowAlpha = (moonGlowIntensity * nightFactor * 0.1) / (g + 1);
+    const glowAlpha = isDarkMode ? baseGlowAlpha : baseGlowAlpha * 0.7;
 
     api.brush.circle(moonX, moonY, glowRadius, {
       fill: glowColorNumeric,
       alpha: glowAlpha,
-      blendMode: 'add',
+      blendMode: glowBlendMode,
     });
   }
 
@@ -206,9 +257,12 @@ function drawMoon(api: ActorUpdateAPI, phase: number, nightFactor: number): void
       shadowOffsetX = moonRadius * 2 * (phase - 0.5);
     }
 
-    // Draw shadow as overlapping dark circle
+    // Shadow color: dark on dark mode, light on light mode (matches sky)
+    const shadowColor = isDarkMode ? 0x0a0f1e : 0xf0f5fa;
+
+    // Draw shadow as overlapping circle
     api.brush.circle(moonX + shadowOffsetX, moonY, moonRadius * 0.98, {
-      fill: 0x0a0f1e,  // { r: 10, g: 15, b: 30 }
+      fill: shadowColor,
       alpha: 0.9 * nightFactor,
     });
   }
@@ -223,8 +277,9 @@ const actor: Actor = {
     state.canvasWidth = width;
     state.canvasHeight = height;
 
-    // Random palette
-    state.palette = COLOR_PALETTES[Math.floor(Math.random() * COLOR_PALETTES.length)];
+    // Random palette index (will select from appropriate palette array based on display mode)
+    state.paletteIndex = Math.floor(Math.random() * COLOR_PALETTES_DARK.length);
+    state.palette = COLOR_PALETTES_DARK[state.paletteIndex];
 
     // Moon position (upper portion of canvas)
     state.moonX = width * (0.3 + Math.random() * 0.4);
@@ -299,6 +354,14 @@ const actor: Actor = {
     const dt = frame.deltaTime / 1000;
     state.time += dt;
 
+    // Get display mode
+    const isDarkMode = api.context.display.isDarkMode();
+
+    // Update palette based on display mode
+    state.palette = isDarkMode
+      ? COLOR_PALETTES_DARK[state.paletteIndex]
+      : COLOR_PALETTES_LIGHT[state.paletteIndex];
+
     // Get moon phase and daytime status
     const moonPhase = api.context.time.moonPhase(); // 0 = new, 0.5 = full, 1 = new again
     const isDaytime = api.context.time.isDaytime();
@@ -310,27 +373,35 @@ const actor: Actor = {
     // Visibility: moon and stars more visible at night
     const nightFactor = isDaytime ? 0.3 : 1.0;
 
+    // Mode-aware blend mode for additive effects
+    const glowBlendMode = isDarkMode ? 'add' : 'multiply';
+
     // Draw stars (only visible at night or twilight)
     if (!isDaytime) {
+      // Star color: white for dark mode, dark gray for light mode
+      const starColor = isDarkMode ? 0xffffff : 0x303030;
+
       for (let i = 0; i < state.starCount; i++) {
         const star = state.stars[i];
 
         // Twinkle effect
         const twinkle = Math.sin(state.time * star.twinkleSpeed + star.twinklePhase);
-        const currentBrightness = star.brightness * (0.5 + twinkle * 0.5) * nightFactor;
+        const baseBrightness = star.brightness * (0.5 + twinkle * 0.5) * nightFactor;
+        // Light mode needs slightly lower alpha
+        const currentBrightness = isDarkMode ? baseBrightness : baseBrightness * 0.7;
 
         if (currentBrightness > 0.1) {
           api.brush.star(star.x, star.y, star.size * 1.5, star.size * 0.5, 4, {
-            fill: 0xffffff,
+            fill: starColor,
             alpha: currentBrightness,
-            blendMode: 'add',
+            blendMode: glowBlendMode,
           });
         }
       }
     }
 
     // Draw moon with phase
-    drawMoon(api, moonPhase, nightFactor);
+    drawMoon(api, moonPhase, nightFactor, isDarkMode);
 
     // Draw tidal waves (back to front)
     for (let i = 0; i < state.waveCount; i++) {
@@ -385,15 +456,19 @@ const actor: Actor = {
 
       // Add foam particles near wave crests
       if (frame.frameCount % 10 === i) {
+        // Foam color: white for dark mode, dark blue-gray for light mode
+        const foamColor = isDarkMode ? 0xffffff : 0x304050;
+
         for (let f = 0; f < 3; f++) {
           const foamX = Math.random() * state.canvasWidth;
           const foamIdx = Math.floor((foamX / state.canvasWidth) * WAVE_SEGMENTS);
           const foamY = state.wavePoints[Math.min(foamIdx, WAVE_SEGMENTS)].y - 2 - Math.random() * 5;
 
+          const baseAlpha = 0.3 + Math.random() * 0.3;
           api.brush.circle(foamX, foamY, 1 + Math.random() * 2, {
-            fill: 0xffffff,
-            alpha: 0.3 + Math.random() * 0.3,
-            blendMode: 'add',
+            fill: foamColor,
+            alpha: isDarkMode ? baseAlpha : baseAlpha * 0.7,
+            blendMode: glowBlendMode,
           });
         }
       }

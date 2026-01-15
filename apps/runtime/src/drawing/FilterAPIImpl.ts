@@ -12,6 +12,8 @@ import {
   DisplacementFilter,
   Sprite,
   Texture,
+  Filter,
+  GlProgram,
 } from 'pixi.js';
 import { PixelateFilter } from 'pixi-filters/pixelate';
 import { DropShadowFilter } from 'pixi-filters/drop-shadow';
@@ -57,6 +59,10 @@ export class FilterAPIImpl implements FilterAPI {
   private _layer: Layer;
   private container: Container;
   private activeFilters: Map<string, unknown> = new Map();
+  // Support multiple custom shaders by caching each unique shader code
+  private customShaderCache: Map<string, { code: string; filter: Filter }> = new Map();
+  // Track failed shaders to avoid retrying compilation
+  private failedShaders: Set<string> = new Set();
 
   constructor(canvasManager: CanvasManager, layer: Layer, container?: Container) {
     this._canvasManager = canvasManager;
@@ -297,9 +303,199 @@ export class FilterAPIImpl implements FilterAPI {
 
   // ============ Custom & Chaining ============
 
-  customShader(_fragmentShader: string, _uniforms?: Record<string, unknown>): void {
-    // Custom shader support requires Pixi.js Filter extension
-    console.warn('[FilterAPI] customShader() not implemented - use Pixi.js Filter directly');
+  customShader(fragmentShader: string, uniforms?: Record<string, unknown>): void {
+    // Generate a unique key for this shader based on its code
+    // Simple hash: use first 100 chars + length to create reasonably unique key
+    const shaderKey = `customShader_${fragmentShader.length}_${this.simpleHash(fragmentShader)}`;
+
+    // Skip shaders that previously failed to compile
+    if (this.failedShaders.has(shaderKey)) {
+      return;
+    }
+
+    // Check if we can reuse cached shader (same code)
+    const cached = this.customShaderCache.get(shaderKey);
+    if (cached && cached.code === fragmentShader) {
+      // Re-add to active filters if cleared (e.g., by clearFiltersPreserveCache)
+      if (!this.activeFilters.has(shaderKey)) {
+        this.activeFilters.set(shaderKey, cached.filter);
+        this.updateContainerFilters();
+      }
+      // Reuse existing shader, update uniforms
+      this.updateCustomShaderUniformsForKey(shaderKey, uniforms || {});
+      return;
+    }
+
+    // Default vertex shader for full-screen filters
+    const defaultVertex = `
+      in vec2 aPosition;
+      out vec2 vTextureCoord;
+
+      uniform vec4 uInputSize;
+      uniform vec4 uOutputFrame;
+      uniform vec4 uOutputTexture;
+
+      vec4 filterVertexPosition(void) {
+        vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;
+        position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;
+        position.y = position.y * (2.0*uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;
+        return vec4(position, 0.0, 1.0);
+      }
+
+      vec2 filterTextureCoord(void) {
+        return aPosition * (uOutputFrame.zw * uInputSize.zw);
+      }
+
+      void main(void) {
+        gl_Position = filterVertexPosition();
+        vTextureCoord = filterTextureCoord();
+      }
+    `;
+
+    // Wrap user's fragment shader with required Pixi.js boilerplate
+    const wrappedFragment = `
+      in vec2 vTextureCoord;
+      out vec4 finalColor;
+
+      uniform sampler2D uTexture;
+      uniform vec4 uInputSize;
+      uniform float uTime;
+      uniform vec2 uResolution;
+      ${uniforms ? Object.entries(uniforms).map(([name, value]) => {
+        if (typeof value === 'number') return `uniform float ${name};`;
+        if (Array.isArray(value) && value.length === 2) return `uniform vec2 ${name};`;
+        if (Array.isArray(value) && value.length === 3) return `uniform vec3 ${name};`;
+        if (Array.isArray(value) && value.length === 4) return `uniform vec4 ${name};`;
+        return '';
+      }).join('\n') : ''}
+
+      ${fragmentShader}
+    `;
+
+    try {
+      // Build resources object for uniforms
+      const resources: Record<string, unknown> = {
+        customUniforms: {
+          uTime: { value: performance.now() / 1000, type: 'f32' },
+          uResolution: { value: [this._canvasManager.getSize().width, this._canvasManager.getSize().height], type: 'vec2<f32>' },
+        },
+      };
+
+      // Add user-provided uniforms
+      if (uniforms) {
+        const customUniformsObj = resources.customUniforms as Record<string, unknown>;
+        for (const [name, value] of Object.entries(uniforms)) {
+          if (typeof value === 'number') {
+            customUniformsObj[name] = { value, type: 'f32' };
+          } else if (Array.isArray(value)) {
+            if (value.length === 2) {
+              customUniformsObj[name] = { value, type: 'vec2<f32>' };
+            } else if (value.length === 3) {
+              customUniformsObj[name] = { value, type: 'vec3<f32>' };
+            } else if (value.length === 4) {
+              customUniformsObj[name] = { value, type: 'vec4<f32>' };
+            }
+          }
+        }
+      }
+
+      const filter = new Filter({
+        glProgram: new GlProgram({
+          vertex: defaultVertex,
+          fragment: wrappedFragment,
+        }),
+        resources,
+      });
+
+      // Cache the shader with its unique key
+      this.customShaderCache.set(shaderKey, { code: fragmentShader, filter });
+
+      this.applyFilter(filter, shaderKey);
+    } catch (error) {
+      console.error('[FilterAPI] Failed to compile custom shader:', error);
+      // Mark this shader as failed to prevent retry loops
+      this.failedShaders.add(shaderKey);
+    }
+  }
+
+  /**
+   * Simple hash function for shader code to generate unique keys.
+   */
+  private simpleHash(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
+  }
+
+  /**
+   * Update uniforms for a custom shader by key.
+   */
+  private updateCustomShaderUniformsForKey(shaderKey: string, uniforms: Record<string, unknown>): void {
+    const filter = this.activeFilters.get(shaderKey) as Filter | undefined;
+    if (!filter) {
+      return;
+    }
+
+    // Update time uniform
+    const customUniforms = (filter.resources as Record<string, unknown>).customUniforms as Record<string, { value: unknown }>;
+    if (customUniforms.uTime) {
+      customUniforms.uTime.value = performance.now() / 1000;
+    }
+
+    // Update user uniforms
+    for (const [name, value] of Object.entries(uniforms)) {
+      if (customUniforms[name]) {
+        customUniforms[name].value = value;
+      }
+    }
+  }
+
+  /**
+   * Update uniforms for an existing custom shader (legacy method for compatibility).
+   */
+  updateCustomShaderUniforms(uniforms: Record<string, unknown>): void {
+    // Find first custom shader in active filters
+    for (const [key, filter] of this.activeFilters.entries()) {
+      if (key.startsWith('customShader_')) {
+        this.updateCustomShaderUniformsForKey(key, uniforms);
+        return;
+      }
+    }
+    console.warn('[FilterAPI] No custom shader to update');
+  }
+
+  /**
+   * Legacy method - keeping for compatibility but now handled internally.
+   */
+  private updateCustomShaderUniformsLegacy(uniforms: Record<string, unknown>): void {
+    const filter = this.activeFilters.get('customShader') as Filter | undefined;
+    if (!filter) {
+      console.warn('[FilterAPI] No custom shader to update');
+      return;
+    }
+
+    try {
+      // Access the uniforms through the filter's resources
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const resources = filter.resources as any;
+      if (resources.customUniforms) {
+        for (const [name, value] of Object.entries(uniforms)) {
+          if (resources.customUniforms[name]) {
+            resources.customUniforms[name].value = value;
+          }
+        }
+        // Update time uniform
+        if (resources.customUniforms.uTime) {
+          resources.customUniforms.uTime.value = performance.now() / 1000;
+        }
+      }
+    } catch (error) {
+      console.error('[FilterAPI] Failed to update custom shader uniforms:', error);
+    }
   }
 
   chain(...filters: FilterDefinition[]): void {
@@ -320,6 +516,31 @@ export class FilterAPIImpl implements FilterAPI {
     }
     this.container.filters = [];
     this.activeFilters.clear();
+    // Clear all custom shader caches
+    this.customShaderCache.clear();
+  }
+
+  /**
+   * Clear filters for new frame, but preserve custom shader cache for reuse.
+   * Used by ActorContainerManager at frame boundaries to avoid shader recompilation.
+   */
+  clearFiltersPreserveCache(): void {
+    // Remove filters from container but don't destroy custom shaders (they'll be reused)
+    for (const [key, filter] of this.activeFilters.entries()) {
+      // Don't destroy custom shaders - they're cached and will be reused
+      if (key.startsWith('customShader_')) {
+        continue;
+      }
+      const f = filter as import('pixi.js').Filter & { sprite?: Sprite };
+      // Handle displacement filter sprite cleanup
+      if (f.sprite) {
+        f.sprite.destroy({ texture: true, textureSource: true });
+      }
+      f.destroy?.();
+    }
+    this.container.filters = [];
+    this.activeFilters.clear();
+    // NOTE: Do NOT clear customShaderCache - shaders will be reused
   }
 
   // ============ Helper Methods ============
@@ -426,5 +647,7 @@ export class FilterAPIImpl implements FilterAPI {
    */
   destroy(): void {
     this.clearFilters();
+    // Clear failed shaders so they can be retried if actor restarts
+    this.failedShaders.clear();
   }
 }

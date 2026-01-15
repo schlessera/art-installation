@@ -124,15 +124,76 @@
         font-size: 14px;
         padding: 12px 16px;
         border-radius: 8px;
-        max-width: 300px;
+        max-width: 320px;
       }
 
       #actor-info h3 {
-        font-size: 12px;
+        font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 1px;
         opacity: 0.7;
         margin-bottom: 8px;
+      }
+
+      .layer-section {
+        margin-bottom: 10px;
+      }
+
+      .layer-header {
+        font-size: 10px;
+        color: #888;
+        margin-bottom: 4px;
+        padding-bottom: 2px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .layer-content {
+        padding-left: 8px;
+        font-size: 12px;
+      }
+
+      .layer-content .actor-item {
+        padding: 2px 0;
+        color: #ccc;
+      }
+
+      .layer-content .filter-tag {
+        color: #a78bfa;
+        font-size: 10px;
+        opacity: 0.8;
+      }
+
+      .layer-content .bg-tag {
+        color: #34d399;
+        font-size: 10px;
+        opacity: 0.8;
+      }
+
+      .layer-content .fg-tag {
+        color: #60a5fa;
+        font-size: 10px;
+        opacity: 0.8;
+      }
+
+      .layer-content .z-index {
+        color: #666;
+        font-size: 10px;
+      }
+
+      .layer-content .solid-color {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        vertical-align: middle;
+        margin-right: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .layer-empty {
+        color: #555;
+        font-style: italic;
+        font-size: 11px;
       }
 
       #actor-list {
@@ -181,8 +242,8 @@
         </div>
       </div>
       <div id="actor-info" style="display: none">
-        <h3>Active Artists</h3>
-        <ul id="actor-list"></ul>
+        <h3>Layer Stack</h3>
+        <div id="layer-stack"></div>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

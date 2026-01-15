@@ -1,0 +1,22 @@
+{
+  "name": "@art/actor-chromatic-pulse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rhythmic RGB separation that pulses with time",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "npx open-cli http://localhost:3000?actor=chromatic-pulse",
+    "build": "vite build",
+    "preview": "vite preview",
+    "validate": "tsx ../../../packages/actor-devtools/bin/validate-actor.ts src/index.ts"
+  },
+  "dependencies": {
+    "@art/types": "workspace:*",
+    "@art/actor-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  }
+}

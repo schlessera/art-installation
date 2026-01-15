@@ -5,7 +5,7 @@
  * Provides snapshot capabilities for AI review.
  */
 
-import { Application, Container, Graphics, RenderTexture } from 'pixi.js';
+import { Application, Container, Graphics, RenderTexture, Sprite } from 'pixi.js';
 import type {
   CanvasReadAPI,
   CanvasSize,
@@ -40,12 +40,14 @@ export interface CanvasMetrics {
 
 /**
  * Layer types for organizing draw operations.
+ * Layers are rendered bottom-to-top (Background first, Overlay last).
  */
 export enum Layer {
   Background = 0,
-  Main = 1,
-  Effects = 2,
-  Overlay = 3,
+  BackgroundEffects = 1,
+  Foreground = 2,
+  ForegroundEffects = 3,
+  Overlay = 4,
 }
 
 /**
@@ -63,6 +65,20 @@ export class CanvasManager implements CanvasReadAPI {
 
   // Display scaling metrics
   private displayMetrics: CanvasMetrics | null = null;
+
+  // Background post-processing infrastructure
+  private backgroundRenderTexture: RenderTexture | null = null;
+  private backgroundPostProcessSprite: Sprite | null = null;
+  private backgroundPostProcessingEnabled = false;
+
+  // Foreground post-processing infrastructure (formerly "global filter actors")
+  private foregroundRenderTexture: RenderTexture | null = null;
+  private foregroundPostProcessSprite: Sprite | null = null;
+  private foregroundPostProcessingEnabled = false;
+
+  // Solid color background fallback
+  private backgroundSolidColor: Graphics | null = null;
+  private currentBackgroundColor: number | null = null;
 
   // Reference to ActorContainerManager for layer-aware snapshots
   private containerManager: ActorContainerManager | null = null;
@@ -111,11 +127,18 @@ export class CanvasManager implements CanvasReadAPI {
 
   /**
    * Create the layer hierarchy.
+   * Order: Background → BackgroundEffects → Foreground → ForegroundEffects → Overlay
    */
   private createLayers(): void {
     if (!this.app) return;
 
-    const layerOrder = [Layer.Background, Layer.Main, Layer.Effects, Layer.Overlay];
+    const layerOrder = [
+      Layer.Background,
+      Layer.BackgroundEffects,
+      Layer.Foreground,
+      Layer.ForegroundEffects,
+      Layer.Overlay,
+    ];
 
     for (const layer of layerOrder) {
       const container = new Container();
@@ -137,10 +160,24 @@ export class CanvasManager implements CanvasReadAPI {
   }
 
   /**
-   * Get the main drawing layer (most actors draw here).
+   * Get the foreground drawing layer (most actors draw here).
+   */
+  getForegroundLayer(): Container {
+    return this.getLayer(Layer.Foreground);
+  }
+
+  /**
+   * Get the background drawing layer.
+   */
+  getBackgroundLayer(): Container {
+    return this.getLayer(Layer.Background);
+  }
+
+  /**
+   * @deprecated Use getForegroundLayer() instead.
    */
   getMainLayer(): Container {
-    return this.getLayer(Layer.Main);
+    return this.getForegroundLayer();
   }
 
   /**
@@ -159,6 +196,245 @@ export class CanvasManager implements CanvasReadAPI {
    */
   setContainerManager(manager: ActorContainerManager): void {
     this.containerManager = manager;
+  }
+
+  // ============ Post-Processing Infrastructure ============
+
+  /**
+   * Initialize background post-processing.
+   * Creates a RenderTexture to capture the background and a Sprite to display it with filters.
+   */
+  initBackgroundPostProcessing(): void {
+    if (this.backgroundPostProcessingEnabled || !this.app) return;
+
+    const width = this.config.width;
+    const height = this.config.height;
+
+    // Create render texture to capture the background
+    this.backgroundRenderTexture = RenderTexture.create({
+      width,
+      height,
+      resolution: 1,
+    });
+
+    // Create sprite to display the captured background with filters applied
+    this.backgroundPostProcessSprite = new Sprite(this.backgroundRenderTexture);
+    this.backgroundPostProcessSprite.label = 'background-post-process-sprite';
+
+    // Add to BackgroundEffects layer
+    const bgEffectsLayer = this.getLayer(Layer.BackgroundEffects);
+    bgEffectsLayer.addChild(this.backgroundPostProcessSprite);
+
+    this.backgroundPostProcessingEnabled = true;
+    console.log('[CanvasManager] Background post-processing initialized');
+  }
+
+  /**
+   * Initialize foreground post-processing.
+   * Creates a RenderTexture to capture the scene and a Sprite to display it with filters.
+   */
+  initForegroundPostProcessing(): void {
+    if (this.foregroundPostProcessingEnabled || !this.app) return;
+
+    const width = this.config.width;
+    const height = this.config.height;
+
+    // Create render texture to capture the scene
+    this.foregroundRenderTexture = RenderTexture.create({
+      width,
+      height,
+      resolution: 1,
+    });
+
+    // Create sprite to display the captured scene with filters applied
+    this.foregroundPostProcessSprite = new Sprite(this.foregroundRenderTexture);
+    this.foregroundPostProcessSprite.label = 'foreground-post-process-sprite';
+
+    // Add to ForegroundEffects layer
+    const fgEffectsLayer = this.getLayer(Layer.ForegroundEffects);
+    fgEffectsLayer.addChild(this.foregroundPostProcessSprite);
+
+    this.foregroundPostProcessingEnabled = true;
+    console.log('[CanvasManager] Foreground post-processing initialized');
+  }
+
+  /**
+   * @deprecated Use initForegroundPostProcessing() instead.
+   */
+  initPostProcessing(): void {
+    this.initForegroundPostProcessing();
+  }
+
+  /**
+   * Render the Background layer to the background texture.
+   * Call this after background actor has updated, before background filter actors.
+   */
+  renderBackgroundToTexture(): void {
+    if (!this.backgroundPostProcessingEnabled || !this.app || !this.backgroundRenderTexture) return;
+
+    const bgLayer = this.getLayer(Layer.Background);
+
+    // Render the Background layer contents to our texture
+    this.app.renderer.render({
+      container: bgLayer,
+      target: this.backgroundRenderTexture,
+      clear: true,
+    });
+
+    // Hide the Background layer since we're showing it via the post-process sprite
+    bgLayer.visible = false;
+  }
+
+  /**
+   * Render the Foreground layer (and processed background) to the scene texture.
+   * Call this after all foreground actors have updated, before foreground filter actors.
+   */
+  renderForegroundToTexture(): void {
+    if (!this.foregroundPostProcessingEnabled || !this.app || !this.foregroundRenderTexture) return;
+
+    const fgLayer = this.getLayer(Layer.Foreground);
+
+    // Render the Foreground layer contents to our texture
+    this.app.renderer.render({
+      container: fgLayer,
+      target: this.foregroundRenderTexture,
+      clear: true,
+    });
+
+    // Hide the Foreground layer since we're showing it via the post-process sprite
+    fgLayer.visible = false;
+  }
+
+  /**
+   * @deprecated Use renderForegroundToTexture() instead.
+   */
+  renderSceneToTexture(): void {
+    this.renderForegroundToTexture();
+  }
+
+  /**
+   * Draw a solid color background (used as fallback when no background actor).
+   * @param color - RGB color value (e.g., 0x3a2f4d)
+   */
+  drawSolidColorBackground(color: number): void {
+    if (!this.app) return;
+
+    const bgLayer = this.getLayer(Layer.Background);
+
+    // Create or reuse the solid color graphics
+    if (!this.backgroundSolidColor) {
+      this.backgroundSolidColor = new Graphics();
+      this.backgroundSolidColor.label = 'solid-color-background';
+      bgLayer.addChild(this.backgroundSolidColor);
+    }
+
+    // Only redraw if color changed
+    if (this.currentBackgroundColor !== color) {
+      this.backgroundSolidColor.clear();
+      this.backgroundSolidColor.rect(0, 0, this.config.width, this.config.height);
+      this.backgroundSolidColor.fill(color);
+      this.currentBackgroundColor = color;
+    }
+
+    this.backgroundSolidColor.visible = true;
+  }
+
+  /**
+   * Hide the solid color background (when using a background actor).
+   */
+  hideSolidColorBackground(): void {
+    if (this.backgroundSolidColor) {
+      this.backgroundSolidColor.visible = false;
+    }
+  }
+
+  /**
+   * Get the current solid background color (for debug display).
+   */
+  getCurrentBackgroundColor(): number | null {
+    return this.currentBackgroundColor;
+  }
+
+  /**
+   * Generate a random solid color with max 50% brightness.
+   * Used as fallback when no background actors are available.
+   */
+  generateRandomBackgroundColor(): number {
+    // Max value of 127 ensures brightness <= 50%
+    const r = Math.floor(Math.random() * 128);
+    const g = Math.floor(Math.random() * 128);
+    const b = Math.floor(Math.random() * 128);
+    return (r << 16) | (g << 8) | b;
+  }
+
+  /**
+   * Restore layer visibility after post-processing.
+   * Called at the start of each frame.
+   */
+  prepareFrame(): void {
+    // Restore Background layer visibility
+    if (this.backgroundPostProcessingEnabled) {
+      const bgLayer = this.getLayer(Layer.Background);
+      bgLayer.visible = true;
+
+      // Clear any filters on the background post-process sprite
+      if (this.backgroundPostProcessSprite) {
+        this.backgroundPostProcessSprite.filters = null;
+      }
+    }
+
+    // Restore Foreground layer visibility
+    if (this.foregroundPostProcessingEnabled) {
+      const fgLayer = this.getLayer(Layer.Foreground);
+      fgLayer.visible = true;
+
+      // Clear any filters on the foreground post-process sprite
+      if (this.foregroundPostProcessSprite) {
+        this.foregroundPostProcessSprite.filters = null;
+      }
+    }
+  }
+
+  /**
+   * Get the background post-process sprite for filter actors to attach filters to.
+   */
+  getBackgroundPostProcessSprite(): Sprite | null {
+    return this.backgroundPostProcessSprite;
+  }
+
+  /**
+   * Get the foreground post-process sprite for filter actors to attach filters to.
+   */
+  getForegroundPostProcessSprite(): Sprite | null {
+    return this.foregroundPostProcessSprite;
+  }
+
+  /**
+   * @deprecated Use getForegroundPostProcessSprite() instead.
+   */
+  getPostProcessSprite(): Sprite | null {
+    return this.foregroundPostProcessSprite;
+  }
+
+  /**
+   * Check if background post-processing is enabled.
+   */
+  isBackgroundPostProcessingEnabled(): boolean {
+    return this.backgroundPostProcessingEnabled;
+  }
+
+  /**
+   * Check if foreground post-processing is enabled.
+   */
+  isForegroundPostProcessingEnabled(): boolean {
+    return this.foregroundPostProcessingEnabled;
+  }
+
+  /**
+   * @deprecated Use isForegroundPostProcessingEnabled() instead.
+   */
+  isPostProcessingEnabled(): boolean {
+    return this.foregroundPostProcessingEnabled;
   }
 
   /**
@@ -255,7 +531,7 @@ export class CanvasManager implements CanvasReadAPI {
   /**
    * Add a graphics object to a layer.
    */
-  addToLayer(graphics: Graphics | Container, layer: Layer = Layer.Main): void {
+  addToLayer(graphics: Graphics | Container, layer: Layer = Layer.Foreground): void {
     const container = this.getLayer(layer);
     container.addChild(graphics);
   }
@@ -677,6 +953,13 @@ export class CanvasManager implements CanvasReadAPI {
   }
 
   /**
+   * Get the canvas HTML element.
+   */
+  getCanvas(): HTMLCanvasElement | null {
+    return this.app?.canvas as HTMLCanvasElement | null;
+  }
+
+  /**
    * Get the canvas as a PNG data URL.
    */
   toDataURL(): string {
@@ -694,6 +977,35 @@ export class CanvasManager implements CanvasReadAPI {
       this.renderTexture.destroy();
       this.renderTexture = null;
     }
+
+    // Clean up background post-processing resources
+    if (this.backgroundRenderTexture) {
+      this.backgroundRenderTexture.destroy();
+      this.backgroundRenderTexture = null;
+    }
+    if (this.backgroundPostProcessSprite) {
+      this.backgroundPostProcessSprite.destroy();
+      this.backgroundPostProcessSprite = null;
+    }
+    this.backgroundPostProcessingEnabled = false;
+
+    // Clean up foreground post-processing resources
+    if (this.foregroundRenderTexture) {
+      this.foregroundRenderTexture.destroy();
+      this.foregroundRenderTexture = null;
+    }
+    if (this.foregroundPostProcessSprite) {
+      this.foregroundPostProcessSprite.destroy();
+      this.foregroundPostProcessSprite = null;
+    }
+    this.foregroundPostProcessingEnabled = false;
+
+    // Clean up solid color background
+    if (this.backgroundSolidColor) {
+      this.backgroundSolidColor.destroy();
+      this.backgroundSolidColor = null;
+    }
+    this.currentBackgroundColor = null;
 
     if (this.app) {
       this.app.destroy(true);

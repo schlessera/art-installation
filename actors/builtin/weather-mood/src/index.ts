@@ -584,6 +584,7 @@ function drawLightning(
   y: number,
   length: number,
   branches: number,
+  isDark: boolean,
   isMain: boolean = true
 ): { x: number; y: number }[] {
   const points: { x: number; y: number }[] = [{ x, y }];
@@ -598,28 +599,39 @@ function drawLightning(
 
     // Create branches
     if (branches > 0 && Math.random() > 0.65) {
-      drawLightning(api, currentX, currentY, length * 0.35, branches - 1, false);
+      drawLightning(api, currentX, currentY, length * 0.35, branches - 1, isDark, false);
     }
   }
 
+  // Dark mode: blue-purple lightning; Light mode: deeper purple-blue
+  const outerGlowColor = isDark ? 0x8080ff : 0x404080;
+  const midGlowColor = isDark ? 0xb4b4ff : 0x6060a0;
+  const coreColor = isDark ? 0xffffff : 0x303060;
+  const coronaTint = isDark ? 0xc8c8ff : 0x505090;
+  const outerAlpha = isDark ? 0.15 : 0.2;
+  const midAlpha = isDark ? 0.35 : 0.4;
+  const coreAlpha = isDark ? 0.95 : 0.8;
+  const coronaAlpha = isDark ? 0.6 : 0.5;
+  const coronaBlend = isDark ? 'add' : 'multiply';
+
   // Wide outer glow
   api.brush.stroke(points, {
-    color: 0x8080ff,
-    alpha: 0.15,
+    color: outerGlowColor,
+    alpha: outerAlpha,
     width: 20,
   });
 
   // Medium electric glow
   api.brush.stroke(points, {
-    color: 0xb4b4ff,
-    alpha: 0.35,
+    color: midGlowColor,
+    alpha: midAlpha,
     width: 10,
   });
 
   // Bright core
   api.brush.stroke(points, {
-    color: 0xffffff,
-    alpha: 0.95,
+    color: coreColor,
+    alpha: coreAlpha,
     width: isMain ? 3 : 2,
   });
 
@@ -631,9 +643,9 @@ function drawLightning(
     api.brush.image(state.lightningGlowTexture, pt.x, pt.y, {
       width: coronaSize,
       height: coronaSize,
-      tint: 0xc8c8ff,
-      alpha: 0.6,
-      blendMode: 'add',
+      tint: coronaTint,
+      alpha: coronaAlpha,
+      blendMode: coronaBlend,
     });
   }
 
@@ -690,6 +702,12 @@ const actor: Actor = {
 
     const dt = frame.deltaTime / 16.67;
 
+    // Light/dark mode awareness
+    const isDark = api.context.display.isDarkMode();
+    // Additive blending for dark mode, multiply for light mode
+    const additiveBlend = isDark ? 'add' : 'multiply';
+    const screenBlend = isDark ? 'screen' : 'multiply';
+
     // Spawn new particles from pool (no allocation)
     const spawnRates = getSpawnRate(state.currentWeather);
     for (const { type, rate } of spawnRates) {
@@ -718,13 +736,16 @@ const actor: Actor = {
           if (!shouldDeactivate) {
             // Use pre-rendered rain streak texture with rotation based on velocity
             const rainAngle = Math.atan2(p.vy, p.vx) - Math.PI / 2;
+            // Dark mode: light blue rain; Light mode: darker blue rain
+            const rainTint = isDark ? 0x96c8ff : 0x4080c0;
+            const rainAlpha = isDark ? p.opacity * 0.85 : p.opacity * 0.6;
             api.brush.image(state.rainTexture, p.x, p.y, {
               width: p.size * 2.5,
               height: p.size * 10,
               rotation: rainAngle,
-              tint: 0x96c8ff, // Soft blue tint
-              alpha: p.opacity * 0.85,
-              blendMode: 'add',
+              tint: rainTint,
+              alpha: rainAlpha,
+              blendMode: additiveBlend,
             });
           }
           break;
@@ -741,13 +762,17 @@ const actor: Actor = {
             // Occasional sparkle effect
             const sparkle = Math.sin(p.life * 0.1 + p.x) > 0.92 ? 1.3 : 1;
 
+            // Dark mode: white snowflakes; Light mode: light gray with subtle blue
+            const snowTint = isDark ? 0xffffff : 0x708090;
+            const snowAlpha = isDark ? p.opacity * sparkle : p.opacity * sparkle * 0.7;
+
             api.brush.image(state.snowflakeTextures[snowVariant], p.x, p.y, {
               width: snowSize * sparkle,
               height: snowSize * sparkle,
               rotation: snowRotation,
-              tint: 0xffffff,
-              alpha: p.opacity * sparkle,
-              blendMode: 'screen',
+              tint: snowTint,
+              alpha: snowAlpha,
+              blendMode: screenBlend,
             });
           }
           break;
@@ -761,12 +786,18 @@ const actor: Actor = {
             const sunAlpha = p.opacity * fadeInOut;
             const bokehSize = p.size * 2;
 
+            // Sun bokeh should stay warm/bright in both modes
+            const bokehTint = 0xffe090; // Warm golden
+            const bokehAlpha = isDark ? sunAlpha * 0.25 : sunAlpha * 0.35;
+            // Use normal blend in light mode for visibility
+            const bokehBlend = isDark ? 'add' : 'normal';
+
             api.brush.image(state.bokehTexture, p.x, p.y, {
               width: bokehSize,
               height: bokehSize,
-              tint: 0xffe090, // Warm golden tint
-              alpha: sunAlpha * 0.25, // Very subtle
-              blendMode: 'add',
+              tint: bokehTint,
+              alpha: bokehAlpha,
+              blendMode: bokehBlend,
             });
           }
           break;
@@ -780,12 +811,17 @@ const actor: Actor = {
             const fogWidth = p.size * 3 * depthFactor;
             const fogHeight = p.size * 2 * depthFactor;
 
+            // Dark mode: light blue-gray fog; Light mode: darker gray fog
+            const fogTint = isDark ? 0xe0e4ec : 0x606878;
+            const fogTintSecondary = isDark ? 0xd0d4e0 : 0x505868;
+            const fogAlphaAdjust = isDark ? fogAlpha * depthFactor : fogAlpha * depthFactor * 0.6;
+
             api.brush.image(state.fogTexture, p.x, p.y, {
               width: fogWidth,
               height: fogHeight,
-              tint: 0xe0e4ec, // Cool blue-gray
-              alpha: fogAlpha * depthFactor,
-              blendMode: 'screen',
+              tint: fogTint,
+              alpha: fogAlphaAdjust,
+              blendMode: screenBlend,
             });
 
             // Add a second layer offset for more depth
@@ -793,9 +829,9 @@ const actor: Actor = {
               api.brush.image(state.fogTexture, p.x - p.size * 0.3, p.y + p.size * 0.2, {
                 width: fogWidth * 0.7,
                 height: fogHeight * 0.6,
-                tint: 0xd0d4e0,
-                alpha: fogAlpha * 0.4,
-                blendMode: 'screen',
+                tint: fogTintSecondary,
+                alpha: (isDark ? fogAlpha * 0.4 : fogAlpha * 0.3),
+                blendMode: screenBlend,
               });
             }
           }
@@ -808,20 +844,26 @@ const actor: Actor = {
             const cloudWidth = p.size * 2.5;
             const cloudHeight = p.size * 2;
 
+            // Dark mode: light clouds with dark shadow; Light mode: darker clouds with darker shadow
+            const cloudShadowTint = isDark ? 0x606878 : 0x404858;
+            const cloudMainTint = isDark ? 0xf0f4ff : 0x708090;
+            const cloudShadowAlpha = isDark ? p.opacity * 0.15 : p.opacity * 0.2;
+            const cloudMainAlpha = isDark ? p.opacity * 0.9 : p.opacity * 0.6;
+
             // Draw subtle shadow first (offset below)
             api.brush.image(state.fogTexture, p.x + 6, p.y + p.size * 0.1, {
               width: cloudWidth * 0.95,
               height: cloudHeight * 0.9,
-              tint: 0x606878,
-              alpha: p.opacity * 0.15,
+              tint: cloudShadowTint,
+              alpha: cloudShadowAlpha,
             });
 
             // Main cloud with fog texture
             api.brush.image(state.fogTexture, p.x, p.y, {
               width: cloudWidth,
               height: cloudHeight,
-              tint: 0xf0f4ff, // Soft white with slight blue tint
-              alpha: p.opacity * 0.9,
+              tint: cloudMainTint,
+              alpha: cloudMainAlpha,
             });
           }
           break;
@@ -840,19 +882,38 @@ const actor: Actor = {
       const sunX = width * 0.8;
       const sunY = height * 0.2;
 
+      // Sun should always be bright and warm - it's a light source!
+      // In light mode, use normal blend with a subtle shadow ring for visibility
+      const rayTint = 0xffd880;       // Warm golden rays
+      const sunGlowTint = 0xfff0d0;   // Warm cream glow
+      const sunCoreTint = 0xffffff;   // Bright white core
+      const rayAlphaBase = isDark ? 0.2 : 0.35;
+      const sunGlowAlpha = isDark ? 0.85 : 0.9;
+      const sunCoreAlpha = 0.95;
+      // Use additive in dark mode for glow, normal in light mode
+      const sunBlend = isDark ? 'add' : 'normal';
+
+      // In light mode, add a subtle darker ring behind sun for contrast
+      if (!isDark) {
+        api.brush.circle(sunX, sunY, 110, {
+          fill: 0xd0c8b0,
+          alpha: 0.3,
+        });
+      }
+
       // God rays using pre-rendered texture (8 rays, animated)
       for (let i = 0; i < 8; i++) {
         const angle = state.sunAngle + (i / 8) * Math.PI * 2;
         const rayLength = 180 + Math.sin(state.sunAngle * 2.5 + i * 1.3) * 40;
-        const rayAlpha = 0.2 + Math.sin(state.sunAngle * 1.5 + i * 0.8) * 0.08;
+        const rayAlpha = rayAlphaBase + Math.sin(state.sunAngle * 1.5 + i * 0.8) * 0.08;
 
         api.brush.image(state.godRayTexture, sunX, sunY, {
           width: 24 + Math.sin(state.sunAngle + i) * 4,
           height: rayLength,
           rotation: angle - Math.PI / 2, // Point outward from sun
-          tint: 0xffd880,
+          tint: rayTint,
           alpha: rayAlpha,
-          blendMode: 'add',
+          blendMode: sunBlend,
         });
       }
 
@@ -860,16 +921,16 @@ const actor: Actor = {
       api.brush.image(state.sunGlowTexture, sunX, sunY, {
         width: 200,
         height: 200,
-        tint: 0xfff0d0,
-        alpha: 0.85,
-        blendMode: 'add',
+        tint: sunGlowTint,
+        alpha: sunGlowAlpha,
+        blendMode: sunBlend,
       });
 
       // Bright core for extra intensity
       api.brush.circle(sunX, sunY, 20, {
-        fill: 0xffffff,
-        alpha: 0.9,
-        blendMode: 'add',
+        fill: sunCoreTint,
+        alpha: sunCoreAlpha,
+        blendMode: sunBlend,
       });
 
       // Subtle warm vignette for atmospheric haze
@@ -891,10 +952,13 @@ const actor: Actor = {
 
         // Draw fading ghost stroke
         const fadeAlpha = Math.max(0, 0.3 * (1 - history.age / 20));
-        if (fadeAlpha > 0.02 && history.points.length > 1) {
+        // Dark mode: blue ghost; Light mode: darker purple ghost
+        const ghostColor = isDark ? 0x9090ff : 0x505080;
+        const ghostAlpha = isDark ? fadeAlpha : fadeAlpha * 0.8;
+        if (ghostAlpha > 0.02 && history.points.length > 1) {
           api.brush.stroke(history.points, {
-            color: 0x9090ff,
-            alpha: fadeAlpha,
+            color: ghostColor,
+            alpha: ghostAlpha,
             width: 4,
           });
         }
@@ -903,7 +967,7 @@ const actor: Actor = {
       // Spawn new lightning
       if (Math.random() < 0.006) {
         const lightningX = Math.random() * width;
-        const points = drawLightning(api, lightningX, 0, height * 0.65, 2);
+        const points = drawLightning(api, lightningX, 0, height * 0.65, 2, isDark);
 
         // Store for afterimage effect (limit to 3 stored)
         if (points.length > 0 && state.lightningHistory.length < 3) {
@@ -911,9 +975,12 @@ const actor: Actor = {
         }
 
         // Screen flash effect
+        // Dark mode: white flash; Light mode: dark flash
+        const flashColor = isDark ? 0xffffff : 0x202030;
+        const flashAlpha = isDark ? 0.15 : 0.1;
         api.brush.rect(0, 0, width, height, {
-          fill: 0xffffff,
-          alpha: 0.15,
+          fill: flashColor,
+          alpha: flashAlpha,
         });
 
         // Chromatic aberration for dramatic effect
@@ -926,35 +993,41 @@ const actor: Actor = {
       // Cold: frost overlay on edges
       const frostIntensity = Math.min(0.25, (5 - state.temperature) / 20);
 
+      // Dark mode: icy blue-white frost; Light mode: darker blue-gray frost
+      const frostTint = isDark ? 0xe8f4ff : 0x607090;
+      const frostCornerTint = isDark ? 0xd0e8ff : 0x506080;
+      const frostAlpha = isDark ? frostIntensity : frostIntensity * 0.7;
+
       // Draw frost texture as full-screen overlay
       api.brush.image(state.frostTexture, width / 2, height / 2, {
         width: width,
         height: height,
-        tint: 0xe8f4ff, // Icy blue-white
-        alpha: frostIntensity,
-        blendMode: 'screen',
+        tint: frostTint,
+        alpha: frostAlpha,
+        blendMode: screenBlend,
       });
 
       // Extra frost corners for very cold temperatures
       if (state.temperature < -5) {
         const cornerFrost = Math.min(0.15, (-5 - state.temperature) / 30);
+        const cornerFrostAlpha = isDark ? cornerFrost : cornerFrost * 0.6;
 
         // Top-left corner
         api.brush.image(state.frostTexture, 0, 0, {
           width: width * 0.5,
           height: height * 0.5,
-          tint: 0xd0e8ff,
-          alpha: cornerFrost,
-          blendMode: 'add',
+          tint: frostCornerTint,
+          alpha: cornerFrostAlpha,
+          blendMode: additiveBlend,
         });
 
         // Bottom-right corner
         api.brush.image(state.frostTexture, width, height, {
           width: width * 0.5,
           height: height * 0.5,
-          tint: 0xd0e8ff,
-          alpha: cornerFrost,
-          blendMode: 'add',
+          tint: frostCornerTint,
+          alpha: cornerFrostAlpha,
+          blendMode: additiveBlend,
         });
       }
 
@@ -964,11 +1037,15 @@ const actor: Actor = {
       // Hot: warm haze effect
       const heatIntensity = Math.min(0.2, (state.temperature - 30) / 20);
 
+      // Dark mode: warm orange; Light mode: deeper amber
+      const heatTint = isDark ? 0xffa040 : 0x905010;
+      const heatAlpha = isDark ? heatIntensity * 0.08 : heatIntensity * 0.06;
+
       // Warm haze tint
       api.brush.rect(0, 0, width, height, {
-        fill: 0xffa040,
-        alpha: heatIntensity * 0.08,
-        blendMode: 'add',
+        fill: heatTint,
+        alpha: heatAlpha,
+        blendMode: additiveBlend,
       });
 
       // Heat shimmer vignette

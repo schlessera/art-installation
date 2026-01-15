@@ -5,7 +5,7 @@
  * AI review, gallery storage, and QR code display.
  */
 
-import type { Actor, ActorSetupAPI, ActorUpdateAPI, ActorContribution } from '@art/types';
+import type { Actor, ActorSetupAPI, ActorUpdateAPI, ActorContribution, DisplayMode } from '@art/types';
 import { CanvasManager } from './engine/CanvasManager';
 import { RenderLoop } from './engine/RenderLoop';
 import { ActorRegistry, ActorScheduler, ActorContainerManager } from './actors';
@@ -28,6 +28,11 @@ import { GalleryClient } from './api/GalleryClient';
  *   - height: Canvas height in pixels (default: 960)
  *   - actor: Solo mode - run only this actor (e.g., ?actor=wave-painter)
  *   - actors: Fixed actor list for testing (e.g., ?actors=wave-painter,particle-flow)
+ *   - bgActor: Fixed background actor ID
+ *   - bgFilters: Fixed background filter IDs (comma-separated) or count (0-2)
+ *   - fgFilters: Fixed foreground filter IDs (comma-separated) or count (0-2)
+ *   - enableVideo: Enable webcam video input (default: false)
+ *   - mode: Force display mode ('light' or 'dark'), otherwise random per cycle
  */
 function parseUrlConfig(): {
   maxActors?: number;
@@ -38,6 +43,12 @@ function parseUrlConfig(): {
   height?: number;
   soloActorId?: string;
   fixedActorIds?: string[];
+  fixedBackgroundActorId?: string;
+  fixedBackgroundFilterIds?: string[];
+  fixedForegroundFilterIds?: string[];
+  enableVideo?: boolean;
+  debugVideo?: boolean;
+  displayMode?: DisplayMode;
 } {
   const params = new URLSearchParams(window.location.search);
   const config: ReturnType<typeof parseUrlConfig> = {};
@@ -97,6 +108,54 @@ function parseUrlConfig(): {
     if (!isNaN(parsed) && parsed > 0) {
       config.height = parsed;
     }
+  }
+
+  const enableVideo = params.get('enableVideo');
+  if (enableVideo !== null) {
+    config.enableVideo = enableVideo === 'true' || enableVideo === '1';
+  }
+
+  const debugVideo = params.get('debugVideo');
+  if (debugVideo !== null) {
+    config.debugVideo = debugVideo === 'true' || debugVideo === '1';
+  }
+
+  // Background actor override
+  const bgActor = params.get('bgActor');
+  if (bgActor) {
+    config.fixedBackgroundActorId = bgActor;
+  }
+
+  // Background filters override (use has() to detect empty string for disabling)
+  if (params.has('bgFilters')) {
+    const bgFilters = params.get('bgFilters') || '';
+    // Check if it's a number (count) or comma-separated IDs
+    const parsed = parseInt(bgFilters, 10);
+    if (!isNaN(parsed)) {
+      // It's a count - we'll handle this in scheduler config
+      // For now, we don't support count-only override
+    } else {
+      // Empty string results in empty array (disables filters)
+      config.fixedBackgroundFilterIds = bgFilters.split(',').map(id => id.trim()).filter(Boolean);
+    }
+  }
+
+  // Foreground filters override (use has() to detect empty string for disabling)
+  if (params.has('fgFilters')) {
+    const fgFilters = params.get('fgFilters') || '';
+    const parsed = parseInt(fgFilters, 10);
+    if (!isNaN(parsed)) {
+      // It's a count - we'll handle this in scheduler config
+    } else {
+      // Empty string results in empty array (disables filters)
+      config.fixedForegroundFilterIds = fgFilters.split(',').map(id => id.trim()).filter(Boolean);
+    }
+  }
+
+  // Display mode override (light/dark)
+  const mode = params.get('mode');
+  if (mode === 'light' || mode === 'dark') {
+    config.displayMode = mode;
   }
 
   return config;
@@ -196,8 +255,67 @@ async function main(): Promise<void> {
   console.log('[Runtime] Canvas initialized');
 
   // Initialize context manager
-  contextManager = new ContextManager({ enableAudio: false }); // Disable audio for now
+  contextManager = new ContextManager({
+    enableAudio: false, // Disable audio for now
+    enableVideo: urlConfig.enableVideo ?? false,
+    forcedDisplayMode: urlConfig.displayMode,
+  });
   await contextManager.start();
+
+  // Log initial display mode
+  console.log(`[Runtime] Display mode: ${contextManager.getDisplayProvider().mode()}${urlConfig.displayMode ? ' (forced via URL)' : ' (random)'}`);
+
+
+  // Set video target dimensions for proper coordinate mapping
+  contextManager.setVideoTargetDimensions(CONFIG.canvas.width, CONFIG.canvas.height);
+
+  // Create debug video overlay if enabled
+  if (urlConfig.debugVideo && urlConfig.enableVideo) {
+    const videoProvider = contextManager.getVideoProvider();
+    const videoEl = videoProvider?.getVideoElement();
+    if (videoEl) {
+      // Create video element that overlays the canvas exactly
+      const debugVideo = document.createElement('video');
+      debugVideo.id = 'video-debug-overlay';
+      debugVideo.srcObject = videoEl.srcObject;
+      debugVideo.muted = true;
+      debugVideo.playsInline = true;
+      debugVideo.autoplay = true;
+      debugVideo.style.cssText = `
+        position: absolute;
+        object-fit: fill;
+        opacity: 0.3;
+        transform: scaleX(-1);
+        pointer-events: none;
+        z-index: 100;
+      `;
+
+      container.appendChild(debugVideo);
+      debugVideo.play();
+
+      // Function to sync video overlay position with canvas
+      const syncOverlayPosition = () => {
+        const canvas = canvasManager.getCanvas();
+        if (canvas && debugVideo) {
+          const rect = canvas.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          debugVideo.style.left = `${rect.left - containerRect.left}px`;
+          debugVideo.style.top = `${rect.top - containerRect.top}px`;
+          debugVideo.style.width = `${rect.width}px`;
+          debugVideo.style.height = `${rect.height}px`;
+        }
+      };
+
+      // Sync on load and resize
+      syncOverlayPosition();
+      window.addEventListener('resize', syncOverlayPosition);
+      // Also sync after a short delay to catch any layout shifts
+      setTimeout(syncOverlayPosition, 100);
+
+      console.log('[Runtime] Debug video overlay enabled');
+    }
+  }
+
   console.log('[Runtime] Context manager started');
 
   // Initialize snapshot capture
@@ -210,22 +328,25 @@ async function main(): Promise<void> {
       apiUrl: CONFIG.galleryApiUrl,
     });
 
-    // Check if gallery is available
-    const galleryAvailable = await galleryClient.checkHealth();
-    if (galleryAvailable) {
-      console.log(`[Runtime] Gallery API connected: ${CONFIG.galleryApiUrl}`);
-    } else {
-      console.warn(`[Runtime] Gallery API not available at ${CONFIG.galleryApiUrl}`);
-    }
-
-    // Initialize QR overlay
+    // Initialize QR overlay immediately (hidden until gallery is confirmed available)
     qrOverlay = new QROverlay({
       galleryUrl: CONFIG.galleryUrl,
       position: 'bottom-right',
       label: 'Scan to vote',
+      visible: false,
     });
     qrOverlay.init(document.body);
-    console.log('[Runtime] QR overlay initialized');
+    console.log('[Runtime] QR overlay initialized (hidden, pending gallery check)');
+
+    // Check gallery health async - don't block startup
+    galleryClient.checkHealth().then((available) => {
+      if (available) {
+        console.log(`[Runtime] Gallery API connected: ${CONFIG.galleryApiUrl}`);
+        qrOverlay?.setVisible(true);
+      } else {
+        console.warn(`[Runtime] Gallery API not available at ${CONFIG.galleryApiUrl}`);
+      }
+    });
   } else {
     console.log('[Runtime] Solo mode: Gallery and QR overlay disabled');
   }
@@ -238,17 +359,20 @@ async function main(): Promise<void> {
     cycleDuration: CONFIG.cycle.duration,
     noveltyBias: CONFIG.cycle.noveltyBias,
     fixedActorIds: CONFIG.fixedActorIds,
+    fixedBackgroundActorId: urlConfig.fixedBackgroundActorId,
+    fixedBackgroundFilterIds: urlConfig.fixedBackgroundFilterIds,
+    fixedForegroundFilterIds: urlConfig.fixedForegroundFilterIds,
   });
 
   // Create per-actor container manager for z-order layering
-  const actorContainerManager = new ActorContainerManager(canvasManager);
+  actorContainerManager = new ActorContainerManager(canvasManager);
 
   // Link container manager to canvas manager for layer-aware snapshots
   canvasManager.setContainerManager(actorContainerManager);
 
   // Create fallback APIs for setup phase (actors don't draw during setup)
-  const brushApi = new BrushAPIImpl(canvasManager, Layer.Main);
-  const filterApi = new FilterAPIImpl(canvasManager, Layer.Main);
+  const brushApi = new BrushAPIImpl(canvasManager, Layer.Foreground);
+  const filterApi = new FilterAPIImpl(canvasManager, Layer.Foreground);
 
   const setupAPI: ActorSetupAPI = {
     canvas: canvasManager,
@@ -287,6 +411,11 @@ async function main(): Promise<void> {
   console.log('[Runtime] Actor registration ready');
 
   // Set up cycle callbacks
+  actorScheduler.onPrepareNewCycle(() => {
+    // Randomize display mode (light/dark) for each cycle
+    contextManager.prepareNewCycle();
+  });
+
   actorScheduler.onCycleStart((actorIds) => {
     console.log(`[Runtime] Cycle started with actors:`, actorIds);
     updateCycleDisplay(actorIds);
@@ -305,14 +434,37 @@ async function main(): Promise<void> {
 
   // Connect scheduler to render loop
   renderLoop.onFrame((frame) => {
+    // Prepare frame (restore layer visibility, clear post-process filters)
+    canvasManager.prepareFrame();
+
     // Clear previous frame's graphics from all actor containers
-    actorContainerManager.clearFrame();
+    actorContainerManager!.clearFrame();
 
     // Update context (for audio analysis etc.)
     contextManager.update();
 
-    // Update all active actors via scheduler (each gets its own container)
-    actorScheduler.update(frame);
+    // === THREE-PHASE RENDERING ===
+
+    // PHASE 1: BACKGROUND
+    // Update background actor (draws to Background layer)
+    actorScheduler.updateBackgroundActor(frame);
+
+    // If we have background filters, render background to texture and apply filters
+    if (actorScheduler.hasBackgroundFilters()) {
+      canvasManager.renderBackgroundToTexture();
+      actorScheduler.updateBackgroundFilters(frame);
+    }
+
+    // PHASE 2: FOREGROUND
+    // Update foreground actors (they draw to their containers in Foreground layer)
+    actorScheduler.updateForegroundActors(frame);
+
+    // PHASE 3: FOREGROUND FILTERS
+    // If we have foreground filters, render scene to texture and apply filters
+    if (actorScheduler.hasForegroundFilters()) {
+      canvasManager.renderForegroundToTexture();
+      actorScheduler.updateForegroundFilters(frame);
+    }
 
     // Check if cycle should end
     if (actorScheduler.shouldEndCycle()) {
@@ -347,10 +499,10 @@ async function main(): Promise<void> {
       updateCycleProgress();
     });
 
-    // Update actor info panel
+    // Update actor info panel (layer stack display)
     const actorInfo = document.getElementById('actor-info');
-    const actorList = document.getElementById('actor-list');
-    if (actorInfo && actorList) {
+    const layerStack = document.getElementById('layer-stack');
+    if (actorInfo && layerStack) {
       actorInfo.style.display = 'block';
     }
   }
@@ -366,6 +518,14 @@ async function main(): Promise<void> {
 
   // Initial resize
   canvasManager.resize(window.innerWidth, window.innerHeight);
+
+  // Cleanup on page unload to release media resources (webcam, microphone)
+  const handleUnload = () => {
+    console.log('[Runtime] Page unloading, cleaning up...');
+    contextManager.stop();
+  };
+  window.addEventListener('pagehide', handleUnload);
+  window.addEventListener('beforeunload', handleUnload);
 
   // Expose for debugging
   if (CONFIG.debug) {
@@ -459,20 +619,101 @@ async function handleCycleEnd(actorIds: string[], duration: number): Promise<voi
 }
 
 /**
- * Update the cycle display in the debug panel.
+ * Update the layer stack display in the debug panel.
+ * Shows layers in reverse order (top layer first).
  */
-function updateCycleDisplay(actorIds: string[]): void {
-  const actorList = document.getElementById('actor-list');
-  if (actorList) {
-    actorList.innerHTML = actorIds
-      .map((id) => {
-        const registered = actorRegistry.get(id);
-        const name = registered?.actor.metadata.name || id;
-        return `<li>${name}</li>`;
-      })
-      .join('');
+function updateCycleDisplay(_actorIds: string[]): void {
+  const layerStack = document.getElementById('layer-stack');
+  if (!layerStack) return;
+
+  // Helper to format actor name
+  const getActorName = (id: string): string => {
+    const registered = actorRegistry.get(id);
+    return registered?.actor.metadata.name || id;
+  };
+
+  // Helper to convert hex color to CSS
+  const hexToRgb = (hex: number): string => {
+    const r = (hex >> 16) & 0xff;
+    const g = (hex >> 8) & 0xff;
+    const b = hex & 0xff;
+    return `rgb(${r}, ${g}, ${b})`;
+  };
+
+  // Helper to format hex color as string
+  const hexToString = (hex: number): string => {
+    return '#' + hex.toString(16).padStart(6, '0');
+  };
+
+  // Build layer stack HTML (top to bottom)
+  const sections: string[] = [];
+
+  // 1. Foreground Effects (foreground filters)
+  const fgFilterIds = actorScheduler.hasForegroundFilters()
+    ? actorContainerManager?.getForegroundFilterActorIds() || []
+    : [];
+  if (fgFilterIds.length > 0) {
+    sections.push(`
+      <div class="layer-section">
+        <div class="layer-content">
+          ${fgFilterIds.map(id => `<div class="actor-item">${getActorName(id)} <span class="filter-tag">(filter)</span></div>`).join('')}
+        </div>
+      </div>
+    `);
   }
+
+  // 3. Foreground (main actors, in z-order reverse - highest z first)
+  const fgActorIds = actorContainerManager?.getForegroundActorIds() || [];
+  const fgActorsReversed = [...fgActorIds].reverse();
+  if (fgActorsReversed.length > 0) {
+    sections.push(`
+      <div class="layer-section">
+        <div class="layer-content">
+          ${fgActorsReversed.map((id, i) => {
+              const zIndex = fgActorIds.length - 1 - i;
+              return `<div class="actor-item">${getActorName(id)} <span class="z-index">(z:${zIndex})</span></div>`;
+            }).join('')}
+        </div>
+      </div>
+    `);
+  }
+
+  // 4. Background Effects (background filters)
+  const bgFilterIds = actorScheduler.hasBackgroundFilters()
+    ? actorContainerManager?.getBackgroundFilterActorIds() || []
+    : [];
+  if (bgFilterIds.length > 0) {
+    sections.push(`
+      <div class="layer-section">
+        <div class="layer-content">
+          ${bgFilterIds.map(id => `<div class="actor-item">${getActorName(id)} <span class="filter-tag">(filter)</span></div>`).join('')}
+        </div>
+      </div>
+    `);
+  }
+
+  // 5. Background (single actor or solid color)
+  const bgActorId = actorContainerManager?.getBackgroundActorId();
+  const bgColor = canvasManager.getCurrentBackgroundColor();
+  let bgContent: string;
+  if (bgActorId) {
+    bgContent = `<div class="actor-item">${getActorName(bgActorId)} <span class="bg-tag">(background)</span></div>`;
+  } else if (bgColor !== null) {
+    bgContent = `<div class="actor-item"><span class="solid-color" style="background: ${hexToRgb(bgColor)}"></span>solid color: ${hexToString(bgColor)}</div>`;
+  } else {
+    bgContent = '<span class="layer-empty">(none)</span>';
+  }
+  sections.push(`
+    <div class="layer-section">
+      <div class="layer-content">${bgContent}</div>
+    </div>
+  `);
+
+  layerStack.innerHTML = sections.join('');
 }
+
+// Reference to container manager for debug display
+let actorContainerManager: ActorContainerManager | null = null;
 
 /**
  * Update the cycle progress display.

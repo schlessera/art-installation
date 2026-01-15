@@ -245,6 +245,14 @@ const actor: Actor = {
 
     const { centerX, centerY, layers, colorScheme } = state;
 
+    // Light/dark mode adaptation
+    const isDarkMode = api.context.display.isDarkMode();
+    const blendMode = isDarkMode ? 'add' : 'multiply';
+    // Adjust lightness: dark mode uses high lightness (60-80%), light mode uses low (20-40%)
+    const lightnessOffset = isDarkMode ? 0 : -40;
+    // Light mode needs slightly lower alpha for visibility
+    const alphaMultiplier = isDarkMode ? 1.0 : 0.8;
+
     // Audio reactivity - speed boost on beat
     const isBeat = api.context.audio.isBeat();
     const bass = api.context.audio.bass();
@@ -302,12 +310,15 @@ const actor: Actor = {
 
           // Calculate averaged properties for this segment
           const avgAge = ((segStart + segEnd) / 2) / layer.trailLength;
-          const alpha = layer.alpha * avgAge * avgAge; // Quadratic fade
+          const baseAlpha = layer.alpha * avgAge * avgAge; // Quadratic fade
+          const alpha = baseAlpha * alphaMultiplier;
 
           // Use middle point's hue for color gradient effect
           const midIdx = (layer.trailHead - layer.trailLength + Math.floor((segStart + segEnd) / 2) + 1 + POINTS_PER_LAYER) % POINTS_PER_LAYER;
           const hue = layer.trail[midIdx].hue;
-          const color = hslToRgba(hue, colorScheme.saturation, colorScheme.lightness, alpha);
+          // Adjust lightness for display mode
+          const adjustedLightness = Math.max(15, Math.min(85, colorScheme.lightness + lightnessOffset));
+          const color = hslToRgba(hue, colorScheme.saturation, adjustedLightness, alpha);
 
           // Line thickness varies by segment age
           const thickness = 2 + avgAge * 1.5;
@@ -317,24 +328,30 @@ const actor: Actor = {
           api.brush.stroke(state.strokePoints.slice(0, pointCount), {
             color,
             width: thickness,
-            blendMode: 'add',
+            blendMode,
           });
         }
       }
 
       // Draw "pen" position
-      const penGlow = 0.4 + bass * 0.4;
+      const basePenGlow = 0.4 + bass * 0.4;
+      const penGlow = basePenGlow * alphaMultiplier;
+      // Adjust pen lightness for display mode (brighter in dark mode, darker in light mode)
+      const penLightness = isDarkMode ? 80 : 35;
       api.brush.circle(px, py, 4 + bass * 3, {
-        fill: hslToRgba(hue, colorScheme.saturation, 80, penGlow),
-        blendMode: 'add',
+        fill: hslToRgba(hue, colorScheme.saturation, penLightness, penGlow),
+        blendMode,
       });
     }
 
-    // Draw center point
+    // Draw center point - use accent color for the mode
     const centerPulse = 0.3 + Math.sin(state.time * 2) * 0.1;
+    const centerColor = isDarkMode
+      ? `rgba(255, 255, 255, ${centerPulse})`
+      : `rgba(0, 0, 0, ${centerPulse * 0.8})`;
     api.brush.circle(centerX, centerY, 5, {
-      fill: `rgba(255, 255, 255, ${centerPulse})`,
-      blendMode: 'add',
+      fill: centerColor,
+      blendMode,
     });
   },
 

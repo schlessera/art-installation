@@ -70,9 +70,9 @@ export class ActorRunner {
       return;
     }
 
-    // Create APIs for this actor (using Main layer)
-    const brushApi = new BrushAPIImpl(this.canvasManager, Layer.Main);
-    const filterApi = new FilterAPIImpl(this.canvasManager, Layer.Main);
+    // Create APIs for this actor (using Foreground layer)
+    const brushApi = new BrushAPIImpl(this.canvasManager, Layer.Foreground);
+    const filterApi = new FilterAPIImpl(this.canvasManager, Layer.Foreground);
 
     const activeActor: ActiveActor = {
       actor,

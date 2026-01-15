@@ -43,6 +43,22 @@ export interface ActorMetadata {
 
   /** Context APIs this actor wants to use */
   requiredContexts?: ContextType[];
+
+  /**
+   * Actor's rendering role. Defaults to 'foreground' if not specified.
+   * - 'background': Draws on background layer (1 per cycle)
+   * - 'foreground': Standard drawing actor (2-5 per cycle)
+   * - 'filter': Post-processing filter applied to background or foreground layer
+   */
+  role?: ActorRole;
+
+  /**
+   * @deprecated Use `role: 'filter'` instead.
+   * When true, this actor's filters apply to the entire rendered scene
+   * (post-processing) rather than just its own container.
+   * Filter actors should only use api.filter.* methods, not api.brush.*.
+   */
+  isGlobalFilter?: boolean;
 }
 
 /**
@@ -65,7 +81,29 @@ export interface ActorAuthor {
 /**
  * Available context types.
  */
-export type ContextType = 'time' | 'weather' | 'audio' | 'video' | 'social';
+export type ContextType = 'time' | 'weather' | 'audio' | 'video' | 'social' | 'display';
+
+/**
+ * Actor role determines where and how the actor renders.
+ * - 'background': Draws on background layer (1 per cycle, or solid color fallback)
+ * - 'foreground': Standard drawing actor (2-5 per cycle, default)
+ * - 'filter': Post-processing filter (0-2 per layer, assigned at runtime)
+ */
+export type ActorRole = 'background' | 'foreground' | 'filter';
+
+/**
+ * Get the effective role for an actor, handling backwards compatibility.
+ */
+export function getActorRole(metadata: ActorMetadata): ActorRole {
+  if (metadata.role) {
+    return metadata.role;
+  }
+  // Backwards compatibility: isGlobalFilter maps to 'filter'
+  if (metadata.isGlobalFilter) {
+    return 'filter';
+  }
+  return 'foreground';
+}
 
 /**
  * API provided to actors during setup phase.

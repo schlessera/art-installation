@@ -37,8 +37,8 @@ interface RGB {
   b: number;
 }
 
-// Predefined color palettes (each with 3-5 colors)
-const COLOR_PALETTES: RGB[][] = [
+// Predefined color palettes for dark mode (bright colors)
+const DARK_MODE_PALETTES: RGB[][] = [
   // Sunset
   [
     { r: 255, g: 94, b: 77 },
@@ -97,6 +97,66 @@ const COLOR_PALETTES: RGB[][] = [
   ],
 ];
 
+// Predefined color palettes for light mode (darker, more saturated colors)
+const LIGHT_MODE_PALETTES: RGB[][] = [
+  // Sunset (deeper, richer tones)
+  [
+    { r: 180, g: 50, b: 30 },
+    { r: 200, g: 100, b: 40 },
+    { r: 180, g: 130, b: 60 },
+    { r: 140, g: 60, b: 120 },
+  ],
+  // Ocean (deeper blues and teals)
+  [
+    { r: 0, g: 40, b: 70 },
+    { r: 20, g: 80, b: 120 },
+    { r: 40, g: 140, b: 140 },
+    { r: 60, g: 120, b: 140 },
+  ],
+  // Aurora (rich jewel tones)
+  [
+    { r: 0, g: 160, b: 90 },
+    { r: 0, g: 140, b: 140 },
+    { r: 80, g: 40, b: 160 },
+    { r: 180, g: 0, b: 100 },
+  ],
+  // Forest (deep greens)
+  [
+    { r: 15, g: 50, b: 35 },
+    { r: 30, g: 75, b: 55 },
+    { r: 50, g: 110, b: 75 },
+    { r: 100, g: 140, b: 80 },
+  ],
+  // Neon (saturated but darker)
+  [
+    { r: 180, g: 0, b: 180 },
+    { r: 0, g: 160, b: 160 },
+    { r: 180, g: 160, b: 0 },
+    { r: 200, g: 0, b: 100 },
+  ],
+  // Warm (deep warm tones)
+  [
+    { r: 180, g: 50, b: 20 },
+    { r: 200, g: 100, b: 20 },
+    { r: 180, g: 150, b: 20 },
+    { r: 180, g: 80, b: 80 },
+  ],
+  // Cool (deep blues and purples)
+  [
+    { r: 50, g: 40, b: 110 },
+    { r: 40, g: 70, b: 180 },
+    { r: 0, g: 130, b: 200 },
+    { r: 60, g: 160, b: 140 },
+  ],
+  // Pastel (muted, dusty tones for light backgrounds)
+  [
+    { r: 180, g: 100, b: 110 },
+    { r: 180, g: 140, b: 100 },
+    { r: 100, g: 160, b: 120 },
+    { r: 100, g: 140, b: 180 },
+  ],
+];
+
 // Constants for pre-allocation
 const MAX_WAVE_SEGMENTS = 100;  // Based on ceil(1920 / 25) + some buffer
 
@@ -117,10 +177,12 @@ interface WaveState {
   waveCount: number;
   palette: RGB[];
   paletteName: string;
+  paletteIndex: number; // Store index to switch palettes on mode change
   colorProgress: number; // 0 to palette.length (cycles back)
   cycleSpeed: number; // How fast to cycle through colors
   audioEnergy: number;
   strokePoints: { x: number; y: number }[];  // Pre-allocated array for stroke calls
+  isDarkMode: boolean; // Track current display mode
 }
 
 /**
@@ -147,10 +209,12 @@ let state: WaveState = {
   waveCount: 0,
   palette: [],
   paletteName: '',
+  paletteIndex: 0,
   colorProgress: 0,
   cycleSpeed: 0.05,
   audioEnergy: 0,
   strokePoints: [],
+  isDarkMode: true,
 };
 
 /**
@@ -201,10 +265,15 @@ const actor: Actor = {
   async setup(api: ActorSetupAPI): Promise<void> {
     const { height } = api.canvas.getSize();
 
-    // Pick a random color palette
-    const paletteIndex = Math.floor(Math.random() * COLOR_PALETTES.length);
-    state.palette = COLOR_PALETTES[paletteIndex];
-    state.paletteName = PALETTE_NAMES[paletteIndex];
+    // Detect display mode
+    state.isDarkMode = api.context.display.isDarkMode();
+
+    // Pick a random color palette (index is shared between dark/light palettes)
+    state.paletteIndex = Math.floor(Math.random() * DARK_MODE_PALETTES.length);
+    state.palette = state.isDarkMode
+      ? DARK_MODE_PALETTES[state.paletteIndex]
+      : LIGHT_MODE_PALETTES[state.paletteIndex];
+    state.paletteName = PALETTE_NAMES[state.paletteIndex];
 
     // Pre-allocate stroke points array (avoid slice() allocations in update)
     state.strokePoints = new Array(MAX_WAVE_SEGMENTS);
@@ -226,11 +295,21 @@ const actor: Actor = {
     state.cycleSpeed = 0.02; // Slow, smooth cycling
     state.audioEnergy = 0;
 
-    console.log(`[wave-painter] Setup complete with ${state.waveCount} waves, palette: ${state.paletteName}`);
+    console.log(`[wave-painter] Setup complete with ${state.waveCount} waves, palette: ${state.paletteName}, mode: ${state.isDarkMode ? 'dark' : 'light'}`);
   },
 
   update(api: ActorUpdateAPI, frame: FrameContext): void {
     const { width } = api.canvas.getSize();
+
+    // Check for display mode changes and update palette accordingly
+    const currentDarkMode = api.context.display.isDarkMode();
+    if (currentDarkMode !== state.isDarkMode) {
+      state.isDarkMode = currentDarkMode;
+      state.palette = state.isDarkMode
+        ? DARK_MODE_PALETTES[state.paletteIndex]
+        : LIGHT_MODE_PALETTES[state.paletteIndex];
+      console.log(`[wave-painter] Display mode changed to ${state.isDarkMode ? 'dark' : 'light'}`);
+    }
 
     // Get audio reactivity
     const bassLevel = api.context.audio.isAvailable() ? api.context.audio.bass() : 0;
@@ -279,9 +358,11 @@ const actor: Actor = {
       // Draw the wave using pre-allocated strokePoints (still need slice for API but reuses same array)
       // Note: This slice is unavoidable without API changes, but it's on a shared array
       const points = state.strokePoints.slice(0, pointCount);
+      // Adjust alpha for visibility: higher in light mode where colors are darker
+      const waveAlpha = state.isDarkMode ? 0.7 : 0.85;
       api.brush.stroke(points, {
         color: numericColor,
-        alpha: 0.7,
+        alpha: waveAlpha,
         width: 3 + i * 2,
         smooth: true,
         cap: 'round',
@@ -289,12 +370,14 @@ const actor: Actor = {
       });
 
       // Draw glow effect on beat
+      // Use 'screen' blend mode in light mode for better visibility
       if (isBeat && i === 0) {
         api.brush.stroke(points, {
           color: numericColor,
-          alpha: 0.3,
+          alpha: state.isDarkMode ? 0.3 : 0.4,
           width: 15,
           smooth: true,
+          blendMode: state.isDarkMode ? 'add' : 'multiply',
         });
       }
     }
@@ -318,10 +401,11 @@ const actor: Actor = {
             const y = (y1 + y2) / 2;
             // Use interpolated color for particles too (numeric for performance)
             const particleColor = getPaletteColor(state.palette, state.colorProgress + 0.5);
+            // Use 'add' blend mode for dark mode (brightens), 'multiply' for light mode (darkens)
             api.brush.circle(x, y, 5 + state.audioEnergy * 10, {
               fill: rgbToNumeric(particleColor),
-              alpha: 0.5,
-              blendMode: 'add',
+              alpha: state.isDarkMode ? 0.5 : 0.6,
+              blendMode: state.isDarkMode ? 'add' : 'multiply',
             });
           }
         }
@@ -334,9 +418,11 @@ const actor: Actor = {
     state.waveCount = 0;
     state.palette = [];
     state.paletteName = '';
+    state.paletteIndex = 0;
     state.colorProgress = 0;
     state.cycleSpeed = 0.05;
     state.audioEnergy = 0;
+    state.isDarkMode = true;
     console.log('[wave-painter] Teardown complete');
   },
 };

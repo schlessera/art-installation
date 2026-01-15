@@ -12,6 +12,8 @@ import type {
   AudioContext as AudioContextType,
   VideoContext,
   SocialContext,
+  DisplayContext,
+  DisplayMode,
   RGBA,
   MotionData,
   FaceData,
@@ -22,6 +24,8 @@ import type {
 import { TimeProvider } from './TimeProvider';
 import { WeatherProvider } from './WeatherProvider';
 import { AudioProvider } from './AudioProvider';
+import { VideoProvider } from './VideoProvider';
+import { DisplayProvider } from './DisplayProvider';
 
 /**
  * Mock VideoContext implementation.
@@ -72,6 +76,10 @@ class MockVideoContext implements VideoContext {
  * Mock SocialContext implementation.
  */
 class MockSocialContext implements SocialContext {
+  isAvailable(): boolean {
+    return false;
+  }
+
   viewerCount(): number {
     return Math.floor(Math.random() * 50) + 10;
   }
@@ -113,6 +121,9 @@ export interface ContextManagerConfig {
 
   /** Enable social context (requires API) */
   enableSocial?: boolean;
+
+  /** Force display mode (bypasses random selection per cycle) */
+  forcedDisplayMode?: DisplayMode;
 }
 
 /**
@@ -124,32 +135,53 @@ export class ContextManager implements ContextAPI {
   public readonly audio: AudioContextType;
   public readonly video: VideoContext;
   public readonly social: SocialContext;
+  public readonly display: DisplayContext;
 
   private timeProvider: TimeProvider;
   private weatherProvider: WeatherProvider;
   private audioProvider: AudioProvider;
+  private videoProvider: VideoProvider | null = null;
+  private displayProvider: DisplayProvider;
 
-  private config: Required<ContextManagerConfig>;
+  private config: Required<Omit<ContextManagerConfig, 'forcedDisplayMode'>> & {
+    forcedDisplayMode?: DisplayMode;
+  };
 
   constructor(config: ContextManagerConfig = {}) {
     this.config = {
       enableAudio: config.enableAudio ?? true,
       enableVideo: config.enableVideo ?? false,
       enableSocial: config.enableSocial ?? false,
+      forcedDisplayMode: config.forcedDisplayMode,
     };
 
     // Initialize providers
     this.timeProvider = new TimeProvider();
     this.weatherProvider = new WeatherProvider({ useMock: true });
     this.audioProvider = new AudioProvider();
+    this.displayProvider = new DisplayProvider({
+      forcedMode: config.forcedDisplayMode,
+    });
 
     // Set up context interfaces
     this.time = this.timeProvider;
     this.weather = this.weatherProvider;
     this.audio = this.audioProvider;
+    this.display = this.displayProvider;
 
-    // Use mock implementations for video and social
-    this.video = new MockVideoContext();
+    // Initialize video provider or use mock
+    if (this.config.enableVideo) {
+      this.videoProvider = new VideoProvider({
+        analysisWidth: 160,
+        analysisHeight: 120,
+        analysisInterval: 50,
+      });
+      this.video = this.videoProvider;
+    } else {
+      this.video = new MockVideoContext();
+    }
+
+    // Use mock implementation for social
     this.social = new MockSocialContext();
   }
 
@@ -167,6 +199,11 @@ export class ContextManager implements ContextAPI {
       await this.audioProvider.start();
     }
 
+    // Start video if enabled
+    if (this.config.enableVideo && this.videoProvider) {
+      await this.videoProvider.start();
+    }
+
     console.log('[ContextManager] Context providers started');
   }
 
@@ -176,6 +213,9 @@ export class ContextManager implements ContextAPI {
   stop(): void {
     this.weatherProvider.stop();
     this.audioProvider.stop();
+    if (this.videoProvider) {
+      this.videoProvider.stop();
+    }
     console.log('[ContextManager] Context providers stopped');
   }
 
@@ -186,6 +226,11 @@ export class ContextManager implements ContextAPI {
     // Audio needs per-frame updates for analysis
     if (this.config.enableAudio && this.audioProvider.isAvailable()) {
       this.audioProvider.update();
+    }
+
+    // Video needs per-frame updates for motion detection
+    if (this.config.enableVideo && this.videoProvider?.isAvailable()) {
+      this.videoProvider.update();
     }
   }
 
@@ -214,6 +259,9 @@ export class ContextManager implements ContextAPI {
         sentiment: this.social.sentiment(),
         mentionCount: this.social.mentionCount(60), // Last 60 minutes
       },
+      display: {
+        mode: this.display.mode(),
+      },
     };
   }
 
@@ -239,9 +287,43 @@ export class ContextManager implements ContextAPI {
   }
 
   /**
+   * Get the video provider for configuration.
+   */
+  getVideoProvider(): VideoProvider | null {
+    return this.videoProvider;
+  }
+
+  /**
+   * Set the target canvas dimensions for video coordinate mapping.
+   * Call this after canvas initialization to ensure motion regions
+   * are correctly mapped from video space to canvas space.
+   */
+  setVideoTargetDimensions(width: number, height: number): void {
+    if (this.videoProvider) {
+      this.videoProvider.setTargetDimensions(width, height);
+    }
+  }
+
+  /**
    * Get the ContextAPI interface.
    */
   getContextAPI(): ContextAPI {
     return this;
+  }
+
+  /**
+   * Get the display provider for configuration.
+   */
+  getDisplayProvider(): DisplayProvider {
+    return this.displayProvider;
+  }
+
+  /**
+   * Called at the start of each cycle to randomize cycle-specific context.
+   * This randomizes the display mode (unless forced via config).
+   */
+  prepareNewCycle(): void {
+    this.displayProvider.newCycle();
+    console.log(`[ContextManager] New cycle: display mode = ${this.displayProvider.mode()}`);
   }
 }

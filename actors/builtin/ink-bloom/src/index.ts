@@ -42,16 +42,16 @@ function rgbToNumeric(r: number, g: number, b: number): number {
   return (r << 16) | (g << 8) | b;
 }
 
-const INK_PALETTES = [
+// Dark mode palettes - brighter colors for dark backgrounds
+const INK_PALETTES_DARK = [
   {
     name: 'Traditional',
     colors: [
-      rgbToNumeric(20, 20, 40),      // Deep black
-      rgbToNumeric(60, 40, 80),      // Purple-black
-      rgbToNumeric(100, 60, 40),     // Sepia
-      rgbToNumeric(40, 60, 80),      // Blue-gray
+      rgbToNumeric(120, 120, 160),   // Soft gray-purple
+      rgbToNumeric(160, 140, 180),   // Light purple
+      rgbToNumeric(180, 140, 120),   // Light sepia
+      rgbToNumeric(140, 160, 180),   // Light blue-gray
     ],
-    blendMode: 'screen' as BlendMode,
   },
   {
     name: 'Neon',
@@ -61,37 +61,82 @@ const INK_PALETTES = [
       rgbToNumeric(255, 200, 50),    // Yellow
       rgbToNumeric(150, 50, 255),    // Purple
     ],
-    blendMode: 'add' as BlendMode,
   },
   {
     name: 'Earth',
     colors: [
-      rgbToNumeric(139, 90, 43),     // Sienna
-      rgbToNumeric(85, 107, 47),     // Olive
-      rgbToNumeric(160, 120, 90),    // Tan
-      rgbToNumeric(70, 90, 70),      // Forest
+      rgbToNumeric(180, 140, 100),   // Light sienna
+      rgbToNumeric(140, 160, 100),   // Light olive
+      rgbToNumeric(200, 170, 140),   // Light tan
+      rgbToNumeric(120, 150, 120),   // Light forest
     ],
-    blendMode: 'screen' as BlendMode,
   },
   {
     name: 'Ocean',
     colors: [
-      rgbToNumeric(20, 80, 120),     // Deep blue
-      rgbToNumeric(40, 120, 140),    // Teal
-      rgbToNumeric(60, 150, 160),    // Aqua
-      rgbToNumeric(100, 180, 180),   // Seafoam
+      rgbToNumeric(80, 140, 180),    // Medium blue
+      rgbToNumeric(100, 170, 190),   // Light teal
+      rgbToNumeric(120, 190, 200),   // Light aqua
+      rgbToNumeric(150, 210, 210),   // Light seafoam
     ],
-    blendMode: 'screen' as BlendMode,
   },
   {
     name: 'Sunset',
     colors: [
-      rgbToNumeric(200, 80, 50),     // Orange-red
-      rgbToNumeric(220, 120, 60),    // Coral
-      rgbToNumeric(180, 60, 100),    // Magenta
-      rgbToNumeric(240, 160, 80),    // Gold
+      rgbToNumeric(255, 130, 100),   // Light orange-red
+      rgbToNumeric(255, 170, 110),   // Light coral
+      rgbToNumeric(230, 110, 150),   // Light magenta
+      rgbToNumeric(255, 200, 130),   // Light gold
     ],
-    blendMode: 'add' as BlendMode,
+  },
+];
+
+// Light mode palettes - darker, more saturated colors for light backgrounds
+const INK_PALETTES_LIGHT = [
+  {
+    name: 'Traditional',
+    colors: [
+      rgbToNumeric(20, 20, 40),      // Deep black
+      rgbToNumeric(60, 40, 80),      // Purple-black
+      rgbToNumeric(80, 50, 30),      // Dark sepia
+      rgbToNumeric(30, 50, 70),      // Dark blue-gray
+    ],
+  },
+  {
+    name: 'Neon',
+    colors: [
+      rgbToNumeric(180, 20, 100),    // Dark pink
+      rgbToNumeric(20, 120, 180),    // Dark cyan
+      rgbToNumeric(180, 140, 20),    // Dark yellow
+      rgbToNumeric(100, 20, 180),    // Dark purple
+    ],
+  },
+  {
+    name: 'Earth',
+    colors: [
+      rgbToNumeric(100, 60, 25),     // Dark sienna
+      rgbToNumeric(55, 75, 30),      // Dark olive
+      rgbToNumeric(120, 85, 55),     // Dark tan
+      rgbToNumeric(40, 60, 40),      // Dark forest
+    ],
+  },
+  {
+    name: 'Ocean',
+    colors: [
+      rgbToNumeric(10, 50, 90),      // Deep blue
+      rgbToNumeric(20, 80, 100),     // Dark teal
+      rgbToNumeric(30, 100, 110),    // Dark aqua
+      rgbToNumeric(50, 120, 120),    // Dark seafoam
+    ],
+  },
+  {
+    name: 'Sunset',
+    colors: [
+      rgbToNumeric(160, 50, 30),     // Dark orange-red
+      rgbToNumeric(180, 80, 40),     // Dark coral
+      rgbToNumeric(140, 40, 70),     // Dark magenta
+      rgbToNumeric(200, 120, 50),    // Dark gold
+    ],
   },
 ];
 
@@ -125,7 +170,8 @@ interface InkState {
   blooms: Bloom[];
   width: number;
   height: number;
-  palette: typeof INK_PALETTES[0];
+  palette: typeof INK_PALETTES_DARK[0];
+  paletteIndex: number;  // Store index to use same palette in both modes
   timeSinceSpawn: number;
   nextSpawnTime: number;
   time: number;
@@ -136,7 +182,8 @@ let state: InkState = {
   blooms: [],
   width: 0,
   height: 0,
-  palette: INK_PALETTES[0],
+  palette: INK_PALETTES_DARK[0],
+  paletteIndex: 0,
   timeSinceSpawn: 0,
   nextSpawnTime: 0,
   time: 0,
@@ -182,7 +229,7 @@ function randomSpawnTime(): number {
   return SPAWN_INTERVAL_MIN + Math.random() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
 }
 
-function spawnBloom(bloom: Bloom, width: number, height: number, palette: typeof INK_PALETTES[0]): void {
+function spawnBloom(bloom: Bloom, width: number, height: number, palette: typeof INK_PALETTES_DARK[0]): void {
   bloom.active = true;
 
   // Spawn away from edges
@@ -228,8 +275,13 @@ const actor: Actor = {
     // Pre-render glow texture once
     state.glowTexture = createGlowTexture();
 
-    // Random palette
-    state.palette = INK_PALETTES[Math.floor(Math.random() * INK_PALETTES.length)];
+    // Random palette index (used to select from mode-appropriate palette array)
+    state.paletteIndex = Math.floor(Math.random() * INK_PALETTES_DARK.length);
+    // Initial palette based on current mode (will be updated in update() for mode changes)
+    const isDarkMode = api.context.display.isDarkMode();
+    state.palette = isDarkMode
+      ? INK_PALETTES_DARK[state.paletteIndex]
+      : INK_PALETTES_LIGHT[state.paletteIndex];
 
     // Pre-allocate blooms
     state.blooms = [];
@@ -267,13 +319,26 @@ const actor: Actor = {
       bloom.currentRadius = bloom.baseRadius * (0.5 + Math.random() * 0.5);
     }
 
-    console.log(`[ink-bloom] Setup: palette: ${state.palette.name}, blend: ${state.palette.blendMode}`);
+    console.log(`[ink-bloom] Setup: palette: ${state.palette.name}, mode: ${isDarkMode ? 'dark' : 'light'}`);
   },
 
   update(api: ActorUpdateAPI, frame: FrameContext): void {
     const dt = frame.deltaTime / 1000;
     state.time += dt;
     state.timeSinceSpawn += dt;
+
+    // Update palette based on current display mode (handles mode changes mid-cycle)
+    const isDarkMode = api.context.display.isDarkMode();
+    state.palette = isDarkMode
+      ? INK_PALETTES_DARK[state.paletteIndex]
+      : INK_PALETTES_LIGHT[state.paletteIndex];
+
+    // Mode-aware blend modes
+    const bloomBlendMode: BlendMode = isDarkMode ? 'screen' : 'multiply';
+    const highlightBlendMode: BlendMode = isDarkMode ? 'add' : 'multiply';
+
+    // Mode-aware alpha adjustment (light mode needs slightly lower alpha)
+    const alphaMultiplier = isDarkMode ? 1.0 : 0.75;
 
     const { width, height, blooms, palette } = state;
 
@@ -346,8 +411,8 @@ const actor: Actor = {
           width: size,
           height: size,
           tint: bloom.color,
-          alpha: fadeAlpha * 0.45,
-          blendMode: palette.blendMode,
+          alpha: fadeAlpha * 0.45 * alphaMultiplier,
+          blendMode: bloomBlendMode,
         });
       }
 
@@ -357,16 +422,20 @@ const actor: Actor = {
         width: centerSize,
         height: centerSize,
         tint: bloom.color,
-        alpha: fadeAlpha * 0.55,
-        blendMode: palette.blendMode,
+        alpha: fadeAlpha * 0.55 * alphaMultiplier,
+        blendMode: bloomBlendMode,
       });
 
-      // Inner highlight using small white glow
+      // Inner highlight using small glow
+      // Dark mode: white highlight with 'add' blend
+      // Light mode: dark highlight with 'multiply' blend
+      const highlightTint = isDarkMode ? 0xffffff : 0x000000;
       api.brush.image(state.glowTexture, bloom.x, bloom.y, {
         width: bloom.currentRadius * 0.5,
         height: bloom.currentRadius * 0.5,
-        alpha: fadeAlpha * 0.35,
-        blendMode: 'add',
+        tint: highlightTint,
+        alpha: fadeAlpha * (isDarkMode ? 0.35 : 0.25),
+        blendMode: highlightBlendMode,
       });
     }
   },

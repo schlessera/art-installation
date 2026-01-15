@@ -28,6 +28,7 @@ function createMockSetupAPI(): ActorSetupAPI {
       findEmptyRegions: () => [],
       getBrightness: () => 0.5,
       getAverageBrightness: () => 0.5,
+      getCanvasSnapshotAsync: () => Promise.resolve({ width: 800, height: 600, data: new Uint8Array(800 * 600 * 4) }),
     },
     context: createMockContext(),
     loadAsset: vi.fn().mockResolvedValue(null),
@@ -153,6 +154,7 @@ function createMockContext() {
       getColorAt: () => null,
     },
     social: {
+      isAvailable: () => false,
       viewerCount: () => 10,
       getMentions: () => [],
       sentiment: () => 0.5,
@@ -160,6 +162,12 @@ function createMockContext() {
       engagementLevel: () => 0.5,
       isViralMoment: () => false,
       mentionCount: () => 0,
+    },
+    display: {
+      isDarkMode: () => true,
+      mode: () => 'dark' as const,
+      baseColor: () => 0x000000,
+      accentColor: () => 0xffffff,
     },
   };
 }

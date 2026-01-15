@@ -176,6 +176,12 @@ function mapBlendMode(mode?: BlendMode): string {
  */
 function applyFill(graphics: Graphics, style?: ShapeStyle): void {
   if (!style?.fill) {
+    // If stroke is specified without fill, this is a stroke-only shape
+    // Don't apply default white fill as it would obscure the stroke effect
+    if (style?.stroke || style?.strokeWidth) {
+      return;
+    }
+    // Fill-only shape (no stroke) - apply default white fill
     graphics.fill({ color: 0xffffff, alpha: style?.alpha ?? 1 });
     return;
   }
@@ -513,7 +519,7 @@ class SpritePool {
 
 // Gradient cache to reuse FillGradient objects
 const gradientCache = new Map<string, FillGradient>();
-const MAX_GRADIENT_CACHE_SIZE = 200;
+const MAX_GRADIENT_CACHE_SIZE = 500;
 
 /**
  * Generate cache key for a gradient.
@@ -551,13 +557,11 @@ function getOrCreateFillGradient(gradient: Gradient): FillGradient {
   }
 
   // Evict old entries if cache is full
+  // IMPORTANT: Do NOT call destroy() on evicted gradients - they may still be
+  // referenced by Graphics objects waiting to render. Let GC handle cleanup.
   if (gradientCache.size >= MAX_GRADIENT_CACHE_SIZE) {
     const firstKey = gradientCache.keys().next().value;
     if (firstKey) {
-      const oldGradient = gradientCache.get(firstKey);
-      if (oldGradient) {
-        oldGradient.destroy();
-      }
       gradientCache.delete(firstKey);
     }
   }

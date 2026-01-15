@@ -16,6 +16,7 @@ __snapshots__/
 # IDE
 .vscode/
 .idea/
+.mynav/
 *.swp
 *.swo
 *~

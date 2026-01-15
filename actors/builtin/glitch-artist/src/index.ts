@@ -112,6 +112,8 @@ interface GlitchState {
   filterBudgetUsed: number;
   // Async canvas analysis tracking
   analysisPending: boolean;
+  // Display mode (cached per frame)
+  isDarkMode: boolean;
 }
 
 // ============================================================
@@ -154,6 +156,7 @@ let state: GlitchState = {
   time: 0,
   filterBudgetUsed: 0,
   analysisPending: false,
+  isDarkMode: true,
 };
 
 function rgbToNumeric(color: RGB): number {
@@ -339,6 +342,9 @@ const actor: Actor = {
     const dt = frame.deltaTime / 1000;
     state.time += dt;
 
+    // Cache display mode for this frame
+    state.isDarkMode = api.context.display.isDarkMode();
+
     // Reset filter budget at start of each frame
     state.filterBudgetUsed = 0;
 
@@ -461,9 +467,13 @@ const actor: Actor = {
         case 'shift': {
           // Draw colored shift rectangles (no filter, just drawing - always allowed)
           const shiftX = (Math.random() - 0.5) * 20 * currentIntensity;
+          // Fallback color: magenta for dark mode, cyan for light mode (both visible)
+          const fallbackColor = state.isDarkMode
+            ? { r: 255, g: 0, b: 255 }   // Magenta
+            : { r: 0, g: 255, b: 255 };  // Cyan
           const shiftColor = state.dominantColors.length > 0
             ? state.dominantColors[Math.floor(Math.random() * state.dominantColors.length)]
-            : { r: 255, g: 0, b: 255 };
+            : fallbackColor;
 
           api.brush.rect(event.x + shiftX, event.y, event.width, event.height * 0.3, {
             fill: rgbToNumeric(shiftColor),
@@ -476,6 +486,11 @@ const actor: Actor = {
     }
 
     // Draw scan lines
+    // Adapt colors for light/dark mode
+    const scanLineColor = state.isDarkMode ? 0xffffff : 0x000000;
+    // Use 'screen' for dark mode (lightens), 'multiply' for light mode (darkens)
+    const scanLineBlendMode = state.isDarkMode ? 'screen' : 'multiply';
+
     for (const line of state.scanLines) {
       line.y += line.speed * dt;
       if (line.y > state.canvasHeight) {
@@ -489,9 +504,9 @@ const actor: Actor = {
         const segmentWidth = 20 + Math.random() * 100;
         if (Math.random() > gapChance) {
           api.brush.rect(x, line.y, segmentWidth, line.thickness, {
-            fill: 0xffffff,
+            fill: scanLineColor,
             alpha: line.opacity,
-            blendMode: 'overlay',
+            blendMode: scanLineBlendMode,
           });
         }
         x += segmentWidth;
@@ -513,6 +528,10 @@ const actor: Actor = {
     }
 
     // Draw interference pattern (subtle vertical bars)
+    // Adapt colors for light/dark mode
+    const interferenceColor = state.isDarkMode ? 0xc8c8c8 : 0x373737;  // Light gray for dark mode, dark gray for light mode
+    const interferenceBlendMode = state.isDarkMode ? 'screen' : 'multiply';
+
     if (frame.frameCount % 3 === 0) {
       const barCount = 5 + Math.floor(Math.random() * 10);
       for (let b = 0; b < barCount; b++) {
@@ -522,9 +541,9 @@ const actor: Actor = {
         const barY = Math.random() * (state.canvasHeight - barHeight);
 
         api.brush.rect(barX, barY, barWidth, barHeight, {
-          fill: 0xc8c8c8,  // { r: 200, g: 200, b: 200 }
+          fill: interferenceColor,
           alpha: 0.05,
-          blendMode: 'overlay',
+          blendMode: interferenceBlendMode,
         });
       }
     }

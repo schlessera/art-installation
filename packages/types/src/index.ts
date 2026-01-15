@@ -16,7 +16,9 @@ export type {
   RegisteredActor,
   ActorUsageStats,
   ContextType,
+  ActorRole,
 } from './actor';
+export { getActorRole } from './actor';
 
 // Canvas types
 export type {
@@ -68,9 +70,12 @@ export type {
   AudioLevels,
   VideoContext,
   MotionData,
+  FaceLandmarks,
   FaceData,
   SocialContext,
   SocialMention,
+  DisplayContext,
+  DisplayMode,
   ContextAPI,
   ContextSnapshot,
 } from './context';

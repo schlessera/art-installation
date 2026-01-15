@@ -12,6 +12,8 @@ import type {
   AudioContext,
   VideoContext,
   SocialContext,
+  DisplayContext,
+  DisplayMode,
   WeatherCondition,
   Season,
   AudioLevels,
@@ -532,6 +534,11 @@ export class MockSocialContext implements SocialContext {
   private _keywords: string[] = [];
   private _engagement: number = 0.5;
   private _viral: boolean = false;
+  private _available: boolean = true;
+
+  isAvailable(): boolean {
+    return this._available;
+  }
 
   viewerCount(): number {
     return this._viewerCount;
@@ -623,6 +630,13 @@ export class MockSocialContext implements SocialContext {
     this._mentions = [];
   }
 
+  /**
+   * Set availability status.
+   */
+  setAvailable(available: boolean): void {
+    this._available = available;
+  }
+
   private updateSentiment(): void {
     if (this._mentions.length === 0) {
       this._sentiment = 0.5;
@@ -630,6 +644,60 @@ export class MockSocialContext implements SocialContext {
     }
     const sum = this._mentions.reduce((acc, m) => acc + m.sentiment, 0);
     this._sentiment = sum / this._mentions.length;
+  }
+}
+
+// ============================================================
+// DISPLAY CONTEXT MOCK
+// ============================================================
+
+export class MockDisplayContext implements DisplayContext {
+  private _darkMode: boolean = true;
+
+  isDarkMode(): boolean {
+    return this._darkMode;
+  }
+
+  mode(): DisplayMode {
+    return this._darkMode ? 'dark' : 'light';
+  }
+
+  baseColor(): number {
+    return this._darkMode ? 0x000000 : 0xffffff;
+  }
+
+  accentColor(): number {
+    return this._darkMode ? 0xffffff : 0x000000;
+  }
+
+  // ============ Control Methods ============
+
+  /**
+   * Set display mode to dark.
+   */
+  setDarkMode(): void {
+    this._darkMode = true;
+  }
+
+  /**
+   * Set display mode to light.
+   */
+  setLightMode(): void {
+    this._darkMode = false;
+  }
+
+  /**
+   * Set display mode.
+   */
+  setMode(mode: DisplayMode): void {
+    this._darkMode = mode === 'dark';
+  }
+
+  /**
+   * Toggle display mode.
+   */
+  toggle(): void {
+    this._darkMode = !this._darkMode;
   }
 }
 
@@ -650,6 +718,7 @@ export class MockContextAPIs implements ContextAPI {
   audio: MockAudioContext;
   video: MockVideoContext;
   social: MockSocialContext;
+  display: MockDisplayContext;
 
   constructor(options: MockContextOptions = {}) {
     this.time = new MockTimeContext();
@@ -657,6 +726,7 @@ export class MockContextAPIs implements ContextAPI {
     this.audio = new MockAudioContext();
     this.video = new MockVideoContext();
     this.social = new MockSocialContext();
+    this.display = new MockDisplayContext();
 
     if (options.weather) {
       this.weather.setConditions(options.weather);
@@ -678,6 +748,7 @@ export class MockContextAPIs implements ContextAPI {
     this.audio = new MockAudioContext();
     this.video = new MockVideoContext();
     this.social = new MockSocialContext();
+    this.display = new MockDisplayContext();
   }
 }
 

@@ -10,6 +10,10 @@
  * - Numeric colors with separate alpha (no string allocation)
  * - Single line per connection (instead of 2)
  * - Squared distance early-out (avoids sqrt for distant pairs)
+ *
+ * Light/Dark mode aware:
+ * - Dark mode: Bright stars with 'add' blend mode on dark backgrounds
+ * - Light mode: Dark stars with 'multiply' blend mode on light backgrounds
  */
 
 import type {
@@ -33,7 +37,7 @@ const metadata: ActorMetadata = {
   tags: ['stars', 'constellations', 'ambient', 'lines', 'space'],
   createdAt: new Date('2026-01-10'),
   preferredDuration: 120,
-  requiredContexts: ['time'],
+  requiredContexts: ['time', 'display'],
 };
 
 // Configuration constants
@@ -87,7 +91,8 @@ interface ConstellationState {
   time: number;
   connectionAlphaMultiplier: number;
   connectionVisibility: number[][];
-  glowDataUrl: string; // Pre-rendered glow texture
+  glowDataUrl: string; // Pre-rendered glow texture (light version for dark mode)
+  glowDataUrlDark: string; // Pre-rendered dark glow texture (for light mode)
   // Session variability (randomized once per setup)
   glowSizeMultiplier: number;      // 0.8-1.2
   twinkleSpeedMultiplier: number;  // 0.7-1.3
@@ -104,6 +109,7 @@ let state: ConstellationState = {
   connectionAlphaMultiplier: 1,
   connectionVisibility: [],
   glowDataUrl: '',
+  glowDataUrlDark: '',
   glowSizeMultiplier: 1,
   twinkleSpeedMultiplier: 1,
   saturationOffset: 0,
@@ -137,8 +143,9 @@ function hslToNumeric(h: number, s: number, l: number): number {
 /**
  * Create pre-rendered soft glow texture.
  * Called once in setup(), reused for all stars via tinting.
+ * @param dark - If true, creates a dark glow for light mode (uses black instead of white)
  */
-function createGlowTexture(): string {
+function createGlowTexture(dark: boolean = false): string {
   const size = 64;
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -149,11 +156,22 @@ function createGlowTexture(): string {
     size / 2, size / 2, 0,
     size / 2, size / 2, size / 2
   );
-  gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-  gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
-  gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.4)');
-  gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.1)');
-  gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+  if (dark) {
+    // Dark glow for light mode - uses black with varying opacity
+    gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+    gradient.addColorStop(0.2, 'rgba(0, 0, 0, 0.8)');
+    gradient.addColorStop(0.4, 'rgba(0, 0, 0, 0.4)');
+    gradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.1)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  } else {
+    // Light glow for dark mode - uses white with varying opacity
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+    gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.4)');
+    gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.1)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  }
 
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, size, size);
@@ -242,8 +260,9 @@ const actor: Actor = {
     state.twinkleSpeedMultiplier = 0.7 + Math.random() * 0.6;  // 0.7-1.3
     state.saturationOffset = -10 + Math.random() * 20;         // -10 to +10
 
-    // Pre-render glow texture once
-    state.glowDataUrl = createGlowTexture();
+    // Pre-render glow textures once (both light and dark versions)
+    state.glowDataUrl = createGlowTexture(false);      // White glow for dark mode
+    state.glowDataUrlDark = createGlowTexture(true);   // Black glow for light mode
 
     // Pre-allocate stars
     state.stars = [];
@@ -288,6 +307,13 @@ const actor: Actor = {
     const { width, height } = state;
     const stars = state.stars;
     const fadeStep = CONNECTION_FADE_SPEED * dt;
+
+    // Get display mode for light/dark adaptation
+    const isDarkMode = api.context.display.isDarkMode();
+    const glowBlendMode = isDarkMode ? 'add' : 'multiply';
+    const lineBlendMode = isDarkMode ? 'add' : 'darken';
+    const glowTexture = isDarkMode ? state.glowDataUrl : state.glowDataUrlDark;
+    const coreColor = isDarkMode ? 0xffffff : 0x000000;
 
     // Update star positions
     for (let i = 0; i < stars.length; i++) {
@@ -341,12 +367,15 @@ const actor: Actor = {
 
         // Draw single line per connection (instead of 2)
         if (currentAlpha > 0.01) {
-          // Blend colors of connected stars
-          const avgColor = blendColors(stars[i].color, stars[j].color);
+          // Blend colors of connected stars, darken for light mode
+          let avgColor = blendColors(stars[i].color, stars[j].color);
+          if (!isDarkMode) {
+            avgColor = darkenForLightMode(avgColor);
+          }
           api.brush.line(
             stars[i].x, stars[i].y,
             stars[j].x, stars[j].y,
-            { color: avgColor, alpha: currentAlpha, width: 1.5, blendMode: 'add', cap: 'round' }
+            { color: avgColor, alpha: currentAlpha, width: 1.5, blendMode: lineBlendMode, cap: 'round' }
           );
         }
       }
@@ -359,20 +388,22 @@ const actor: Actor = {
       const alpha = star.baseAlpha * twinkle;
 
       // Soft glow sprite with tinting (size varies per session)
+      // Use appropriate glow texture and blend mode for display mode
       const glowSize = star.radius * 8 * state.glowSizeMultiplier;
-      api.brush.image(state.glowDataUrl, star.x, star.y, {
+      const starTint = isDarkMode ? star.color : darkenForLightMode(star.color);
+      api.brush.image(glowTexture, star.x, star.y, {
         width: glowSize,
         height: glowSize,
-        tint: star.color,
+        tint: starTint,
         alpha: alpha,
-        blendMode: 'add',
+        blendMode: glowBlendMode,
       });
 
-      // Bright core for visibility
+      // Bright/dark core for visibility (white on dark, black on light)
       api.brush.circle(star.x, star.y, star.radius * 0.6, {
-        fill: 0xffffff,
+        fill: coreColor,
         alpha: alpha,
-        blendMode: 'add',
+        blendMode: glowBlendMode,
       });
     }
 
@@ -405,21 +436,21 @@ const actor: Actor = {
       const tailX = ss.x - dirX * ss.length;
       const tailY = ss.y - dirY * ss.length;
 
-      // Draw trail with gradient via 3 segments (reduced from 10 lines)
+      // Draw trail - white on dark mode, black on light mode
       api.brush.line(ss.x, ss.y, tailX, tailY, {
-        color: 0xffffff,
+        color: coreColor,
         alpha: alpha * 0.6,
         width: 3,
-        blendMode: 'add',
+        blendMode: lineBlendMode,
         cap: 'round',
       });
 
-      // Bright head using pre-rendered glow
-      api.brush.image(state.glowDataUrl, ss.x, ss.y, {
+      // Bright/dark head using pre-rendered glow
+      api.brush.image(glowTexture, ss.x, ss.y, {
         width: 20,
         height: 20,
         alpha: alpha,
-        blendMode: 'add',
+        blendMode: glowBlendMode,
       });
     }
   },
@@ -429,6 +460,7 @@ const actor: Actor = {
     state.shootingStars = [];
     state.connectionVisibility = [];
     state.glowDataUrl = '';
+    state.glowDataUrlDark = '';
     state.time = 0;
     console.log('[constellation-weaver] Teardown complete');
   },
@@ -441,6 +473,24 @@ function blendColors(c1: number, c2: number): number {
   const r = ((c1 >> 16) + (c2 >> 16)) >> 1;
   const g = (((c1 >> 8) & 0xff) + ((c2 >> 8) & 0xff)) >> 1;
   const b = ((c1 & 0xff) + (c2 & 0xff)) >> 1;
+  return (r << 16) | (g << 8) | b;
+}
+
+/**
+ * Darken a color for light mode - preserves hue but reduces lightness.
+ * This gives better visual results than pure inversion for colored stars.
+ */
+function darkenForLightMode(color: number): number {
+  // Extract RGB
+  let r = (color >> 16) & 0xff;
+  let g = (color >> 8) & 0xff;
+  let b = color & 0xff;
+
+  // Reduce brightness significantly (multiply by ~0.3)
+  r = Math.floor(r * 0.3);
+  g = Math.floor(g * 0.3);
+  b = Math.floor(b * 0.3);
+
   return (r << 16) | (g << 8) | b;
 }
 

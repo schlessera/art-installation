@@ -283,6 +283,49 @@ function rgbToNumeric(color: RGB): number {
   return (color.r << 16) | (color.g << 8) | color.b;
 }
 
+/**
+ * Adjust RGB color for display mode.
+ * In dark mode: colors can be lighter/brighter
+ * In light mode: colors need to be darker for contrast
+ */
+function adjustColorForMode(color: RGB, isDarkMode: boolean): RGB {
+  if (isDarkMode) {
+    // Dark mode: slightly boost brightness for visibility
+    return {
+      r: Math.min(255, color.r + 20),
+      g: Math.min(255, color.g + 20),
+      b: Math.min(255, color.b + 20),
+    };
+  } else {
+    // Light mode: darken colors significantly for contrast
+    // Reduce lightness by ~30-40%
+    return {
+      r: Math.floor(color.r * 0.6),
+      g: Math.floor(color.g * 0.6),
+      b: Math.floor(color.b * 0.6),
+    };
+  }
+}
+
+/**
+ * Adjust flower colors for display mode.
+ * Flowers need to be vibrant in dark mode but saturated/darker in light mode.
+ */
+function adjustFlowerColorForMode(color: RGB, isDarkMode: boolean): RGB {
+  if (isDarkMode) {
+    // Dark mode: keep vibrant colors as-is
+    return color;
+  } else {
+    // Light mode: reduce brightness while maintaining saturation
+    // Use a less aggressive darkening than stems to keep flowers visible
+    return {
+      r: Math.floor(color.r * 0.75),
+      g: Math.floor(color.g * 0.75),
+      b: Math.floor(color.b * 0.75),
+    };
+  }
+}
+
 function createSegment(): PlantSegment {
   return {
     active: false,
@@ -457,6 +500,9 @@ const actor: Actor = {
   update(api: ActorUpdateAPI, frame: FrameContext): void {
     const dt = frame.deltaTime / 1000;
 
+    // Get display mode for color adjustments
+    const isDarkMode = api.context.display.isDarkMode();
+
     // Update wind
     state.windPhase += dt * 2;
     const wind = Math.sin(state.windPhase) * state.windStrength;
@@ -559,10 +605,13 @@ const actor: Actor = {
           3 * (1 - t) * Math.pow(t, 2) * absCy2 +
           Math.pow(t, 3) * absY1;
 
-        // Stem color
-        const stemColor = state.stemPalette[seg.colorIndex % state.stemPalette.length];
+        // Stem color - adjusted for display mode
+        const baseStemColor = state.stemPalette[seg.colorIndex % state.stemPalette.length];
+        const stemColor = adjustColorForMode(baseStemColor, isDarkMode);
         const stemColorNumeric = rgbToNumeric(stemColor);
-        const alpha = 0.7 + seg.depth * 0.1;
+        // Light mode needs slightly higher alpha for visibility on bright backgrounds
+        const baseAlpha = 0.7 + seg.depth * 0.1;
+        const alpha = isDarkMode ? baseAlpha : Math.min(1, baseAlpha + 0.15);
 
         // Draw bezier stem
         const startPoint: Point = { x: absX0, y: absY0 };
@@ -579,13 +628,19 @@ const actor: Actor = {
 
         // Draw flower if fully grown
         if (seg.hasFlower && seg.growthProgress >= 0.95) {
-          const flowerColor = state.flowerPalette[seg.flowerColorIndex % state.flowerPalette.length];
+          const baseFlowerColor =
+            state.flowerPalette[seg.flowerColorIndex % state.flowerPalette.length];
+          const flowerColor = adjustFlowerColorForMode(baseFlowerColor, isDarkMode);
           const flowerColorNumeric = rgbToNumeric(flowerColor);
-          const centerColor = 0xffdc64; // Yellow center { r: 255, g: 220, b: 100 }
+          // Flower center: yellow in dark mode, darker orange-brown in light mode
+          const centerColor = isDarkMode ? 0xffdc64 : 0xc9a030;
 
           // Flower petals using small circles or polygons
           api.brush.pushMatrix();
           api.brush.translate(currentX, currentY);
+
+          // Petal alpha: slightly lower in light mode for softer look
+          const petalAlpha = isDarkMode ? 0.8 : 0.7;
 
           // Draw petals
           for (let p = 0; p < seg.petalCount; p++) {
@@ -595,7 +650,7 @@ const actor: Actor = {
 
             api.brush.circle(petalX, petalY, seg.flowerSize * 0.4, {
               fill: flowerColorNumeric,
-              alpha: 0.8,
+              alpha: petalAlpha,
             });
           }
 
@@ -622,7 +677,9 @@ const actor: Actor = {
             3 * (1 - leafT) * Math.pow(leafT, 2) * absCy2 +
             Math.pow(leafT, 3) * absY1;
 
-          const leafColor = state.leafPalette[Math.floor(Math.random() * state.leafPalette.length)];
+          const baseLeafColor =
+            state.leafPalette[Math.floor(Math.random() * state.leafPalette.length)];
+          const leafColor = adjustColorForMode(baseLeafColor, isDarkMode);
           const leafColorNumeric = rgbToNumeric(leafColor);
 
           // Simple leaf as small ellipse, scaled with fill percentage
@@ -630,9 +687,11 @@ const actor: Actor = {
             // Only draw some leaves per frame to reduce overdraw
             const leafWidth = 4 * (0.5 + state.fillPercentage);
             const leafHeight = 8 * (0.5 + state.fillPercentage);
+            // Leaf alpha: slightly higher in light mode for visibility
+            const leafAlpha = isDarkMode ? 0.6 : 0.7;
             api.brush.ellipse(leafX + wind * 2, leafY, leafWidth, leafHeight, {
               fill: leafColorNumeric,
-              alpha: 0.6,
+              alpha: leafAlpha,
             });
           }
         }

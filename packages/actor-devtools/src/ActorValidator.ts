@@ -56,8 +56,8 @@ const FORBIDDEN_PATTERNS: Array<{ pattern: RegExp; message: string }> = [
   { pattern: /\bindexedDB\b/, message: 'indexedDB is not allowed' },
   { pattern: /\bcaches\b\./, message: 'Cache API is not allowed' },
 
-  // DOM access
-  { pattern: /\bdocument\b\./, message: 'document access is not allowed' },
+  // DOM access (allow document.createElement('canvas') for texture generation)
+  { pattern: /\bdocument\.(?!createElement\s*\(\s*['"]canvas['"]\))/, message: 'document access is not allowed (except createElement("canvas") for textures)' },
   { pattern: /\bwindow\b\.(?!crypto)/, message: 'window access is not allowed (except crypto)' },
   { pattern: /\bglobalThis\b\./, message: 'globalThis access is not allowed' },
 

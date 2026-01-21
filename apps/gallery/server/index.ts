@@ -28,12 +28,15 @@ const MIN_SCORE_THRESHOLD = parseInt(process.env.GALLERY_MIN_SCORE || '40', 10);
 
 // Allowed origins for CORS (runtime URL)
 const RUNTIME_URL = process.env.RUNTIME_URL || 'http://localhost:3000';
+const EXTRA_ORIGINS = (process.env.CORS_ORIGINS || '').split(',').filter(Boolean);
+const IS_DEV = process.env.NODE_ENV !== 'production';
 const ALLOWED_ORIGINS = [
   RUNTIME_URL,
   'http://localhost:3000',
   'http://localhost:3001',
   'http://127.0.0.1:3000',
   'http://127.0.0.1:3001',
+  ...EXTRA_ORIGINS,
 ];
 
 async function main() {
@@ -65,6 +68,9 @@ async function main() {
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
+      // In development mode, allow any origin
+      if (IS_DEV) return callback(null, true);
+      // In production, check against allowed origins
       if (ALLOWED_ORIGINS.includes(origin)) {
         return callback(null, true);
       }

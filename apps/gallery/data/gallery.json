@@ -2622,8 +2622,10 @@
       "cycleNumber": 11,
       "cycleDuration": 60.01659999999404,
       "frameCount": 60017,
-      "isVisible": true,
-      "isArchived": false
+      "isVisible": false,
+      "isArchived": true,
+      "archivedAt": "2026-01-21T13:31:47.899Z",
+      "archiveReason": "pruned"
     },
     {
       "id": "211da621-054a-46f9-a51b-259543274d8f",
@@ -4295,8 +4297,10 @@
       "cycleNumber": 1,
       "cycleDuration": 395.69189999999105,
       "frameCount": 395693,
-      "isVisible": true,
-      "isArchived": false
+      "isVisible": false,
+      "isArchived": true,
+      "archivedAt": "2026-01-21T13:31:47.899Z",
+      "archiveReason": "pruned"
     },
     {
       "id": "9d0978a9-bc5b-4696-8c56-17ff965d7130",
@@ -8303,6 +8307,646 @@
       "cycleNumber": 1,
       "cycleDuration": 60.002900000035766,
       "frameCount": 60003.30000001192,
+      "isVisible": true,
+      "isArchived": false
+    },
+    {
+      "id": "54e8b0e7-eaff-44e3-8b52-f2028cb42f8e",
+      "imagePath": "/images/54e8b0e7-eaff-44e3-8b52-f2028cb42f8e-full.png",
+      "thumbnailPath": "/images/54e8b0e7-eaff-44e3-8b52-f2028cb42f8e-thumb.png",
+      "width": 360,
+      "height": 640,
+      "createdAt": "2026-01-21T13:29:46.153Z",
+      "contributingActors": [
+        {
+          "actorId": "plasma-waves",
+          "actorName": "Plasma Waves",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.2,
+          "operationCount": 0
+        },
+        {
+          "actorId": "ethereal-glow",
+          "actorName": "Ethereal Glow",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.2,
+          "operationCount": 0
+        },
+        {
+          "actorId": "impressionist",
+          "actorName": "Impressionist Strokes",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.2,
+          "operationCount": 0
+        },
+        {
+          "actorId": "wave-painter",
+          "actorName": "Wave Painter",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.2,
+          "operationCount": 0
+        },
+        {
+          "actorId": "social-pulse",
+          "actorName": "Social Pulse",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.2,
+          "operationCount": 0
+        }
+      ],
+      "review": {
+        "aestheticScore": 76,
+        "creativityScore": 72,
+        "coherenceScore": 73,
+        "overallScore": 72,
+        "feedback": "A captivating blend of colors and movement.",
+        "recognizedElements": [
+          "patterns",
+          "colors",
+          "motion"
+        ],
+        "suggestedTags": [
+          "abstract",
+          "generative",
+          "dynamic"
+        ],
+        "reviewedAt": "2026-01-21T13:29:47.813Z",
+        "modelId": "mock"
+      },
+      "votes": [],
+      "voteCount": 0,
+      "combinedScore": 72,
+      "context": {
+        "timestamp": "2026-01-21T13:29:44.905Z",
+        "time": {
+          "hour": 13,
+          "dayProgress": 0.5623148148148148,
+          "season": "winter"
+        },
+        "weather": {
+          "condition": "mist",
+          "temperature": 23.76386372040069,
+          "humidity": 52.26627393110629
+        },
+        "audio": {
+          "averageLevel": 0,
+          "bpm": null
+        },
+        "social": {
+          "viewerCount": 26,
+          "sentiment": 0.13047671925298757,
+          "mentionCount": 0
+        },
+        "display": {
+          "mode": "dark"
+        }
+      },
+      "cycleNumber": 1,
+      "cycleDuration": 60.002,
+      "frameCount": 60002.39999997616,
+      "isVisible": false,
+      "isArchived": true,
+      "archivedAt": "2026-01-21T13:31:47.899Z",
+      "archiveReason": "pruned"
+    },
+    {
+      "id": "7a7bb577-de2b-4d32-857f-986944ed1e2d",
+      "imagePath": "/images/7a7bb577-de2b-4d32-857f-986944ed1e2d-full.png",
+      "thumbnailPath": "/images/7a7bb577-de2b-4d32-857f-986944ed1e2d-thumb.png",
+      "width": 360,
+      "height": 640,
+      "createdAt": "2026-01-21T13:30:45.817Z",
+      "contributingActors": [
+        {
+          "actorId": "plasma-waves",
+          "actorName": "Plasma Waves",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.3333333333333333,
+          "operationCount": 0
+        },
+        {
+          "actorId": "architectural-patterns",
+          "actorName": "Architectural Patterns",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.3333333333333333,
+          "operationCount": 0
+        },
+        {
+          "actorId": "vintage-film",
+          "actorName": "Vintage Film Projector",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.3333333333333333,
+          "operationCount": 0
+        }
+      ],
+      "review": {
+        "aestheticScore": 64,
+        "creativityScore": 64,
+        "coherenceScore": 62,
+        "overallScore": 60,
+        "feedback": "A captivating blend of colors and movement.",
+        "recognizedElements": [
+          "patterns",
+          "colors",
+          "motion"
+        ],
+        "suggestedTags": [
+          "abstract",
+          "generative",
+          "dynamic"
+        ],
+        "reviewedAt": "2026-01-21T13:30:47.850Z",
+        "modelId": "mock"
+      },
+      "votes": [],
+      "voteCount": 0,
+      "combinedScore": 60,
+      "context": {
+        "timestamp": "2026-01-21T13:30:44.922Z",
+        "time": {
+          "hour": 13,
+          "dayProgress": 0.5630092592592593,
+          "season": "winter"
+        },
+        "weather": {
+          "condition": "mist",
+          "temperature": 23.76386372040069,
+          "humidity": 52.26627393110629
+        },
+        "audio": {
+          "averageLevel": 0,
+          "bpm": null
+        },
+        "social": {
+          "viewerCount": 39,
+          "sentiment": -0.19775303488975818,
+          "mentionCount": 0
+        },
+        "display": {
+          "mode": "dark"
+        }
+      },
+      "cycleNumber": 2,
+      "cycleDuration": 60.00930000001192,
+      "frameCount": 60009.5,
+      "isVisible": false,
+      "isArchived": true,
+      "archivedAt": "2026-01-21T13:31:47.899Z",
+      "archiveReason": "pruned"
+    },
+    {
+      "id": "d715100e-16fa-40f5-833b-d35e3c3f88ec",
+      "imagePath": "/images/d715100e-16fa-40f5-833b-d35e3c3f88ec-full.png",
+      "thumbnailPath": "/images/d715100e-16fa-40f5-833b-d35e3c3f88ec-thumb.png",
+      "width": 360,
+      "height": 640,
+      "createdAt": "2026-01-21T13:31:45.636Z",
+      "contributingActors": [
+        {
+          "actorId": "soft-noise",
+          "actorName": "Soft Noise",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.14285714285714285,
+          "operationCount": 0
+        },
+        {
+          "actorId": "aurora-dreamscape",
+          "actorName": "Aurora Dreamscape",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.14285714285714285,
+          "operationCount": 0
+        },
+        {
+          "actorId": "weather-mood",
+          "actorName": "Weather Mood",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.14285714285714285,
+          "operationCount": 0
+        },
+        {
+          "actorId": "psychedelic-distortion",
+          "actorName": "Psychedelic Distortion",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.14285714285714285,
+          "operationCount": 0
+        },
+        {
+          "actorId": "motion-ghost",
+          "actorName": "Motion Ghost",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.14285714285714285,
+          "operationCount": 0
+        },
+        {
+          "actorId": "lunar-tides",
+          "actorName": "Lunar Tides",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.14285714285714285,
+          "operationCount": 0
+        },
+        {
+          "actorId": "dream-sequence",
+          "actorName": "Dream Sequence",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.14285714285714285,
+          "operationCount": 0
+        }
+      ],
+      "review": {
+        "aestheticScore": 74,
+        "creativityScore": 80,
+        "coherenceScore": 82,
+        "overallScore": 79,
+        "feedback": "A captivating blend of colors and movement.",
+        "recognizedElements": [
+          "patterns",
+          "colors",
+          "motion"
+        ],
+        "suggestedTags": [
+          "abstract",
+          "generative",
+          "dynamic"
+        ],
+        "reviewedAt": "2026-01-21T13:31:47.892Z",
+        "modelId": "mock"
+      },
+      "votes": [],
+      "voteCount": 0,
+      "combinedScore": 79,
+      "context": {
+        "timestamp": "2026-01-21T13:31:44.943Z",
+        "time": {
+          "hour": 13,
+          "dayProgress": 0.5637037037037037,
+          "season": "winter"
+        },
+        "weather": {
+          "condition": "mist",
+          "temperature": 23.76386372040069,
+          "humidity": 52.26627393110629
+        },
+        "audio": {
+          "averageLevel": 0,
+          "bpm": null
+        },
+        "social": {
+          "viewerCount": 46,
+          "sentiment": 0.07916305861058248,
+          "mentionCount": 0
+        },
+        "display": {
+          "mode": "light"
+        }
+      },
+      "cycleNumber": 3,
+      "cycleDuration": 60.01510000002384,
+      "frameCount": 60015.60000002384,
+      "isVisible": true,
+      "isArchived": false
+    },
+    {
+      "id": "993202e5-ace7-4965-b7f5-d4ef1c66a9be",
+      "imagePath": "/images/993202e5-ace7-4965-b7f5-d4ef1c66a9be-full.png",
+      "thumbnailPath": "/images/993202e5-ace7-4965-b7f5-d4ef1c66a9be-thumb.png",
+      "width": 360,
+      "height": 640,
+      "createdAt": "2026-01-21T13:32:45.666Z",
+      "contributingActors": [
+        {
+          "actorId": "gradient-sweep",
+          "actorName": "Gradient Sweep",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "psychedelic-distortion",
+          "actorName": "Psychedelic Distortion",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "wave-painter",
+          "actorName": "Wave Painter",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "vintage-film",
+          "actorName": "Vintage Film Projector",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "crt-monitor",
+          "actorName": "CRT Monitor",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "stained-glass",
+          "actorName": "Stained Glass",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        }
+      ],
+      "review": {
+        "aestheticScore": 71,
+        "creativityScore": 76,
+        "coherenceScore": 70,
+        "overallScore": 73,
+        "feedback": "A captivating blend of colors and movement.",
+        "recognizedElements": [
+          "patterns",
+          "colors",
+          "motion"
+        ],
+        "suggestedTags": [
+          "abstract",
+          "generative",
+          "dynamic"
+        ],
+        "reviewedAt": "2026-01-21T13:32:47.933Z",
+        "modelId": "mock"
+      },
+      "votes": [],
+      "voteCount": 0,
+      "combinedScore": 73,
+      "context": {
+        "timestamp": "2026-01-21T13:32:44.958Z",
+        "time": {
+          "hour": 13,
+          "dayProgress": 0.5643981481481481,
+          "season": "winter"
+        },
+        "weather": {
+          "condition": "mist",
+          "temperature": 23.76386372040069,
+          "humidity": 52.26627393110629
+        },
+        "audio": {
+          "averageLevel": 0,
+          "bpm": null
+        },
+        "social": {
+          "viewerCount": 31,
+          "sentiment": -0.18259601166139106,
+          "mentionCount": 0
+        },
+        "display": {
+          "mode": "dark"
+        }
+      },
+      "cycleNumber": 4,
+      "cycleDuration": 60.007400000035766,
+      "frameCount": 60007.60000002384,
+      "isVisible": true,
+      "isArchived": false
+    },
+    {
+      "id": "1fdae79a-8ae8-4df6-9b9e-7464d595f176",
+      "imagePath": "/images/1fdae79a-8ae8-4df6-9b9e-7464d595f176-full.png",
+      "thumbnailPath": "/images/1fdae79a-8ae8-4df6-9b9e-7464d595f176-thumb.png",
+      "width": 360,
+      "height": 640,
+      "createdAt": "2026-01-21T13:33:45.413Z",
+      "contributingActors": [
+        {
+          "actorId": "plasma-waves",
+          "actorName": "Plasma Waves",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "woodcut-print",
+          "actorName": "Woodcut Print",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "vhs-tracking",
+          "actorName": "VHS Tracking",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "motion-ghost",
+          "actorName": "Motion Ghost",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "particle-flow",
+          "actorName": "Particle Flow",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "neon-edge",
+          "actorName": "Neon Edge",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        }
+      ],
+      "review": {
+        "aestheticScore": 82,
+        "creativityScore": 83,
+        "coherenceScore": 82,
+        "overallScore": 84,
+        "feedback": "A captivating blend of colors and movement.",
+        "recognizedElements": [
+          "patterns",
+          "colors",
+          "motion"
+        ],
+        "suggestedTags": [
+          "abstract",
+          "generative",
+          "dynamic"
+        ],
+        "reviewedAt": "2026-01-21T13:33:47.977Z",
+        "modelId": "mock"
+      },
+      "votes": [],
+      "voteCount": 0,
+      "combinedScore": 84,
+      "context": {
+        "timestamp": "2026-01-21T13:33:44.978Z",
+        "time": {
+          "hour": 13,
+          "dayProgress": 0.5650925925925926,
+          "season": "winter"
+        },
+        "weather": {
+          "condition": "mist",
+          "temperature": 23.76386372040069,
+          "humidity": 52.26627393110629
+        },
+        "audio": {
+          "averageLevel": 0,
+          "bpm": null
+        },
+        "social": {
+          "viewerCount": 33,
+          "sentiment": 0.17770692318160344,
+          "mentionCount": 0
+        },
+        "display": {
+          "mode": "light"
+        }
+      },
+      "cycleNumber": 5,
+      "cycleDuration": 60.01419999998808,
+      "frameCount": 60014.60000002384,
+      "isVisible": true,
+      "isArchived": false
+    },
+    {
+      "id": "532194d3-0be6-4ebe-b9c9-2b745379df62",
+      "imagePath": "/images/532194d3-0be6-4ebe-b9c9-2b745379df62-full.png",
+      "thumbnailPath": "/images/532194d3-0be6-4ebe-b9c9-2b745379df62-thumb.png",
+      "width": 360,
+      "height": 640,
+      "createdAt": "2026-01-21T14:12:53.161Z",
+      "contributingActors": [
+        {
+          "actorId": "stripe-scroll",
+          "actorName": "Stripe Scroll",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "spirograph-dreams",
+          "actorName": "Spirograph Dreams",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "vintage-film",
+          "actorName": "Vintage Film Projector",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "face-reactor",
+          "actorName": "Face Reactor",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "lunar-tides",
+          "actorName": "Lunar Tides",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        },
+        {
+          "actorId": "weather-mood",
+          "actorName": "Weather Mood",
+          "authorName": "Art Installation Team",
+          "authorGithub": "cloudfest",
+          "contributionWeight": 0.16666666666666666,
+          "operationCount": 0
+        }
+      ],
+      "review": {
+        "aestheticScore": 78,
+        "creativityScore": 80,
+        "coherenceScore": 77,
+        "overallScore": 79,
+        "feedback": "A captivating blend of colors and movement.",
+        "recognizedElements": [
+          "patterns",
+          "colors",
+          "motion"
+        ],
+        "suggestedTags": [
+          "abstract",
+          "generative",
+          "dynamic"
+        ],
+        "reviewedAt": "2026-01-21T14:12:55.014Z",
+        "modelId": "mock"
+      },
+      "votes": [],
+      "voteCount": 0,
+      "combinedScore": 79,
+      "context": {
+        "timestamp": "2026-01-21T14:12:51.807Z",
+        "time": {
+          "hour": 14,
+          "dayProgress": 0.5922569444444444,
+          "season": "winter"
+        },
+        "weather": {
+          "condition": "clear",
+          "temperature": 22.17091659048861,
+          "humidity": 59.84045890466282
+        },
+        "audio": {
+          "averageLevel": 0,
+          "bpm": null
+        },
+        "social": {
+          "viewerCount": 13,
+          "sentiment": 0.08615393776470809,
+          "mentionCount": 0
+        },
+        "display": {
+          "mode": "dark"
+        }
+      },
+      "cycleNumber": 6,
+      "cycleDuration": 2346.8220999999644,
+      "frameCount": 2346825.699999988,
       "isVisible": true,
       "isArchived": false
     }

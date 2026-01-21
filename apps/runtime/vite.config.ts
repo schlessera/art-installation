@@ -14,8 +14,9 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
-    open: true,
+    host: '0.0.0.0', // Bind to all interfaces for external access
+    open: false, // Don't auto-open browser (interferes with custom ports)
+    allowedHosts: ['ccmux', 'localhost'], // Allow external access via ccmux hostname
     // Allow serving files from the actors folder
     fs: {
       allow: [

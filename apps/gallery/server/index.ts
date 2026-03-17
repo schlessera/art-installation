@@ -26,6 +26,10 @@ const MAX_ARTWORKS = parseInt(process.env.GALLERY_MAX_ARTWORKS || '30', 10);
 const PRUNE_PERCENTAGE = parseFloat(process.env.GALLERY_PRUNE_PERCENTAGE || '0.1');
 const MIN_SCORE_THRESHOLD = parseInt(process.env.GALLERY_MIN_SCORE || '40', 10);
 
+// Runtime ID gating
+const SAMPLE_RUNTIME_ID = process.env.GALLERY_SAMPLE_RUNTIME_ID || '';
+const OFFICIAL_RUNTIME_ID = process.env.GALLERY_OFFICIAL_RUNTIME_ID || '';
+
 // Allowed origins for CORS (runtime URL)
 const RUNTIME_URL = process.env.RUNTIME_URL || 'http://localhost:3000';
 const EXTRA_ORIGINS = (process.env.CORS_ORIGINS || '').split(',').filter(Boolean);
@@ -43,6 +47,7 @@ async function main() {
   console.log('[Gallery] Starting server...');
   console.log(`[Gallery] Data directory: ${DATA_DIR}`);
   console.log(`[Gallery] API Key: ${ANTHROPIC_API_KEY ? 'configured' : 'not configured (using mock reviews)'}`);
+  console.log(`[Gallery] Runtime ID gating: sample=${SAMPLE_RUNTIME_ID ? 'configured' : 'not set'}, official=${OFFICIAL_RUNTIME_ID ? 'configured' : 'not set'}`);
 
   // Initialize storage
   const storage = new GalleryStorage({
@@ -88,7 +93,10 @@ async function main() {
   });
 
   // API routes
-  app.use('/api', createApiRoutes(storage));
+  app.use('/api', createApiRoutes(storage, {
+    sampleRuntimeId: SAMPLE_RUNTIME_ID,
+    officialRuntimeId: OFFICIAL_RUNTIME_ID,
+  }));
 
   // Static file serving for images
   app.use('/images', express.static(path.join(DATA_DIR, 'images')));

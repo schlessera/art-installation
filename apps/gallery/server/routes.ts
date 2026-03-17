@@ -8,7 +8,12 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import type { GalleryStorage, ArtworkSubmission } from './storage';
 
-export function createApiRoutes(storage: GalleryStorage): Router {
+export interface RuntimeIdConfig {
+  sampleRuntimeId: string;
+  officialRuntimeId: string;
+}
+
+export function createApiRoutes(storage: GalleryStorage, runtimeIdConfig: RuntimeIdConfig): Router {
   const router = Router();
 
   /**
@@ -18,6 +23,19 @@ export function createApiRoutes(storage: GalleryStorage): Router {
   router.post('/artworks', async (req: Request, res: Response) => {
     try {
       const submission: ArtworkSubmission = req.body;
+
+      // Validate runtime ID (when gating is configured)
+      const gatingEnabled = !!(runtimeIdConfig.sampleRuntimeId || runtimeIdConfig.officialRuntimeId);
+      let isSample = false;
+
+      if (gatingEnabled) {
+        const runtimeId = submission.runtimeId;
+        if (!runtimeId || (runtimeId !== runtimeIdConfig.sampleRuntimeId && runtimeId !== runtimeIdConfig.officialRuntimeId)) {
+          res.status(403).json({ error: 'Submission rejected' });
+          return;
+        }
+        isSample = runtimeId === runtimeIdConfig.sampleRuntimeId;
+      }
 
       // Validate required fields
       if (!submission.imageData || !submission.thumbnailData) {
@@ -29,7 +47,7 @@ export function createApiRoutes(storage: GalleryStorage): Router {
         return;
       }
 
-      const artwork = await storage.submitArtwork(submission);
+      const artwork = await storage.submitArtwork(submission, isSample);
       res.status(201).json(artwork);
     } catch (err) {
       console.error('[API] Failed to submit artwork:', err);

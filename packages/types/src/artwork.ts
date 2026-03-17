@@ -145,6 +145,9 @@ export interface SavedArtwork {
   /** Whether artwork is visible in gallery */
   isVisible: boolean;
 
+  /** Whether this is a sample submission (not official hackathon) */
+  isSample?: boolean;
+
   /** Whether artwork was archived (pruned) */
   isArchived: boolean;
 

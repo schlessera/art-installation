@@ -28,6 +28,8 @@ export interface ArtworkSubmission {
   cycleDuration: number;
   /** Total frames rendered */
   frameCount: number;
+  /** Runtime instance ID for gallery submission gating */
+  runtimeId?: string;
 }
 
 const DEFAULT_TIMEOUT = 30000;

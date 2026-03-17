@@ -49,6 +49,7 @@ function parseUrlConfig(): {
   enableVideo?: boolean;
   debugVideo?: boolean;
   displayMode?: DisplayMode;
+  runtimeId?: string;
 } {
   const params = new URLSearchParams(window.location.search);
   const config: ReturnType<typeof parseUrlConfig> = {};
@@ -158,6 +159,12 @@ function parseUrlConfig(): {
     config.displayMode = mode;
   }
 
+  // Runtime ID for gallery submission gating
+  const runtimeId = params.get('runtime_id');
+  if (runtimeId) {
+    config.runtimeId = runtimeId;
+  }
+
   return config;
 }
 
@@ -190,6 +197,8 @@ const CONFIG = {
   galleryUrl: import.meta.env.VITE_GALLERY_URL || 'http://localhost:5173',
   // Gallery API URL (for submitting artworks)
   galleryApiUrl: import.meta.env.VITE_GALLERY_API_URL || 'http://localhost:3001/api',
+  // Runtime ID for gallery submission gating
+  runtimeId: urlConfig.runtimeId,
   cycle: {
     minActors,
     maxActors,
@@ -605,6 +614,7 @@ async function handleCycleEnd(actorIds: string[], duration: number): Promise<voi
         cycleNumber: cycleInfo.cycleNumber,
         cycleDuration: duration / 1000, // Convert to seconds
         frameCount: cycleInfo.elapsed,
+        runtimeId: CONFIG.runtimeId,
       });
       console.log(`[Runtime] Artwork submitted to gallery: ${savedArtwork.id}`);
 

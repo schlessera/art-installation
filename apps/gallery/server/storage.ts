@@ -46,6 +46,8 @@ export interface ArtworkSubmission {
   cycleDuration: number;
   /** Total frames rendered */
   frameCount: number;
+  /** Runtime instance ID (used for gating, not persisted) */
+  runtimeId?: string;
 }
 
 interface StoredData {
@@ -150,7 +152,7 @@ export class GalleryStorage {
   /**
    * Submit a new artwork (without review - review happens async).
    */
-  async submitArtwork(submission: ArtworkSubmission): Promise<SavedArtwork> {
+  async submitArtwork(submission: ArtworkSubmission, isSample: boolean = false): Promise<SavedArtwork> {
     const id = uuidv4();
     const createdAt = new Date();
 
@@ -188,6 +190,7 @@ export class GalleryStorage {
       cycleDuration: submission.cycleDuration,
       frameCount: submission.frameCount,
       isVisible: false, // Not visible until reviewed
+      isSample,
       isArchived: false,
     };
 

@@ -20,7 +20,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Configuration from environment variables
 const PORT = parseInt(process.env.GALLERY_PORT || process.env.PORT || '3001', 10);
-const DATA_DIR = process.env.GALLERY_DATA_DIR || path.join(__dirname, '../data');
+const DATA_DIR = process.env.GALLERY_DATA_DIR
+  ? path.resolve(__dirname, '..', process.env.GALLERY_DATA_DIR)
+  : path.join(__dirname, '../data');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const MAX_ARTWORKS = parseInt(process.env.GALLERY_MAX_ARTWORKS || '30', 10);
 const PRUNE_PERCENTAGE = parseFloat(process.env.GALLERY_PRUNE_PERCENTAGE || '0.1');

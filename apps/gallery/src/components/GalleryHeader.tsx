@@ -19,8 +19,10 @@ export function GalleryHeader({
     <header className="gallery-header">
       <div className="header-content">
         <div className="header-title">
-          <h1>Art Gallery</h1>
-          <span className="subtitle">Cloudfest Hackathon 2026</span>
+          <a href="/" className="header-home-link">
+            <h1>Art Gallery</h1>
+            <span className="subtitle">CloudFest Hackathon 2026</span>
+          </a>
         </div>
 
         {stats && (

@@ -64,10 +64,20 @@ body {
   gap: 1rem;
 }
 
+.header-home-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.header-home-link:hover h1 {
+  color: var(--color-primary);
+}
+
 .header-title h1 {
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
+  transition: color 0.2s;
 }
 
 .header-title .subtitle {

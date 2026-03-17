@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "concurrently -n server,client -c blue,green \"pnpm run dev:server\" \"pnpm run dev:client\"",
     "dev:server": "tsx watch server/index.ts",
-    "dev:client": "vite --port 5173",
+    "dev:client": "vite",
     "build": "tsc && vite build",
     "start": "tsx server/index.ts",
     "preview": "vite preview",
@@ -23,6 +23,7 @@
     "multer": "^2.0.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-router-dom": "^7.13.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

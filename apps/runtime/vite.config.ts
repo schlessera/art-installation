@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 const projectRoot = resolve(__dirname, '../..');
+const PORT = parseInt(process.env.RUNTIME_PORT || '3000', 10);
 
 export default defineConfig({
   root: '.',
@@ -14,9 +15,9 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0', // Bind to all interfaces for external access
+    port: PORT,
+    strictPort: true,
     open: false, // Don't auto-open browser (interferes with custom ports)
-    allowedHosts: ['ccmux', 'localhost'], // Allow external access via ccmux hostname
     // Allow serving files from the actors folder
     fs: {
       allow: [

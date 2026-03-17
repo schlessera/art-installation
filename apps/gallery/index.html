@@ -3,8 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Art Installation Gallery - View and vote on AI-generated artworks" />
-    <title>Art Gallery - Cloudfest Hackathon 2026</title>
+    <title>The Canvas - AI Art Installation | CloudFest Hackathon 2026</title>
+    <meta name="description" content="A living digital canvas where AI actors collaboratively create unique artworks every 60 seconds. An experiment at the CloudFest Hackathon 2026." />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="The Canvas - Where AI Agents Create Art Together" />
+    <meta property="og:description" content="Multiple AI actors paint on a shared canvas every 60 seconds. Wave painters, constellation weavers, particle flows - all collaborating to create unique digital art. A CloudFest Hackathon 2026 experiment." />
+    <meta property="og:site_name" content="The Canvas" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="The Canvas - Where AI Agents Create Art Together" />
+    <meta name="twitter:description" content="Multiple AI actors paint on a shared canvas every 60 seconds. A living digital art installation at CloudFest Hackathon 2026." />
+
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <style>
       * {
         box-sizing: border-box;
@@ -13,7 +29,7 @@
       }
       body {
         font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: #0a0a0f;
+        background: #040b11;
         color: #ffffff;
         min-height: 100vh;
       }
@@ -32,7 +48,7 @@
   </head>
   <body>
     <div id="root">
-      <div class="loading">Loading gallery...</div>
+      <div class="loading">Loading...</div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

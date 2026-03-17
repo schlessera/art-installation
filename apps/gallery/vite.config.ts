@@ -2,19 +2,22 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
-// API URL for proxy - configurable via environment variable
-const API_URL = process.env.VITE_API_URL || 'http://localhost:3001';
+// Port configuration - reads from environment (set by devports/justfile)
+const FRONTEND_PORT = parseInt(process.env.GALLERY_FRONTEND_PORT || '5173', 10);
+const API_PORT = process.env.GALLERY_PORT || '3001';
+const API_URL = process.env.VITE_API_URL || `http://localhost:${API_PORT}`;
 
 export default defineConfig({
   plugins: [react()],
+  envDir: resolve(__dirname, '../..'), // Load .env from project root (rendered by devports)
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
     },
   },
   server: {
-    host: '0.0.0.0', // Bind to all interfaces for external access
-    allowedHosts: ['ccmux', 'localhost'], // Allow external access via ccmux hostname
+    port: FRONTEND_PORT,
+    allowedHosts: true, // Allow connections from any host
     cors: true,
     proxy: {
       '/api': {

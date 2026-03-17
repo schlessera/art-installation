@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import type { SavedArtwork, GalleryStats } from '@art/types';
 import { GalleryHeader } from './components/GalleryHeader';
 import { GalleryGrid } from './components/GalleryGrid';
@@ -8,6 +9,9 @@ import { useGalleryApi } from './hooks/useGalleryApi';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
 export function App() {
+  const { artworkId } = useParams<{ artworkId?: string }>();
+  const navigate = useNavigate();
+
   const [artworks, setArtworks] = useState<SavedArtwork[]>([]);
   const [stats, setStats] = useState<GalleryStats | null>(null);
   const [selectedArtwork, setSelectedArtwork] = useState<SavedArtwork | null>(null);
@@ -24,6 +28,31 @@ export function App() {
     loadArtworks();
     loadStats();
   }, [sortBy]);
+
+  // Open modal from URL param (deep link)
+  useEffect(() => {
+    if (!artworkId) {
+      setSelectedArtwork(null);
+      return;
+    }
+
+    // Try to find in already-loaded artworks first
+    const found = artworks.find((a) => a.id === artworkId);
+    if (found) {
+      setSelectedArtwork(found);
+      return;
+    }
+
+    // Otherwise fetch it directly
+    api.getArtwork(artworkId).then((artwork) => {
+      if (artwork) {
+        setSelectedArtwork(artwork);
+      } else {
+        // Invalid ID — redirect to gallery
+        navigate('/gallery', { replace: true });
+      }
+    });
+  }, [artworkId, artworks]);
 
   async function loadArtworks() {
     setLoading(true);
@@ -57,11 +86,11 @@ export function App() {
   }
 
   function handleArtworkClick(artwork: SavedArtwork) {
-    setSelectedArtwork(artwork);
+    navigate(`/gallery/${artwork.id}`);
   }
 
   function handleCloseModal() {
-    setSelectedArtwork(null);
+    navigate('/gallery');
   }
 
   async function handleVote(artworkId: string) {

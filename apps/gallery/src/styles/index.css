@@ -248,12 +248,14 @@ body {
 /* ============ Gallery Grid ============ */
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1rem;
 }
 
 /* ============ Artwork Card ============ */
 .artwork-card {
+  display: flex;
+  flex-direction: row;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -263,22 +265,23 @@ body {
 }
 
 .artwork-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   box-shadow: 0 8px 32px rgba(0, 216, 255, 0.1);
   border-color: rgba(0, 216, 255, 0.15);
 }
 
 .artwork-image-container {
   position: relative;
-  aspect-ratio: var(--artwork-aspect-ratio);
+  flex-shrink: 0;
+  width: 140px;
   overflow: hidden;
+  background: var(--color-bg);
 }
 
 .artwork-image {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  background: var(--color-bg);
+  object-fit: cover;
   transition: transform 0.3s var(--ease-out);
 }
 
@@ -288,73 +291,92 @@ body {
 
 .voted-badge {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: 0.4rem;
+  left: 0.4rem;
   background: var(--color-success);
   color: white;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 600;
-  padding: 0.2rem 0.6rem;
+  padding: 0.15rem 0.5rem;
   border-radius: var(--radius-pill);
   letter-spacing: 0.04em;
 }
 
 .artwork-info {
-  padding: 0.75rem;
-}
-
-.artwork-scores {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
 }
 
-.score {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.85rem;
-}
-
-.score-icon {
-  font-size: 1rem;
-}
-
-.score-value {
-  font-weight: 600;
-  color: var(--cf-cyan);
-}
-
-.vote-count {
+/* Card: Actor names */
+.card-actors {
+  font-size: 0.8rem;
   color: var(--color-text-muted);
-  font-size: 0.75rem;
-}
-
-.artwork-actors {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin-bottom: 0.5rem;
 }
 
-.actor-tag {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--color-text-muted);
-  font-size: 0.7rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--radius-pill);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Card: Score bar */
+.card-score {
+  margin-bottom: 0.5rem;
 }
 
-.actor-tag.more {
-  background: linear-gradient(135deg, var(--cf-cyan), var(--cf-purple));
-  color: white;
-  border: none;
+.score-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.35rem;
+}
+
+.score-label {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   font-weight: 500;
 }
 
-.artwork-date {
-  font-size: 0.7rem;
+.score-number {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cf-cyan);
+  line-height: 1;
+}
+
+.score-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cf-cyan), var(--cf-purple));
+  border-radius: 2px;
+  transition: width 0.4s var(--ease-out);
+}
+
+/* Card: Meta row (likes + date) */
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+}
+
+.card-likes {
+  color: var(--cf-pink);
+  font-weight: 500;
+}
+
+.card-date {
   color: var(--color-text-dim);
 }
 

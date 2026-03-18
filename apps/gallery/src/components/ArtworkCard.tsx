@@ -16,6 +16,11 @@ export function ArtworkCard({ artwork, onClick, hasVoted }: ArtworkCardProps) {
     minute: '2-digit',
   });
 
+  // Compact actor display: "Actor A, Actor B +3"
+  const actorNames = contributingActors.slice(0, 2).map((a) => a.actorName);
+  const remaining = contributingActors.length - actorNames.length;
+  const actorText = actorNames.join(', ') + (remaining > 0 ? ` +${remaining}` : '');
+
   return (
     <article className="artwork-card" onClick={onClick}>
       <div className="artwork-image-container">
@@ -29,31 +34,27 @@ export function ArtworkCard({ artwork, onClick, hasVoted }: ArtworkCardProps) {
       </div>
 
       <div className="artwork-info">
-        <div className="artwork-scores">
-          <div className="score ai-score" title="AI Score">
-            <span className="score-icon">🤖</span>
-            <span className="score-value">{review.overallScore}</span>
+        <div className="card-actors" title={contributingActors.map((a) => a.actorName).join(', ')}>
+          {actorText}
+        </div>
+
+        <div className="card-score">
+          <div className="score-bar-header">
+            <span className="score-label">AI Score</span>
+            <span className="score-number">{review.overallScore}</span>
           </div>
-          {voteCount > 0 && (
-            <div className="score user-score" title="Likes">
-              <span className="score-icon">❤️</span>
-              <span className="score-value">{voteCount}</span>
-            </div>
-          )}
+          <div className="score-bar">
+            <div
+              className="score-bar-fill"
+              style={{ width: `${Math.min(100, review.overallScore)}%` }}
+            />
+          </div>
         </div>
 
-        <div className="artwork-actors">
-          {contributingActors.slice(0, 3).map((actor) => (
-            <span key={actor.actorId} className="actor-tag">
-              {actor.actorName}
-            </span>
-          ))}
-          {contributingActors.length > 3 && (
-            <span className="actor-tag more">+{contributingActors.length - 3}</span>
-          )}
+        <div className="card-meta">
+          {voteCount > 0 && <span className="card-likes">&#9829; {voteCount}</span>}
+          <time className="card-date">{formattedDate}</time>
         </div>
-
-        <time className="artwork-date">{formattedDate}</time>
       </div>
     </article>
   );

@@ -280,7 +280,7 @@ body {
 .artwork-image-container {
   position: relative;
   flex-shrink: 0;
-  width: 45%;
+  width: calc(var(--artwork-aspect-ratio) * 100%);
   overflow: hidden;
   background: var(--color-bg);
 }

@@ -310,7 +310,7 @@ const STEPS = [
   {
     number: '02',
     title: 'They Paint Together',
-    description: 'For 60 seconds, actors draw simultaneously on a shared GPU-accelerated canvas at 60 FPS.',
+    description: 'For 60 seconds, actors draw simultaneously using the brush API for shapes and images, the filter API for post-processing effects, and context providers for time, weather, and audio — all at 60 FPS.',
   },
   {
     number: '03',
@@ -319,8 +319,8 @@ const STEPS = [
   },
   {
     number: '04',
-    title: 'Claude Reviews It',
-    description: 'Claude AI evaluates the artwork for aesthetics, creativity, and coherence, scoring each dimension.',
+    title: 'AI Reviews It',
+    description: 'Gemini 3.1 Pro evaluates each artwork across six dimensions: color harmony, composition, visual unity, depth & layering, rhythm & flow, and intentional complexity.',
   },
   {
     number: '05',
@@ -452,8 +452,10 @@ export function LandingPage() {
           </h2>
           <p className="section-intro reveal-on-scroll">
             Each actor is an autonomous creative agent with its own personality and
-            style. They don't know about each other — yet their layered output creates
-            surprising, emergent compositions.
+            style. They interact with the canvas through a dedicated API — brushes for
+            drawing shapes and images, filters for post-processing effects, and context
+            providers for time, weather, and audio data. They don't know about each other
+            — yet their layered output creates surprising, emergent compositions.
           </p>
 
           <div className="actors-grid">
@@ -489,9 +491,9 @@ export function LandingPage() {
             Browse. Discover. Vote.
           </h2>
           <p className="section-intro reveal-on-scroll">
-            Every artwork is reviewed by Claude AI for aesthetics, creativity, and
-            coherence. Your votes combine with AI scores to surface the best
-            collaborative compositions.
+            Every artwork is reviewed by Gemini 3.1 Pro across six dimensions — color
+            harmony, composition, visual unity, depth, rhythm, and complexity. Your votes
+            combine with AI scores to surface the best collaborative compositions.
           </p>
 
           <div className="gallery-preview reveal-on-scroll">
@@ -615,7 +617,7 @@ export function LandingPage() {
             for the CloudFest Hackathon 2026
           </p>
           <p className="footer-tech">
-            Built with Pixi.js, React, and Claude AI
+            Built with Pixi.js, React, and Gemini AI
           </p>
         </div>
       </footer>

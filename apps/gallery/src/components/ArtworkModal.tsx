@@ -68,6 +68,35 @@ export function ArtworkModal({
 
           <div className="artwork-details">
             <section className="detail-section">
+              <h3>Likes</h3>
+              <div className="likes-summary">
+                <span className="likes-count">
+                  &#9829; {voteCount} {voteCount === 1 ? 'like' : 'likes'}
+                </span>
+              </div>
+
+              {!hasVoted && voterName && (
+                <div className="vote-section">
+                  <button
+                    className="like-button"
+                    onClick={handleVote}
+                    disabled={voting}
+                  >
+                    {voting ? 'Liking...' : '\u2764 Like this artwork'}
+                  </button>
+                </div>
+              )}
+
+              {hasVoted && (
+                <p className="already-voted">You have already liked this artwork.</p>
+              )}
+
+              {!voterName && (
+                <p className="no-name">Set your name in the header to like artworks.</p>
+              )}
+            </section>
+
+            <section className="detail-section">
               <h3>AI Review</h3>
               <div className="review-scores">
                 <div className="review-score">
@@ -138,35 +167,6 @@ export function ArtworkModal({
                   </div>
                 ))}
               </div>
-            </section>
-
-            <section className="detail-section">
-              <h3>Likes</h3>
-              <div className="likes-summary">
-                <span className="likes-count">
-                  ❤️ {voteCount} {voteCount === 1 ? 'like' : 'likes'}
-                </span>
-              </div>
-
-              {!hasVoted && voterName && (
-                <div className="vote-section">
-                  <button
-                    className="like-button"
-                    onClick={handleVote}
-                    disabled={voting}
-                  >
-                    {voting ? 'Liking...' : '❤️ Like this artwork'}
-                  </button>
-                </div>
-              )}
-
-              {hasVoted && (
-                <p className="already-voted">You have already liked this artwork.</p>
-              )}
-
-              {!voterName && (
-                <p className="no-name">Set your name in the header to like artworks.</p>
-              )}
             </section>
 
             <section className="detail-section metadata">

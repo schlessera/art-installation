@@ -526,6 +526,70 @@ GALLERY_MIN_SCORE=40                 # Minimum AI score for visibility
 RUNTIME_URL=http://localhost:3000    # Runtime URL for CORS
 ```
 
+## Deployment (Coolify)
+
+Infrastructure is managed via a self-hosted Coolify instance on a shared Hetzner server. Both apps deploy from the `main` branch via Dockerfile builds. **Pushes to `main` should be deployable** — never push untested or partial work.
+
+The server IP is stored in `COOLIFY_SERVER_IP` (set in `.env` at repo root, gitignored). All commands and URLs below use `$COOLIFY_SERVER_IP` — source `.env` or substitute the value.
+
+### Connection Details
+
+- **Coolify URL**: `http://$COOLIFY_SERVER_IP:8000`
+- **Server**: Hetzner shared
+- **Context name**: `shared-hetzner`
+- **Domains**: `polychorus.art` (gallery), `live.polychorus.art` (runtime)
+
+### Current Resources
+
+| UUID | Name | Description | Domain |
+|------|------|-------------|--------|
+| `iosg8o8wg8w8cok4o0ok0884` | polychorus-runtime | Live canvas renderer | `https://live.polychorus.art` |
+| `fscw4wwo8k8k4gskgc0woswg` | polychorus-gallery | API server + React frontend | `https://polychorus.art` |
+
+### Deploying
+
+```bash
+coolify deploy uuid iosg8o8wg8w8cok4o0ok0884   # Deploy runtime
+coolify deploy uuid fscw4wwo8k8k4gskgc0woswg   # Deploy gallery
+coolify deploy batch polychorus-runtime,polychorus-gallery  # Deploy both
+```
+
+### Checking Deployments
+
+```bash
+coolify resource list                    # List all resources with status
+coolify app get <UUID>                   # Get application details
+coolify app logs <UUID>                  # View application logs
+coolify app logs <UUID> --lines 500      # View more log lines
+coolify deploy list <UUID>               # List deployments for a resource
+```
+
+### IP Allowlisting (Required for API Access)
+
+Coolify restricts API access to allowlisted IPs. When the machine's public IP changes (e.g., ISP reassignment, VPN, new network), API calls will return **403 "You are not allowed to access the API"**. This is NOT a token issue.
+
+To fix:
+1. Get current public IP: `curl -s https://api.ipify.org`
+2. Go to `http://$COOLIFY_SERVER_IP:8000/settings`
+3. Add the IP to the API allowed IPs list
+4. Verify: `coolify context verify`
+
+### Setup for New Agents/Machines
+
+1. Install CLI: `go install github.com/AlejandroSuero/coolify-cli/cmd/coolify@latest`
+2. Add context: `coolify context add shared-hetzner http://$COOLIFY_SERVER_IP:8000 <TOKEN>`
+3. Allowlist machine IP in Coolify settings (see above)
+4. Verify: `coolify context verify`
+
+API tokens are generated at `http://$COOLIFY_SERVER_IP:8000/security/api-tokens`.
+
+### Troubleshooting Deployments
+
+1. **Service down**: `coolify resource list` → check status → `coolify app logs <UUID>` → fix → restart
+2. **403 on API**: IP not allowlisted (see IP Allowlisting section above)
+3. **Deploy failed**: `coolify deploy list <UUID>` → check logs → fix → redeploy
+4. **Direct API access**: `curl -H "Authorization: Bearer $COOLIFY_API_TOKEN" http://$COOLIFY_SERVER_IP:8000/api/v1/resources`
+
 ## Gallery Features
 
 - QR code overlay on display links to gallery

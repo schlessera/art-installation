@@ -123,7 +123,7 @@ export class ActorScheduler {
 
   // Callbacks
   private onCycleStartCallbacks: ((actorIds: string[]) => void)[] = [];
-  private onCycleEndCallbacks: ((actorIds: string[], duration: number) => void)[] = [];
+  private onCycleEndCallbacks: ((actorIds: string[], duration: number) => void | Promise<void>)[] = [];
   private onPrepareNewCycleCallback: (() => void) | null = null;
 
   constructor(registry: ActorRegistry, config: Partial<SchedulerConfig> = {}) {
@@ -486,10 +486,13 @@ export class ActorScheduler {
       `[ActorScheduler] Ended cycle ${this.cycleNumber} after ${Math.round(duration)}ms`
     );
 
-    // Notify callbacks
+    // Notify callbacks (await to ensure snapshots are captured before clearing)
     for (const callback of this.onCycleEndCallbacks) {
-      callback(actorIds, duration);
+      await callback(actorIds, duration);
     }
+
+    // Brief delay to ensure snapshot capture completes
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Clear per-actor containers
     if (this.containerManager) {

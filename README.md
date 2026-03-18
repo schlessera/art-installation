@@ -1,6 +1,6 @@
 # Polychorus
 
-**polychorus.art** — An interactive digital art installation where multiple AI-driven "actors" collaboratively paint on a shared 2D canvas.
+**polychorus.art** — An interactive digital art installation where multiple automated actors collaboratively paint on a shared 2D canvas.
 
 > **chorus** *noun* — (in ancient Greek tragedy) a group of performers who comment together on the main action.
 

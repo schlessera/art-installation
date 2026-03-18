@@ -9,6 +9,7 @@
  */
 
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -86,6 +87,7 @@ async function main() {
     credentials: true,
   }));
 
+  app.use(compression()); // gzip responses (API JSON, HTML; images already compressed)
   app.use(express.json({ limit: '50mb' })); // Large limit for base64 images
 
   // Request logging
@@ -100,8 +102,11 @@ async function main() {
     officialRuntimeId: OFFICIAL_RUNTIME_ID,
   }, reviewer));
 
-  // Static file serving for images
-  app.use('/images', express.static(path.join(DATA_DIR, 'images')));
+  // Static file serving for images — immutable once written, cache aggressively
+  app.use('/images', express.static(path.join(DATA_DIR, 'images'), {
+    maxAge: '7d',
+    immutable: true,
+  }));
 
   // In production, serve the built frontend
   if (IS_DEV) {
@@ -118,9 +123,12 @@ async function main() {
       });
     });
   } else {
-    // Production: serve Vite build output
+    // Production: serve Vite build output (hashed filenames are immutable)
     const frontendDir = path.join(__dirname, '../dist');
-    app.use(express.static(frontendDir));
+    app.use(express.static(frontendDir, {
+      maxAge: '7d',
+      immutable: true,
+    }));
     // SPA fallback — serve index.html for non-API, non-image routes
     // Express 5 requires named catch-all parameter (path-to-regexp v8)
     app.get('{*path}', (_req, res) => {

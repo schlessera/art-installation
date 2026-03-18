@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@art/types": "workspace:*",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "multer": "^2.0.2",
@@ -27,6 +28,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.0.0",

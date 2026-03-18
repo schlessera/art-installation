@@ -487,6 +487,28 @@ export class GalleryStorage {
   }
 
   /**
+   * Delete all artworks and their images.
+   */
+  async clearAll(): Promise<number> {
+    const count = this.artworks.length;
+    // Delete image files
+    for (const artwork of this.artworks) {
+      try {
+        const fullPath = path.join(this.config.imagesDir, path.basename(artwork.imagePath));
+        const thumbPath = path.join(this.config.imagesDir, path.basename(artwork.thumbnailPath));
+        await fs.unlink(fullPath).catch(() => {});
+        await fs.unlink(thumbPath).catch(() => {});
+      } catch {
+        // Ignore missing files
+      }
+    }
+    this.artworks = [];
+    await this.save();
+    console.log(`[Storage] Cleared ${count} artworks`);
+    return count;
+  }
+
+  /**
    * Get gallery statistics.
    */
   async getStats(): Promise<GalleryStats> {

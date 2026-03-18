@@ -195,6 +195,20 @@ export function createApiRoutes(storage: GalleryStorage, runtimeIdConfig: Runtim
   });
 
   /**
+   * POST /api/gallery/clear
+   * Delete all artworks and images. Use with caution.
+   */
+  router.post('/gallery/clear', async (_req: Request, res: Response) => {
+    try {
+      const count = await storage.clearAll();
+      res.json({ cleared: count, message: `${count} artwork(s) deleted` });
+    } catch (err) {
+      console.error('[API] Failed to clear gallery:', err);
+      res.status(500).json({ error: 'Failed to clear gallery' });
+    }
+  });
+
+  /**
    * GET /api/health
    * Health check endpoint.
    */

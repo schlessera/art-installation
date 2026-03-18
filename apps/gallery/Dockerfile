@@ -12,11 +12,13 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages/types/ packages/types/
 COPY apps/gallery/ apps/gallery/
 
-# Install dependencies
+# Install ALL dependencies (including devDependencies needed for build)
+ENV NODE_ENV=development
 RUN pnpm install --frozen-lockfile
 
 # Build types package first, then gallery (server + frontend)
 RUN pnpm --filter @art/types build && pnpm --filter @art/gallery build
+ENV NODE_ENV=production
 
 # Stage 2: Production
 FROM node:22-slim AS production

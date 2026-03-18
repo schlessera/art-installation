@@ -162,11 +162,22 @@ export function createApiRoutes(storage: GalleryStorage, runtimeIdConfig: Runtim
     }
   });
 
+  // Admin guard for destructive endpoints
+  function requireAdmin(req: Request, res: Response, next: () => void) {
+    const token = req.headers['x-admin-token'] || req.query.token;
+    const adminToken = process.env.GALLERY_ADMIN_TOKEN;
+    if (!adminToken || token !== adminToken) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    next();
+  }
+
   /**
    * POST /api/reviews/reset
    * Reset all artworks to pending review status (re-triggers AI review).
    */
-  router.post('/reviews/reset', async (_req: Request, res: Response) => {
+  router.post('/reviews/reset', requireAdmin, async (_req: Request, res: Response) => {
     try {
       const count = await storage.resetAllReviews();
       res.json({ reset: count, message: `${count} artwork(s) queued for re-review` });
@@ -180,7 +191,7 @@ export function createApiRoutes(storage: GalleryStorage, runtimeIdConfig: Runtim
    * POST /api/dedup
    * Run deduplication to archive visually similar artworks.
    */
-  router.post('/dedup', async (_req: Request, res: Response) => {
+  router.post('/dedup', requireAdmin, async (_req: Request, res: Response) => {
     if (!reviewer) {
       res.status(503).json({ error: 'Reviewer not available' });
       return;
@@ -196,9 +207,9 @@ export function createApiRoutes(storage: GalleryStorage, runtimeIdConfig: Runtim
 
   /**
    * POST /api/gallery/clear
-   * Delete all artworks and images. Use with caution.
+   * Delete all artworks and images. Requires admin token.
    */
-  router.post('/gallery/clear', async (_req: Request, res: Response) => {
+  router.post('/gallery/clear', requireAdmin, async (_req: Request, res: Response) => {
     try {
       const count = await storage.clearAll();
       res.json({ cleared: count, message: `${count} artwork(s) deleted` });

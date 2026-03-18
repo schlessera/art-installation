@@ -339,8 +339,8 @@ export class ArtworkReviewer {
         suggestedTags: Array.isArray(data.suggestedTags) ? data.suggestedTags : [],
       };
     } catch (err) {
-      console.warn('[Reviewer] Failed to parse response:', err);
-      return this.createMockReview();
+      console.warn('[Reviewer] Failed to parse response:', text, err);
+      throw new Error(`Failed to parse review response: ${err}`);
     }
   }
 

@@ -30,9 +30,8 @@ WORKDIR /app
 # Copy workspace root files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Copy built types package from build stage
-COPY --from=build /app/packages/types/package.json packages/types/package.json
-COPY --from=build /app/packages/types/dist/ packages/types/dist/
+# Copy full types package from build stage (tsx needs source files)
+COPY --from=build /app/packages/types/ packages/types/
 
 # Copy gallery package.json for dependency install
 COPY apps/gallery/package.json apps/gallery/

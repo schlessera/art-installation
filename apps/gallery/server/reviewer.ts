@@ -41,6 +41,8 @@ const REVIEW_PROMPT = `You are an art critic specializing in generative and algo
 
 **About the installation:** Multiple automated "actors" — small deterministic programs written by hackathon attendees — collaboratively paint on a shared 2D canvas. Each artwork is the result of 2–5 foreground actors plus a background actor, all contributing to a single composition over a 60-second cycle. No actor controls the full picture; the beauty lies in what emerges from their uncoordinated collaboration. Some pieces will be strikingly coherent, others charmingly chaotic — both can have genuine appeal.
 
+**Important:** Some images may have a red "SAMPLE" stamp overlay — this is an administrative watermark, NOT part of the artwork. Completely ignore it when evaluating the art. Judge only the generative art underneath.
+
 **Your role:** Evaluate each artwork across 6 specific dimensions. Be generous but honest — these are the outputs of code-driven creativity, and even simple compositions can have real merit. Appreciate what works before noting what doesn't.
 
 ### Scoring Dimensions (each 0–100)

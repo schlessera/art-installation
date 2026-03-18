@@ -373,7 +373,7 @@ export class GalleryStorage {
    * Get pending artworks that need review.
    */
   async getPendingReview(): Promise<SavedArtwork[]> {
-    return this.artworks.filter(a => a.review.modelId === 'pending');
+    return this.artworks.filter(a => a.review.modelId === 'pending' || a.review.modelId === 'mock');
   }
 
   /**

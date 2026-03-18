@@ -122,7 +122,8 @@ async function main() {
     const frontendDir = path.join(__dirname, '../dist');
     app.use(express.static(frontendDir));
     // SPA fallback — serve index.html for non-API, non-image routes
-    app.get('*', (_req, res) => {
+    // Express 5 requires named catch-all parameter (path-to-regexp v8)
+    app.get('{*path}', (_req, res) => {
       res.sendFile(path.join(frontendDir, 'index.html'));
     });
   }

@@ -348,10 +348,15 @@ async function main(): Promise<void> {
     console.log('[Runtime] QR overlay initialized (hidden, pending gallery check)');
 
     // Check gallery health async - don't block startup
+    // Only show QR code if this is an official/sample runtime (has runtimeId)
     galleryClient.checkHealth().then((available) => {
       if (available) {
         console.log(`[Runtime] Gallery API connected: ${CONFIG.galleryApiUrl}`);
-        qrOverlay?.setVisible(true);
+        if (CONFIG.runtimeId) {
+          qrOverlay?.setVisible(true);
+        } else {
+          console.log('[Runtime] No runtimeId — QR overlay hidden (public viewer mode)');
+        }
       } else {
         console.warn(`[Runtime] Gallery API not available at ${CONFIG.galleryApiUrl}`);
       }

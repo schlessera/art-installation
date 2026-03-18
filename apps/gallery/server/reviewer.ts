@@ -91,7 +91,7 @@ Respond with ONLY this JSON — no markdown fences, no explanation:
   "depthAndLayering": <0-100>,
   "rhythmAndFlow": <0-100>,
   "intentionalComplexity": <0-100>,
-  "feedback": "<1-2 sentence UNIQUE comment specific to THIS artwork — mention concrete visual elements, colors, or patterns you see. Never use generic phrases like 'captivating blend' or 'colors and movement'.>",
+  "feedback": "<MANDATORY: Write a 1-2 sentence comment that names specific colors, shapes, or patterns visible in THIS image. Example: 'Turquoise spirals radiate from the center while amber particles cluster along the edges.' FORBIDDEN phrases: 'captivating blend', 'colors and movement', 'dynamic interplay', 'harmonious'. Be concrete and descriptive.>",
   "recognizedElements": ["element1", "element2"],
   "suggestedTags": ["tag1", "tag2"]
 }`;
@@ -366,7 +366,7 @@ export class ArtworkReviewer {
       rhythmAndFlow: base + jitter(),
       intentionalComplexity: base + jitter(),
       overallScore: base,
-      feedback: 'A captivating blend of colors and movement.',
+      feedback: 'Review pending — AI analysis unavailable.',
       recognizedElements: ['patterns', 'colors', 'motion'],
       suggestedTags: ['abstract', 'generative', 'dynamic'],
       reviewedAt: new Date(),

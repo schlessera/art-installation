@@ -546,7 +546,7 @@ body {
 .actor-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--color-border);
@@ -556,12 +556,15 @@ body {
 .actor-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
-.actor-name-row {
+.actor-meta {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  flex-shrink: 0;
 }
 
 .actor-name {

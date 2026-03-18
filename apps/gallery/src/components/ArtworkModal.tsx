@@ -146,14 +146,7 @@ export function ArtworkModal({
                 {contributingActors.map((actor) => (
                   <div key={actor.actorId} className="actor-item">
                     <div className="actor-info">
-                      <div className="actor-name-row">
-                        <span className="actor-name">{actor.actorName}</span>
-                        {actor.actorRole && (
-                          <span className={`actor-role-badge role-${actor.actorRole}`}>
-                            {actor.actorRole}
-                          </span>
-                        )}
-                      </div>
+                      <span className="actor-name">{actor.actorName}</span>
                       <span className="actor-author">
                         by {actor.authorName}
                         {actor.authorGithub && (
@@ -168,8 +161,15 @@ export function ArtworkModal({
                         )}
                       </span>
                     </div>
-                    <div className="actor-contribution">
-                      {Math.round(actor.contributionWeight * 100)}%
+                    <div className="actor-meta">
+                      {actor.actorRole && (
+                        <span className={`actor-role-badge role-${actor.actorRole}`}>
+                          {actor.actorRole}
+                        </span>
+                      )}
+                      <span className="actor-contribution">
+                        {Math.round(actor.contributionWeight * 100)}%
+                      </span>
                     </div>
                   </div>
                 ))}

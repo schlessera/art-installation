@@ -28,21 +28,23 @@ WORKDIR /app
 # Copy workspace root files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Copy packages
-COPY packages/types/package.json packages/types/
-COPY packages/types/dist/ packages/types/dist/
+# Copy built types package from build stage
+COPY --from=build /app/packages/types/package.json packages/types/package.json
+COPY --from=build /app/packages/types/dist/ packages/types/dist/
+
+# Copy gallery package.json for dependency install
 COPY apps/gallery/package.json apps/gallery/
 
 # Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod
 
-# Copy built frontend
+# Copy built frontend from build stage
 COPY --from=build /app/apps/gallery/dist/ apps/gallery/dist/
 
 # Copy server source (runs via tsx in production)
 COPY --from=build /app/apps/gallery/server/ apps/gallery/server/
 
-# Create data directory
+# Create data directory (will be overridden by volume mount)
 RUN mkdir -p apps/gallery/data/images
 
 ENV NODE_ENV=production

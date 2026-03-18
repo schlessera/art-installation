@@ -612,6 +612,7 @@ async function handleCycleEnd(actorIds: string[], duration: number): Promise<voi
       return {
         actorId: id,
         actorName: registered?.actor.metadata.name || id,
+        actorRole: registered?.actor.metadata.role ?? 'foreground',
         authorName: registered?.actor.metadata.author?.name || 'Unknown',
         authorGithub: registered?.actor.metadata.author?.github,
         contributionWeight: 1 / actorIds.length,

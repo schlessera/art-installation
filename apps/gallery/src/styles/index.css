@@ -558,9 +558,44 @@ body {
   flex-direction: column;
 }
 
+.actor-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .actor-name {
   font-weight: 500;
   font-size: 0.9rem;
+}
+
+.actor-role-badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 100px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.role-foreground {
+  color: var(--cf-cyan);
+  border-color: rgba(0, 216, 255, 0.25);
+  background: rgba(0, 216, 255, 0.06);
+}
+
+.role-background {
+  color: var(--cf-purple);
+  border-color: rgba(106, 56, 255, 0.25);
+  background: rgba(106, 56, 255, 0.06);
+}
+
+.role-filter {
+  color: var(--cf-gold);
+  border-color: rgba(253, 208, 55, 0.25);
+  background: rgba(253, 208, 55, 0.06);
 }
 
 .actor-author {

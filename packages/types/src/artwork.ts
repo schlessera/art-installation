@@ -16,6 +16,9 @@ export interface ActorContribution {
   /** Actor display name */
   actorName: string;
 
+  /** Actor role: background, foreground, or filter */
+  actorRole?: import('./actor').ActorRole;
+
   /** Author's display name */
   authorName: string;
 

@@ -146,7 +146,14 @@ export function ArtworkModal({
                 {contributingActors.map((actor) => (
                   <div key={actor.actorId} className="actor-item">
                     <div className="actor-info">
-                      <span className="actor-name">{actor.actorName}</span>
+                      <div className="actor-name-row">
+                        <span className="actor-name">{actor.actorName}</span>
+                        {actor.actorRole && (
+                          <span className={`actor-role-badge role-${actor.actorRole}`}>
+                            {actor.actorRole}
+                          </span>
+                        )}
+                      </div>
                       <span className="actor-author">
                         by {actor.authorName}
                         {actor.authorGithub && (

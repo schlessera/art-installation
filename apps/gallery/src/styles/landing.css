@@ -778,36 +778,185 @@
    ================================================================ */
 
 .section-cloudfest {
+  position: relative;
+  overflow: hidden;
   background: var(--cf-bg);
   border-top: 1px solid var(--cf-border);
 }
 
-.cloudfest-layout {
+/* Orbs as section background */
+.cloudfest-orbs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cf-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  animation: orb-float 8s ease-in-out infinite;
+}
+
+.cf-orb--1 {
+  width: 200px;
+  height: 200px;
+  background: var(--cf-cyan);
+  opacity: 0.12;
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.cf-orb--2 {
+  width: 160px;
+  height: 160px;
+  background: var(--cf-purple);
+  opacity: 0.1;
+  top: 20%;
+  right: 15%;
+  animation-delay: -2s;
+}
+
+.cf-orb--3 {
+  width: 140px;
+  height: 140px;
+  background: var(--cf-pink);
+  opacity: 0.08;
+  bottom: 20%;
+  left: 30%;
+  animation-delay: -4s;
+}
+
+.cf-orb--4 {
+  width: 120px;
+  height: 120px;
+  background: var(--cf-gold);
+  opacity: 0.07;
+  bottom: 10%;
+  right: 20%;
+  animation-delay: -6s;
+}
+
+@keyframes orb-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(15px, -20px) scale(1.05); }
+  50% { transform: translate(-10px, 15px) scale(0.95); }
+  75% { transform: translate(20px, 10px) scale(1.02); }
+}
+
+/* Two event cards side by side */
+.cloudfest-cards {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 4rem;
-  align-items: center;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
 }
 
-@media (min-width: 768px) {
-  .cloudfest-layout {
-    grid-template-columns: 1fr 1fr;
-  }
+.cloudfest-event-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 2rem 2rem 1.75rem;
+  background: var(--cf-bg-card);
+  border: 1px solid var(--cf-border);
+  border-radius: 16px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--cf-text);
+  transition: border-color 0.3s ease,
+              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.cloudfest-text {
-  font-size: 1.05rem;
+.cloudfest-event-card:hover {
+  transform: translateY(-4px);
+}
+
+.cloudfest-event-card--hackathon:hover {
+  border-color: color-mix(in srgb, var(--cf-cyan) 40%, transparent);
+}
+
+.cloudfest-event-card--main:hover {
+  border-color: color-mix(in srgb, var(--cf-purple) 40%, transparent);
+}
+
+/* Top accent line */
+.event-card-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.cloudfest-event-card--hackathon .event-card-accent {
+  background: linear-gradient(to right, var(--cf-cyan), transparent 80%);
+}
+
+.cloudfest-event-card--main .event-card-accent {
+  background: linear-gradient(to right, var(--cf-purple), transparent 80%);
+}
+
+.event-card-type {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.cloudfest-event-card--hackathon .event-card-type {
+  color: var(--cf-cyan);
+}
+
+.cloudfest-event-card--main .event-card-type {
+  color: var(--cf-purple);
+}
+
+.event-card-dates {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.event-card-detail {
+  font-size: 0.875rem;
   font-weight: 300;
-  line-height: 1.7;
+  line-height: 1.6;
   color: var(--cf-text-muted);
-  margin-bottom: 2rem;
 }
 
+.event-card-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--cf-text-muted);
+  transition: color 0.3s;
+}
+
+.cloudfest-event-card:hover .event-card-link {
+  color: var(--cf-text);
+}
+
+.event-card-arrow {
+  transition: transform 0.3s;
+  display: inline-block;
+}
+
+.cloudfest-event-card:hover .event-card-arrow {
+  transform: translateX(3px);
+}
+
+/* Detail rows (venue, theme) */
 .cloudfest-details {
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-bottom: 2rem;
 }
 
 .detail-row {
@@ -833,75 +982,6 @@
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--cf-text);
-}
-
-.cloudfest-links {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-/* Cloudfest visual orbs */
-.cloudfest-visual {
-  position: relative;
-  height: 320px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cf-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  animation: orb-float 8s ease-in-out infinite;
-}
-
-.cf-orb--1 {
-  width: 200px;
-  height: 200px;
-  background: var(--cf-cyan);
-  opacity: 0.12;
-  top: 10%;
-  left: 15%;
-  animation-delay: 0s;
-}
-
-.cf-orb--2 {
-  width: 160px;
-  height: 160px;
-  background: var(--cf-purple);
-  opacity: 0.1;
-  top: 30%;
-  right: 10%;
-  animation-delay: -2s;
-}
-
-.cf-orb--3 {
-  width: 140px;
-  height: 140px;
-  background: var(--cf-pink);
-  opacity: 0.08;
-  bottom: 15%;
-  left: 25%;
-  animation-delay: -4s;
-}
-
-.cf-orb--4 {
-  width: 120px;
-  height: 120px;
-  background: var(--cf-gold);
-  opacity: 0.07;
-  bottom: 25%;
-  right: 25%;
-  animation-delay: -6s;
-}
-
-@keyframes orb-float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(15px, -20px) scale(1.05); }
-  50% { transform: translate(-10px, 15px) scale(0.95); }
-  75% { transform: translate(20px, 10px) scale(1.02); }
 }
 
 /* ================================================================
@@ -1015,8 +1095,12 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .cloudfest-visual {
-    height: 200px;
+  .cloudfest-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .cloudfest-event-card {
+    padding: 1.5rem;
   }
 }
 

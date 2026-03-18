@@ -741,61 +741,70 @@ export function LandingPage() {
 
       {/* ===== CLOUDFEST ===== */}
       <section className="landing-section section-cloudfest">
+        <div className="cloudfest-orbs" aria-hidden="true">
+          <div className="cf-orb cf-orb--1" />
+          <div className="cf-orb cf-orb--2" />
+          <div className="cf-orb cf-orb--3" />
+          <div className="cf-orb cf-orb--4" />
+        </div>
+
         <div className="section-inner">
-          <div className="cloudfest-layout reveal-on-scroll">
-            <div className="cloudfest-info">
-              <h2 className="section-heading">
-                <span className="heading-accent">The Event</span>
-                CloudFest 2026
-              </h2>
-              <p className="cloudfest-text">
-                The world's largest cloud computing festival. 10,000+ leaders in cloud
-                and internet infrastructure gather at Europa-Park in Rust, Germany.
-              </p>
-              <dl className="cloudfest-details">
-                <div className="detail-row">
-                  <dt>Hackathon</dt>
-                  <dd>March 20 &ndash; 22, 2026</dd>
-                </div>
-                <div className="detail-row">
-                  <dt>Main Event</dt>
-                  <dd>March 23 &ndash; 26, 2026</dd>
-                </div>
-                <div className="detail-row">
-                  <dt>Venue</dt>
-                  <dd>Europa-Park, Rust, Germany</dd>
-                </div>
-                <div className="detail-row">
-                  <dt>Theme</dt>
-                  <dd>The Sustainability of Everything</dd>
-                </div>
-              </dl>
-              <div className="cloudfest-links">
-                <a
-                  href="https://www.cloudfest.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-outline"
-                >
-                  CloudFest Website
-                </a>
-                <a
-                  href="https://hackathon.cloudfest.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-outline"
-                >
-                  Hackathon Website
-                </a>
-              </div>
-            </div>
-            <div className="cloudfest-visual" aria-hidden="true">
-              <div className="cf-orb cf-orb--1" />
-              <div className="cf-orb cf-orb--2" />
-              <div className="cf-orb cf-orb--3" />
-              <div className="cf-orb cf-orb--4" />
-            </div>
+          <h2 className="section-heading reveal-on-scroll">
+            <span className="heading-accent">The Event</span>
+            CloudFest 2026
+          </h2>
+          <p className="section-intro reveal-on-scroll">
+            The world&rsquo;s largest cloud computing festival. 10,000+ leaders in cloud
+            and internet infrastructure gather at Europa-Park in Rust, Germany.
+          </p>
+
+          <div className="cloudfest-cards reveal-on-scroll">
+            <a
+              href="https://hackathon.cloudfest.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cloudfest-event-card cloudfest-event-card--hackathon"
+            >
+              <span className="event-card-accent" aria-hidden="true" />
+              <span className="event-card-type">Hackathon</span>
+              <span className="event-card-dates">March 20 &ndash; 22, 2026</span>
+              <span className="event-card-detail">
+                Three days of building, breaking, and shipping &mdash; where this
+                art installation was born.
+              </span>
+              <span className="event-card-link">
+                hackathon.cloudfest.com <span className="event-card-arrow">&rarr;</span>
+              </span>
+            </a>
+            <a
+              href="https://www.cloudfest.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cloudfest-event-card cloudfest-event-card--main"
+            >
+              <span className="event-card-accent" aria-hidden="true" />
+              <span className="event-card-type">Main Event</span>
+              <span className="event-card-dates">March 23 &ndash; 26, 2026</span>
+              <span className="event-card-detail">
+                Keynotes, deep-dives, and 10,000 attendees at Europa-Park
+                in Rust, Germany.
+              </span>
+              <span className="event-card-link">
+                cloudfest.com <span className="event-card-arrow">&rarr;</span>
+              </span>
+            </a>
           </div>
+
+          <dl className="cloudfest-details reveal-on-scroll">
+            <div className="detail-row">
+              <dt>Venue</dt>
+              <dd>Europa-Park, Rust, Germany</dd>
+            </div>
+            <div className="detail-row">
+              <dt>Theme</dt>
+              <dd>The Sustainability of Everything</dd>
+            </div>
+          </dl>
         </div>
       </section>
 

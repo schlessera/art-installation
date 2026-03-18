@@ -102,6 +102,7 @@ export class ActorScheduler {
   private foregroundFilterActors: ActiveActor[] = [];
   private cycleStartTime = 0;
   private cycleNumber = 0;
+  private transitioning = false;
 
   /** @deprecated Use role-specific arrays instead */
   private get activeActors(): ActiveActor[] {
@@ -156,9 +157,26 @@ export class ActorScheduler {
    * - 0-2 foreground filters (weighted towards 1-2)
    */
   async startCycle(): Promise<string[]> {
+    // Guard against concurrent cycle transitions
+    if (this.transitioning) return [];
+    this.transitioning = true;
+
+    try {
+    return await this._startCycleImpl();
+    } finally {
+      this.transitioning = false;
+    }
+  }
+
+  private async _startCycleImpl(): Promise<string[]> {
     // End previous cycle if active
     if (this.activeActors.length > 0) {
       await this.endCycle();
+    }
+
+    // Clear canvas between cycles (RenderTextures, stale pixels)
+    if (this.canvasManager) {
+      this.canvasManager.clearBetweenCycles();
     }
 
     // Prepare for new cycle (e.g., randomize display mode)
@@ -649,9 +667,17 @@ export class ActorScheduler {
   }
 
   /**
+   * Check if a cycle transition is in progress.
+   */
+  isTransitioning(): boolean {
+    return this.transitioning;
+  }
+
+  /**
    * Check if the current cycle should end.
    */
   shouldEndCycle(): boolean {
+    if (this.transitioning) return false;
     if (this.activeActors.length === 0) return false;
     return performance.now() - this.cycleStartTime >= this.config.cycleDuration;
   }

@@ -378,6 +378,27 @@ class GraphicsPool {
     this.activeCount = 0;
   }
 
+  /**
+   * Clear and hide ALL pooled graphics (not just active ones).
+   * Use at cycle end to ensure no visual artifacts persist.
+   */
+  clearAll(): void {
+    for (const g of this.pool) {
+      g.clear();
+      g.visible = false;
+    }
+    this.activeCount = 0;
+  }
+
+  /**
+   * Re-add all pooled Graphics to a container after removeChildren().
+   */
+  reattach(container: Container): void {
+    for (const g of this.pool) {
+      container.addChild(g);
+    }
+  }
+
   destroy(): void {
     for (const g of this.pool) {
       g.destroy();
@@ -432,12 +453,19 @@ class TextureCache {
     return this.cache.has(key);
   }
 
-  destroy(): void {
+  /**
+   * Clear all cached textures (for cycle transitions).
+   */
+  clear(): void {
     for (const texture of this.cache.values()) {
       texture.destroy(true);
     }
     this.cache.clear();
     this.accessOrder = [];
+  }
+
+  destroy(): void {
+    this.clear();
   }
 }
 
@@ -506,6 +534,27 @@ class SpritePool {
       this.pool[i].visible = false;
     }
     this.activeCount = 0;
+  }
+
+  /**
+   * Clear and hide ALL pooled sprites (not just active ones).
+   * Use at cycle end to ensure no visual artifacts persist.
+   */
+  clearAll(): void {
+    for (const s of this.pool) {
+      s.visible = false;
+      s.texture = Texture.EMPTY;
+    }
+    this.activeCount = 0;
+  }
+
+  /**
+   * Re-add all pooled Sprites to a container after removeChildren().
+   */
+  reattach(container: Container): void {
+    for (const s of this.pool) {
+      container.addChild(s);
+    }
   }
 
   destroy(): void {
@@ -1097,6 +1146,30 @@ export class BrushAPIImpl implements BrushAPI {
     this.graphicsPool.releaseAll();
     this.spritePool.releaseAll();
     // Reset state
+    this.reset();
+  }
+
+  /**
+   * Clear all graphics content at cycle end.
+   * Unlike clearFrame(), this clears ALL pooled graphics (not just active ones)
+   * to ensure no visual artifacts persist across cycles.
+   */
+  clearCycle(): void {
+    // Clear all pooled objects
+    this.graphicsPool.clearAll();
+    this.spritePool.clearAll();
+    // Clear the non-pooled Graphics object
+    this.graphics.clear();
+    // Clear cached textures and pending images
+    this.textureCache.clear();
+    this.pendingImages.clear();
+    // Remove ALL children (text objects, stray sprites, etc.)
+    this.container.removeChildren();
+    // Re-add persistent objects that belong to this BrushAPI
+    this.container.addChild(this.graphics);
+    this.graphicsPool.reattach(this.container);
+    this.spritePool.reattach(this.container);
+    // Reset transform state
     this.reset();
   }
 

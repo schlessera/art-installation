@@ -80,9 +80,12 @@ Analyze this artwork and provide a structured evaluation. Be concise but insight
 
 Respond ONLY with valid JSON in this exact format:
 {
-  "aestheticScore": <number 0-100>,
-  "creativityScore": <number 0-100>,
-  "coherenceScore": <number 0-100>,
+  "colorHarmony": <number 0-100>,
+  "composition": <number 0-100>,
+  "visualUnity": <number 0-100>,
+  "depthAndLayering": <number 0-100>,
+  "rhythmAndFlow": <number 0-100>,
+  "intentionalComplexity": <number 0-100>,
   "overallScore": <number 0-100>,
   "feedback": "<2-3 sentences describing the artwork's strengths and areas for improvement>",
   "recognizedElements": ["<element1>", "<element2>", ...],
@@ -90,10 +93,13 @@ Respond ONLY with valid JSON in this exact format:
 }
 
 Scoring guidelines:
-- aestheticScore: Visual appeal, color harmony, balance
-- creativityScore: Originality, uniqueness, unexpected combinations
-- coherenceScore: Visual unity, compositional flow, intentionality
-- overallScore: Weighted average favoring aesthetic and creativity
+- colorHarmony: Coherent color palette (monochromatic, complementary, analogous, etc.)
+- composition: Intentional spatial structure (rule of thirds, symmetry, focal points)
+- visualUnity: Multi-actor contributions meshing into one cohesive piece
+- depthAndLayering: Sense of spatial depth through foreground/background interaction
+- rhythmAndFlow: Visual movement, eye guidance, dynamic energy
+- intentionalComplexity: Structured detail at appropriate level (not empty, not noisy)
+- overallScore: Average of all dimension scores
 
 Be honest but constructive. A blank or very sparse canvas should score low.`;
 
@@ -232,9 +238,12 @@ export class ReviewEngine {
       const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
 
       return {
-        aestheticScore: clamp(data.aestheticScore ?? 50),
-        creativityScore: clamp(data.creativityScore ?? 50),
-        coherenceScore: clamp(data.coherenceScore ?? 50),
+        colorHarmony: clamp(data.colorHarmony ?? 50),
+        composition: clamp(data.composition ?? 50),
+        visualUnity: clamp(data.visualUnity ?? 50),
+        depthAndLayering: clamp(data.depthAndLayering ?? 50),
+        rhythmAndFlow: clamp(data.rhythmAndFlow ?? 50),
+        intentionalComplexity: clamp(data.intentionalComplexity ?? 50),
         overallScore: clamp(data.overallScore ?? 50),
         feedback: String(data.feedback ?? 'No feedback provided.'),
         recognizedElements: Array.isArray(data.recognizedElements)
@@ -249,9 +258,12 @@ export class ReviewEngine {
 
       // Return default scores if parsing fails
       return {
-        aestheticScore: 50,
-        creativityScore: 50,
-        coherenceScore: 50,
+        colorHarmony: 50,
+        composition: 50,
+        visualUnity: 50,
+        depthAndLayering: 50,
+        rhythmAndFlow: 50,
+        intentionalComplexity: 50,
         overallScore: 50,
         feedback: 'Review parsing failed. Using default scores.',
         recognizedElements: [],
@@ -298,9 +310,12 @@ export class ReviewEngine {
     const baseScore = 50 + Math.floor(Math.random() * 40);
 
     return {
-      aestheticScore: baseScore + Math.floor(Math.random() * 20 - 10),
-      creativityScore: baseScore + Math.floor(Math.random() * 20 - 10),
-      coherenceScore: baseScore + Math.floor(Math.random() * 20 - 10),
+      colorHarmony: baseScore + Math.floor(Math.random() * 20 - 10),
+      composition: baseScore + Math.floor(Math.random() * 20 - 10),
+      visualUnity: baseScore + Math.floor(Math.random() * 20 - 10),
+      depthAndLayering: baseScore + Math.floor(Math.random() * 20 - 10),
+      rhythmAndFlow: baseScore + Math.floor(Math.random() * 20 - 10),
+      intentionalComplexity: baseScore + Math.floor(Math.random() * 20 - 10),
       overallScore: baseScore,
       feedback: 'This is a mock review for testing purposes.',
       recognizedElements: ['abstract shapes', 'flowing lines', 'color gradients'],

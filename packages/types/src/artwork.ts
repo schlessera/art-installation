@@ -33,16 +33,25 @@ export interface ActorContribution {
  * AI review data for an artwork.
  */
 export interface ArtworkReview {
-  /** Aesthetic quality score (0-100) */
-  aestheticScore: number;
+  /** Color palette coherence score (0-100) */
+  colorHarmony: number;
 
-  /** Creativity/originality score (0-100) */
-  creativityScore: number;
+  /** Spatial organization and balance score (0-100) */
+  composition: number;
 
-  /** Visual coherence/composition score (0-100) */
-  coherenceScore: number;
+  /** Multi-actor contribution cohesion score (0-100) */
+  visualUnity: number;
 
-  /** Overall combined score (0-100) */
+  /** Sense of spatial depth score (0-100) */
+  depthAndLayering: number;
+
+  /** Visual movement and energy score (0-100) */
+  rhythmAndFlow: number;
+
+  /** Structured detail level score (0-100) */
+  intentionalComplexity: number;
+
+  /** Overall combined score (0-100, average of all dimensions) */
   overallScore: number;
 
   /** AI's descriptive feedback */
@@ -93,6 +102,9 @@ export interface SavedArtwork {
 
   /** Base64 image data (for API responses) */
   imageData?: string;
+
+  /** Perceptual hash (dHash) for visual similarity detection */
+  dHash?: string;
 
   /** Image width in pixels */
   width?: number;
@@ -155,7 +167,7 @@ export interface SavedArtwork {
   archivedAt?: Date;
 
   /** Reason for archiving */
-  archiveReason?: 'pruned' | 'manual' | 'flagged';
+  archiveReason?: 'pruned' | 'manual' | 'flagged' | 'duplicate';
 }
 
 /**

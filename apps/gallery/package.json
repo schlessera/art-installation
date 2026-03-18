@@ -16,7 +16,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.2",
     "@art/types": "workspace:*",
     "cors": "^2.8.5",
     "express": "^5.2.1",
@@ -24,6 +23,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.13.1",
+    "sharp": "^0.33.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

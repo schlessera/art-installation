@@ -17,16 +17,25 @@ export function App() {
   const [selectedArtwork, setSelectedArtwork] = useState<SavedArtwork | null>(null);
   const [showNameModal, setShowNameModal] = useState(false);
   const [voterName, setVoterName] = useLocalStorage<string>('voter-name', '');
-  const [sortBy, setSortBy] = useState<'createdAt' | 'combinedScore' | 'voteCount'>('createdAt');
+  const [sortBy, setSortBy] = useState<'createdAt' | 'combinedScore' | 'voteCount'>('combinedScore');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const api = useGalleryApi();
 
-  // Load artworks on mount
+  // Load artworks on mount and when sort changes
   useEffect(() => {
     loadArtworks();
     loadStats();
+  }, [sortBy]);
+
+  // Auto-refresh every 10 seconds (no loading spinner)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshArtworks();
+      loadStats();
+    }, 10_000);
+    return () => clearInterval(interval);
   }, [sortBy]);
 
   // Open modal from URL param (deep link)
@@ -53,6 +62,21 @@ export function App() {
       }
     });
   }, [artworkId, artworks]);
+
+  async function refreshArtworks() {
+    try {
+      const data = await api.getArtworks({
+        isVisible: true,
+        isArchived: false,
+        sortBy,
+        sortDirection: 'desc',
+      });
+      setArtworks(data);
+      setError(null);
+    } catch {
+      // Silently ignore background refresh errors
+    }
+  }
 
   async function loadArtworks() {
     setLoading(true);

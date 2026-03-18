@@ -6,6 +6,7 @@
  */
 
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import type {
@@ -19,6 +20,9 @@ import type {
   ContextSnapshot,
 } from '@art/types';
 import { calculateCombinedScore, shouldPrune } from '@art/types';
+import sharp from 'sharp';
+import { applyStampOverlay } from './stamp';
+import { computeDHash } from './phash';
 
 export interface StorageConfig {
   /** Directory for storing data */
@@ -95,7 +99,48 @@ export class GalleryStorage {
       console.log('[Storage] Starting with empty gallery');
     }
 
+    // Remove artworks whose image files are missing from disk
+    const before = this.artworks.length;
+    this.artworks = this.artworks.filter(a => {
+      const thumbFile = path.join(this.config.imagesDir, path.basename(a.thumbnailPath));
+      try {
+        fsSync.accessSync(thumbFile);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    const removed = before - this.artworks.length;
+    if (removed > 0) {
+      console.log(`[Storage] Removed ${removed} artworks with missing image files`);
+      await this.save();
+    }
+
+    // Backfill perceptual hashes for existing artworks
+    await this.backfillHashes();
+
     this.initialized = true;
+  }
+
+  /**
+   * Compute dHash for artworks that don't have one yet.
+   */
+  private async backfillHashes(): Promise<void> {
+    const missing = this.artworks.filter(a => !a.dHash);
+    if (missing.length === 0) return;
+
+    console.log(`[Storage] Backfilling hashes for ${missing.length} artworks...`);
+    for (const artwork of missing) {
+      try {
+        const fullPath = path.join(this.config.imagesDir, path.basename(artwork.imagePath));
+        const buffer = await fs.readFile(fullPath);
+        artwork.dHash = await computeDHash(buffer);
+      } catch {
+        // Image file missing or unreadable — skip
+      }
+    }
+    await this.save();
+    console.log(`[Storage] Backfilled hashes for ${missing.length} artworks`);
   }
 
   /**
@@ -150,6 +195,33 @@ export class GalleryStorage {
   }
 
   /**
+   * Extract dimensions from any image format using sharp.
+   */
+  private async extractImageDimensions(base64Data: string): Promise<{ width: number; height: number } | null> {
+    try {
+      const base64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64, 'base64');
+      const metadata = await sharp(buffer).metadata();
+      if (metadata.width && metadata.height) {
+        return { width: metadata.width, height: metadata.height };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Apply "SAMPLE" stamp overlay to a base64-encoded image.
+   */
+  private async applyStamp(base64Data: string, width: number, height: number): Promise<string> {
+    const base64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64, 'base64');
+    const stamped = await applyStampOverlay(buffer, width, height);
+    return `data:image/png;base64,${stamped.toString('base64')}`;
+  }
+
+  /**
    * Submit a new artwork (without review - review happens async).
    */
   async submitArtwork(submission: ArtworkSubmission, isSample: boolean = false): Promise<SavedArtwork> {
@@ -159,22 +231,41 @@ export class GalleryStorage {
     // Extract dimensions from image
     const dimensions = this.extractPngDimensions(submission.imageData);
 
+    // Apply "SAMPLE" stamp overlay to sample submissions
+    let imageData = submission.imageData;
+    let thumbnailData = submission.thumbnailData;
+    if (isSample && dimensions) {
+      imageData = await this.applyStamp(imageData, dimensions.width, dimensions.height);
+      const thumbDimensions = await this.extractImageDimensions(thumbnailData);
+      if (thumbDimensions) {
+        thumbnailData = await this.applyStamp(thumbnailData, thumbDimensions.width, thumbDimensions.height);
+      }
+    }
+
     // Save images
-    const imagePath = await this.saveImage(submission.imageData, id, 'full');
-    const thumbnailPath = await this.saveImage(submission.thumbnailData, id, 'thumb');
+    const imagePath = await this.saveImage(imageData, id, 'full');
+    const thumbnailPath = await this.saveImage(thumbnailData, id, 'thumb');
+
+    // Compute perceptual hash for dedup
+    const base64Clean = imageData.replace(/^data:image\/\w+;base64,/, '');
+    const dHash = await computeDHash(Buffer.from(base64Clean, 'base64'));
 
     const artwork: SavedArtwork = {
       id,
       imagePath,
       thumbnailPath,
+      dHash,
       width: dimensions?.width,
       height: dimensions?.height,
       createdAt,
       contributingActors: submission.contributingActors,
       review: {
-        aestheticScore: 0,
-        creativityScore: 0,
-        coherenceScore: 0,
+        colorHarmony: 0,
+        composition: 0,
+        visualUnity: 0,
+        depthAndLayering: 0,
+        rhythmAndFlow: 0,
+        intentionalComplexity: 0,
         overallScore: 0,
         feedback: 'Pending review...',
         recognizedElements: [],
@@ -283,6 +374,44 @@ export class GalleryStorage {
    */
   async getPendingReview(): Promise<SavedArtwork[]> {
     return this.artworks.filter(a => a.review.modelId === 'pending');
+  }
+
+  /**
+   * Reset all artworks to pending review status.
+   * The background reviewer will re-review them.
+   */
+  async resetAllReviews(): Promise<number> {
+    let count = 0;
+    for (const artwork of this.artworks) {
+      if (artwork.review.modelId !== 'pending') {
+        artwork.review.modelId = 'pending';
+        artwork.review.overallScore = 0;
+        artwork.isVisible = false;
+        artwork.isArchived = false;
+        artwork.archivedAt = undefined;
+        artwork.archiveReason = undefined;
+        count++;
+      }
+    }
+    if (count > 0) {
+      await this.save();
+      console.log(`[Storage] Reset ${count} artwork(s) to pending review`);
+    }
+    return count;
+  }
+
+  /**
+   * Archive an artwork as a duplicate.
+   */
+  async archiveAsDuplicate(id: string): Promise<boolean> {
+    const artwork = this.artworks.find(a => a.id === id);
+    if (!artwork) return false;
+    artwork.isVisible = false;
+    artwork.isArchived = true;
+    artwork.archivedAt = new Date();
+    artwork.archiveReason = 'duplicate';
+    await this.save();
+    return true;
   }
 
   /**

@@ -495,6 +495,33 @@ export class CanvasManager implements CanvasReadAPI {
   }
 
   /**
+   * Clear RenderTextures between cycles to prevent stale pixel data.
+   * Called during cycle transitions to ensure actors reading the canvas
+   * (snapshots, getDominantColors) see clean state.
+   */
+  clearBetweenCycles(): void {
+    if (!this.app) return;
+    const renderer = this.app.renderer;
+
+    // Clear background RenderTexture
+    if (this.backgroundRenderTexture) {
+      renderer.render({
+        container: new Container(),
+        target: this.backgroundRenderTexture,
+        clear: true,
+      });
+    }
+    // Clear foreground RenderTexture
+    if (this.foregroundRenderTexture) {
+      renderer.render({
+        container: new Container(),
+        target: this.foregroundRenderTexture,
+        clear: true,
+      });
+    }
+  }
+
+  /**
    * Clear all layers.
    */
   clear(): void {

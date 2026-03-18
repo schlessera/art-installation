@@ -497,9 +497,9 @@ export class ActorContainerManager {
    * Clear all containers at cycle end.
    */
   clearCycle(): void {
-    // Clear foreground actors
+    // Clear foreground actors — clearCycle() clears ALL pooled graphics content
     for (const entry of this.entries.values()) {
-      entry.brushApi.clearFrame();
+      entry.brushApi.clearCycle();
       entry.filterApi.clearFilters();
       entry.container.visible = false;
     }
@@ -511,7 +511,7 @@ export class ActorContainerManager {
       this.backgroundContainer.visible = false;
     }
     if (this.backgroundBrushApi) {
-      this.backgroundBrushApi.clearFrame();
+      this.backgroundBrushApi.clearCycle();
     }
     if (this.backgroundFilterApi) {
       this.backgroundFilterApi.clearFilters();

@@ -23,8 +23,8 @@ const PORT = parseInt(process.env.GALLERY_PORT || process.env.PORT || '3001', 10
 const DATA_DIR = process.env.GALLERY_DATA_DIR
   ? path.resolve(__dirname, '..', process.env.GALLERY_DATA_DIR)
   : path.join(__dirname, '../data');
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const MAX_ARTWORKS = parseInt(process.env.GALLERY_MAX_ARTWORKS || '30', 10);
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+const MAX_ARTWORKS = parseInt(process.env.GALLERY_MAX_ARTWORKS || '100', 10);
 const PRUNE_PERCENTAGE = parseFloat(process.env.GALLERY_PRUNE_PERCENTAGE || '0.1');
 const MIN_SCORE_THRESHOLD = parseInt(process.env.GALLERY_MIN_SCORE || '40', 10);
 
@@ -48,7 +48,7 @@ const ALLOWED_ORIGINS = [
 async function main() {
   console.log('[Gallery] Starting server...');
   console.log(`[Gallery] Data directory: ${DATA_DIR}`);
-  console.log(`[Gallery] API Key: ${ANTHROPIC_API_KEY ? 'configured' : 'not configured (using mock reviews)'}`);
+  console.log(`[Gallery] OpenRouter API Key: ${OPENROUTER_API_KEY ? 'configured' : 'not configured (using mock reviews)'}`);
   console.log(`[Gallery] Runtime ID gating: sample=${SAMPLE_RUNTIME_ID ? 'configured' : 'not set'}, official=${OFFICIAL_RUNTIME_ID ? 'configured' : 'not set'}`);
 
   // Initialize storage
@@ -62,7 +62,7 @@ async function main() {
 
   // Initialize reviewer
   const reviewer = new ArtworkReviewer(storage, {
-    apiKey: ANTHROPIC_API_KEY,
+    apiKey: OPENROUTER_API_KEY,
     minScoreThreshold: MIN_SCORE_THRESHOLD,
   });
   reviewer.start();
@@ -98,23 +98,34 @@ async function main() {
   app.use('/api', createApiRoutes(storage, {
     sampleRuntimeId: SAMPLE_RUNTIME_ID,
     officialRuntimeId: OFFICIAL_RUNTIME_ID,
-  }));
+  }, reviewer));
 
   // Static file serving for images
   app.use('/images', express.static(path.join(DATA_DIR, 'images')));
 
-  // Health check at root
-  app.get('/', (_req, res) => {
-    res.json({
-      name: 'Art Installation Gallery API',
-      version: '1.0.0',
-      endpoints: {
-        artworks: '/api/artworks',
-        stats: '/api/stats',
-        health: '/api/health',
-      },
+  // In production, serve the built frontend
+  if (IS_DEV) {
+    // Dev mode: health check at root (frontend served by Vite dev server)
+    app.get('/', (_req, res) => {
+      res.json({
+        name: 'Polychorus Gallery API',
+        version: '1.0.0',
+        endpoints: {
+          artworks: '/api/artworks',
+          stats: '/api/stats',
+          health: '/api/health',
+        },
+      });
     });
-  });
+  } else {
+    // Production: serve Vite build output
+    const frontendDir = path.join(__dirname, '../dist');
+    app.use(express.static(frontendDir));
+    // SPA fallback — serve index.html for non-API, non-image routes
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(frontendDir, 'index.html'));
+    });
+  }
 
   // Error handling
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

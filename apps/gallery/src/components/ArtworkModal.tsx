@@ -71,16 +71,28 @@ export function ArtworkModal({
               <h3>AI Review</h3>
               <div className="review-scores">
                 <div className="review-score">
-                  <span className="label">Aesthetic</span>
-                  <span className="value">{review.aestheticScore}</span>
+                  <span className="label">Color Harmony</span>
+                  <span className="value">{review.colorHarmony ?? '—'}</span>
                 </div>
                 <div className="review-score">
-                  <span className="label">Creativity</span>
-                  <span className="value">{review.creativityScore}</span>
+                  <span className="label">Composition</span>
+                  <span className="value">{review.composition ?? '—'}</span>
                 </div>
                 <div className="review-score">
-                  <span className="label">Coherence</span>
-                  <span className="value">{review.coherenceScore}</span>
+                  <span className="label">Visual Unity</span>
+                  <span className="value">{review.visualUnity ?? '—'}</span>
+                </div>
+                <div className="review-score">
+                  <span className="label">Depth</span>
+                  <span className="value">{review.depthAndLayering ?? '—'}</span>
+                </div>
+                <div className="review-score">
+                  <span className="label">Flow</span>
+                  <span className="value">{review.rhythmAndFlow ?? '—'}</span>
+                </div>
+                <div className="review-score">
+                  <span className="label">Complexity</span>
+                  <span className="value">{review.intentionalComplexity ?? '—'}</span>
                 </div>
                 <div className="review-score overall">
                   <span className="label">Overall</span>

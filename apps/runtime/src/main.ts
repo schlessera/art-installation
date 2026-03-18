@@ -446,6 +446,11 @@ async function main(): Promise<void> {
     // Prepare frame (restore layer visibility, clear post-process filters)
     canvasManager.prepareFrame();
 
+    // Skip actor updates during cycle transition
+    if (actorScheduler.isTransitioning()) {
+      return;
+    }
+
     // Clear previous frame's graphics from all actor containers
     actorContainerManager!.clearFrame();
 
@@ -477,7 +482,6 @@ async function main(): Promise<void> {
 
     // Check if cycle should end
     if (actorScheduler.shouldEndCycle()) {
-      // Don't await - let it run in background
       actorScheduler.startCycle().catch(console.error);
     }
 
@@ -603,6 +607,12 @@ async function handleCycleEnd(actorIds: string[], duration: number): Promise<voi
         operationCount: 0, // TODO: Track actual operation counts per actor
       };
     });
+
+    // Only submit to gallery if a runtimeId is configured (official display)
+    if (!CONFIG.runtimeId) {
+      console.log('[Runtime] No runtimeId configured, skipping gallery submission');
+      return;
+    }
 
     // Submit to gallery API (review happens async on gallery server)
     try {

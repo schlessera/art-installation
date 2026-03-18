@@ -20,8 +20,8 @@ export function GalleryHeader({
       <div className="header-content">
         <div className="header-title">
           <a href="/" className="header-home-link">
-            <h1>Art Gallery</h1>
-            <span className="subtitle">CloudFest Hackathon 2026</span>
+            <h1>Polychorus</h1>
+            <span className="subtitle">Gallery</span>
           </a>
         </div>
 

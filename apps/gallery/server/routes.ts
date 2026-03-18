@@ -7,13 +7,14 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import type { GalleryStorage, ArtworkSubmission } from './storage';
+import type { ArtworkReviewer } from './reviewer';
 
 export interface RuntimeIdConfig {
   sampleRuntimeId: string;
   officialRuntimeId: string;
 }
 
-export function createApiRoutes(storage: GalleryStorage, runtimeIdConfig: RuntimeIdConfig): Router {
+export function createApiRoutes(storage: GalleryStorage, runtimeIdConfig: RuntimeIdConfig, reviewer?: ArtworkReviewer): Router {
   const router = Router();
 
   /**
@@ -158,6 +159,38 @@ export function createApiRoutes(storage: GalleryStorage, runtimeIdConfig: Runtim
     } catch (err) {
       console.error('[API] Failed to get stats:', err);
       res.status(500).json({ error: 'Failed to get stats' });
+    }
+  });
+
+  /**
+   * POST /api/reviews/reset
+   * Reset all artworks to pending review status (re-triggers AI review).
+   */
+  router.post('/reviews/reset', async (_req: Request, res: Response) => {
+    try {
+      const count = await storage.resetAllReviews();
+      res.json({ reset: count, message: `${count} artwork(s) queued for re-review` });
+    } catch (err) {
+      console.error('[API] Failed to reset reviews:', err);
+      res.status(500).json({ error: 'Failed to reset reviews' });
+    }
+  });
+
+  /**
+   * POST /api/dedup
+   * Run deduplication to archive visually similar artworks.
+   */
+  router.post('/dedup', async (_req: Request, res: Response) => {
+    if (!reviewer) {
+      res.status(503).json({ error: 'Reviewer not available' });
+      return;
+    }
+    try {
+      const result = await reviewer.getDedup().run();
+      res.json(result);
+    } catch (err) {
+      console.error('[API] Dedup failed:', err);
+      res.status(500).json({ error: 'Dedup failed' });
     }
   });
 

@@ -358,9 +358,12 @@ export function LandingPage() {
 
         <div className="hero-content">
           <div className="hero-brand reveal-on-scroll">
-            <span className="brand-name">The Canvas</span>
-            <span className="brand-divider" />
-            <span className="brand-tagline">An AI Art Experiment</span>
+            <span className="brand-name">Polychorus</span>
+          </div>
+          <div className="hero-definition reveal-on-scroll">
+            <span className="definition-word">chorus</span>
+            <span className="definition-pos">noun</span>
+            <span className="definition-text">(in ancient Greek tragedy) a group of performers who comment together on the main action.</span>
           </div>
 
           <div className="hero-badge reveal-on-scroll">
@@ -601,8 +604,8 @@ export function LandingPage() {
       <footer className="landing-footer">
         <div className="footer-inner">
           <div className="footer-brand">
-            <span className="footer-logo">The Canvas</span>
-            <span className="footer-tagline">An AI Art Experiment</span>
+            <span className="footer-logo">Polychorus</span>
+            <span className="footer-tagline">polychorus.art</span>
           </div>
           <p className="footer-credit">
             Created by{' '}

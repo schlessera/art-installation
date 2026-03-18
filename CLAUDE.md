@@ -519,7 +519,7 @@ VITE_GALLERY_API_URL=http://localhost:3001/api # Gallery API URL (for submitting
 ```bash
 GALLERY_PORT=3001                    # API server port
 GALLERY_DATA_DIR=./data              # Data storage directory
-ANTHROPIC_API_KEY=sk-...             # Claude API key (optional, uses mock if not set)
+GEMINI_API_KEY=...                   # Gemini API key (optional, uses mock if not set)
 GALLERY_MAX_ARTWORKS=30              # Max artworks before pruning
 GALLERY_PRUNE_PERCENTAGE=0.1         # Prune bottom 10%
 GALLERY_MIN_SCORE=40                 # Minimum AI score for visibility

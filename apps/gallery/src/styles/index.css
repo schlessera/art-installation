@@ -367,6 +367,24 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.actor-tag.tag-foreground {
+  color: var(--cf-cyan);
+  border-color: rgba(0, 216, 255, 0.25);
+  background: rgba(0, 216, 255, 0.06);
+}
+
+.actor-tag.tag-background {
+  color: var(--cf-purple);
+  border-color: rgba(106, 56, 255, 0.25);
+  background: rgba(106, 56, 255, 0.06);
+}
+
+.actor-tag.tag-filter {
+  color: var(--cf-gold);
+  border-color: rgba(253, 208, 55, 0.25);
+  background: rgba(253, 208, 55, 0.06);
+}
+
 /* Card: Date */
 .card-date {
   font-size: 0.7rem;

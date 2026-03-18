@@ -44,7 +44,7 @@ export function ArtworkCard({ artwork, onClick, hasVoted }: ArtworkCardProps) {
 
         <div className="card-actors">
           {contributingActors.map((actor) => (
-            <span key={actor.actorId} className="actor-tag">
+            <span key={actor.actorId} className={`actor-tag ${actor.actorRole ? `tag-${actor.actorRole}` : ''}`}>
               {actor.actorName}
             </span>
           ))}

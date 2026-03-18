@@ -23,6 +23,11 @@ ENV NODE_ENV=production
 # Stage 2: Production
 FROM node:22-slim AS production
 
+# Install fonts for SVG stamp rendering (sharp uses librsvg)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    fonts-liberation fonts-dejavu-core fontconfig \
+    && rm -rf /var/lib/apt/lists/* && fc-cache -fv
+
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 WORKDIR /app

@@ -113,7 +113,7 @@ function generateStampSvg(width: number, height: number): string {
         x="0"
         y="${baseFontSize * 0.35}"
         text-anchor="middle"
-        font-family="'Arial Black', 'Impact', 'Helvetica Neue', sans-serif"
+        font-family="'Liberation Sans', 'DejaVu Sans', 'Arial Black', 'Impact', sans-serif"
         font-weight="900"
         font-size="${baseFontSize}"
         letter-spacing="${letterSpacing}"

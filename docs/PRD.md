@@ -9,14 +9,14 @@
 
 ## Executive Summary
 
-An interactive digital art installation where multiple AI-driven "actors" collaboratively paint on a shared canvas. Hackathon attendees can deploy their own actors to participate in the creation. An AI reviewer periodically evaluates the artwork, and a public gallery showcases the best creations with voting capabilities.
+An interactive digital art installation where multiple automated actors collaboratively paint on a shared canvas. Hackathon attendees can deploy their own actors to participate in the creation. An AI reviewer periodically evaluates the artwork, and a public gallery showcases the best creations with voting capabilities.
 
 ---
 
 ## Vision & Goals
 
 ### Vision Statement
-Create a living, evolving artwork that represents the collective creativity of both AI agents and human developers, showcasing the collaborative potential of human-AI interaction in creative endeavors.
+Create a living, evolving artwork that represents the collective creativity of automated actors and human developers, showcasing the collaborative potential of code-driven creativity.
 
 ### Primary Goals
 1. **Engagement**: Provide hackathon attendees with a unique way to participate beyond traditional projects

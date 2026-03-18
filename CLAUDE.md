@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Art Installation - Cloudfest Hackathon 2026
 
-Interactive digital art installation where multiple AI-driven "actors" collaboratively paint on a shared 2D canvas. Hackathon attendees can deploy their own actors via Git.
+Interactive digital art installation where multiple automated actors collaboratively paint on a shared 2D canvas. Hackathon attendees can deploy their own actors via Git.
 
 ## Requirements
 

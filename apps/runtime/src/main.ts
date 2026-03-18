@@ -448,13 +448,14 @@ async function main(): Promise<void> {
 
   // Connect scheduler to render loop
   renderLoop.onFrame((frame) => {
-    // Prepare frame (restore layer visibility, clear post-process filters)
-    canvasManager.prepareFrame();
-
-    // Skip actor updates during cycle transition
+    // Skip everything during cycle transition - preserve canvas state
+    // (including filters on post-process sprites) for snapshot capture
     if (actorScheduler.isTransitioning()) {
       return;
     }
+
+    // Prepare frame (restore layer visibility, clear post-process filters)
+    canvasManager.prepareFrame();
 
     // Clear previous frame's graphics from all actor containers
     actorContainerManager!.clearFrame();
@@ -586,6 +587,11 @@ async function handleCycleEnd(actorIds: string[], duration: number): Promise<voi
     // Get cycle info
     const cycleInfo = actorScheduler.getCycleInfo();
     const contextSnapshot = contextManager.getSnapshot();
+
+    // Force a render to ensure the canvas reflects the current scene graph
+    // (including filters on post-process sprites) before capturing
+    const app = canvasManager.getApp();
+    app.renderer.render(app.stage);
 
     // Capture canvas snapshot
     const snapshot = snapshotCapture.capture(

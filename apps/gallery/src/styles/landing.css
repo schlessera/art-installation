@@ -509,11 +509,43 @@
     var(--cf-bg);
 }
 
-.actors-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.25rem;
+/* --- Carousel viewport (clips to visible cards) --- */
+.actors-carousel-viewport {
+  overflow: hidden;
+  position: relative;
   margin-bottom: 3rem;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+}
+
+/* --- Desktop: 3 cols x 2 rows, horizontal scroll --- */
+.actors-carousel-track.horizontal {
+  display: grid;
+  grid-template-rows: repeat(2, auto);
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 2 * 1.25rem) / 3);
+  gap: 1.25rem;
+  will-change: transform;
+}
+
+/* --- Mobile: single column, vertical scroll --- */
+.actors-carousel-track.vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  will-change: transform;
+}
+
+/* Disable hover lift inside carousel (fights with carousel transform) */
+.actors-carousel-track .actor-card:hover {
+  transform: none;
+}
+
+/* Accessibility: disable auto-scroll for reduced-motion users */
+@media (prefers-reduced-motion: reduce) {
+  .actors-carousel-track {
+    transition: none !important;
+  }
 }
 
 .actor-card {
@@ -974,8 +1006,9 @@
     font-size: 1.5rem;
   }
 
-  .actors-grid {
-    grid-template-columns: 1fr;
+  .actors-carousel-viewport {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 2%, black 98%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 2%, black 98%, transparent 100%);
   }
 
   .gallery-preview-grid {
@@ -987,8 +1020,3 @@
   }
 }
 
-@media (min-width: 641px) and (max-width: 1024px) {
-  .actors-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}

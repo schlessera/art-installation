@@ -16,6 +16,14 @@ import { ContextManager } from './context';
 import { SnapshotCapture } from './review';
 import { QROverlay } from './ui';
 import { GalleryClient } from './api/GalleryClient';
+import { RetryQueue } from './api/RetryQueue';
+import {
+  GlobalErrorHandler,
+  WebGLRecovery,
+  Watchdog,
+  MemoryMonitor,
+  ConnectivityMonitor,
+} from './resilience';
 
 /**
  * Parse runtime configuration from URL query parameters.
@@ -215,7 +223,17 @@ let canvasManager: CanvasManager;
 let contextManager: ContextManager;
 let snapshotCapture: SnapshotCapture;
 let galleryClient: GalleryClient;
+let retryQueue: RetryQueue;
 let qrOverlay: QROverlay;
+
+// Resilience modules
+const globalErrorHandler = new GlobalErrorHandler();
+let watchdog: Watchdog;
+let memoryMonitor: MemoryMonitor;
+let connectivityMonitor: ConnectivityMonitor;
+
+// Install global error handler before anything else
+globalErrorHandler.install();
 
 /**
  * Global function for actors to self-register.
@@ -262,6 +280,34 @@ async function main(): Promise<void> {
   canvasManager = new CanvasManager(CONFIG.canvas);
   await canvasManager.init(container);
   console.log('[Runtime] Canvas initialized');
+
+  // Install WebGL context loss recovery
+  const webglRecovery = new WebGLRecovery(canvasManager, globalErrorHandler, {
+    onContextLost: () => {
+      console.warn('[Runtime] WebGL context lost — pausing');
+    },
+    onContextRestored: () => {
+      console.log('[Runtime] WebGL context restored — restarting cycle');
+      actorScheduler?.startCycle().catch(console.error);
+    },
+  });
+  webglRecovery.install();
+
+  // Initialize watchdog (reload if no frame for 60s)
+  watchdog = new Watchdog(globalErrorHandler);
+  watchdog.start();
+
+  // Initialize memory monitor
+  memoryMonitor = new MemoryMonitor(globalErrorHandler);
+  memoryMonitor.setOnWarning(() => {
+    console.warn('[Runtime] Memory warning — force-ending current cycle');
+    actorScheduler?.startCycle().catch(console.error);
+  });
+  memoryMonitor.start();
+
+  // Initialize connectivity monitor
+  connectivityMonitor = new ConnectivityMonitor();
+  connectivityMonitor.install();
 
   // Initialize context manager
   contextManager = new ContextManager({
@@ -339,6 +385,15 @@ async function main(): Promise<void> {
       apiUrl: CONFIG.galleryApiUrl,
     });
 
+    // Initialize retry queue for failed submissions
+    retryQueue = new RetryQueue(galleryClient);
+
+    // Wire connectivity monitor to retry queue
+    connectivityMonitor.onOnline(() => {
+      console.log('[Runtime] Connectivity restored — draining retry queue');
+      retryQueue.drain().catch(console.error);
+    });
+
     // Initialize QR overlay immediately (hidden until gallery is confirmed available)
     qrOverlay = new QROverlay({
       galleryUrl: CONFIG.galleryUrl,
@@ -359,6 +414,8 @@ async function main(): Promise<void> {
         } else {
           console.log('[Runtime] No runtimeId — QR overlay hidden (public viewer mode)');
         }
+        // Drain any queued submissions from previous sessions
+        retryQueue.drain().catch(console.error);
       } else {
         console.warn(`[Runtime] Gallery API not available at ${CONFIG.galleryApiUrl}`);
       }
@@ -495,6 +552,9 @@ async function main(): Promise<void> {
 
     // Update stats
     renderLoop.setActiveActorCount(actorScheduler.getActiveActorCount());
+
+    // Feed watchdog on each successful frame
+    watchdog.feed();
   });
 
   // Enable debug panel in dev mode
@@ -645,7 +705,17 @@ async function handleCycleEnd(actorIds: string[], duration: number): Promise<voi
       // Update UI to show submitted
       showSaveNotification(savedArtwork.id);
     } catch (submitError) {
-      console.error('[Runtime] Failed to submit to gallery:', submitError);
+      console.error('[Runtime] Failed to submit to gallery — queuing for retry:', submitError);
+      retryQueue?.enqueue({
+        imageData: snapshot.dataUrl,
+        thumbnailData: thumbnail,
+        contributingActors: contributions,
+        context: contextSnapshot,
+        cycleNumber: cycleInfo.cycleNumber,
+        cycleDuration: duration / 1000,
+        frameCount: cycleInfo.elapsed,
+        runtimeId: CONFIG.runtimeId,
+      });
     }
   } catch (error) {
     console.error('[Runtime] Failed to process cycle end:', error);

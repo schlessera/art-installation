@@ -99,6 +99,38 @@ export class GalleryStorage {
       console.log('[Storage] Starting with empty gallery');
     }
 
+    // Backfill missing actorRole fields
+    const ACTOR_ROLE_MAP: Record<string, 'background' | 'filter'> = {
+      'breathing-color': 'background', 'color-cells': 'background',
+      'floating-orbs': 'background', 'gradient-sweep': 'background',
+      'grid-pulse': 'background', 'plasma-waves': 'background',
+      'ripple-rings': 'background', 'soft-noise': 'background',
+      'starfield-drift': 'background', 'stripe-scroll': 'background',
+      'chromatic-pulse': 'filter', 'cross-stitch': 'filter',
+      'crt-monitor': 'filter', 'dream-sequence': 'filter',
+      'ethereal-glow': 'filter', 'film-grain': 'filter',
+      'holographic-display': 'filter', 'impressionist': 'filter',
+      'mosaic-tiles': 'filter', 'neon-edge': 'filter',
+      'oil-impasto': 'filter', 'pencil-sketch': 'filter',
+      'pointillism': 'filter', 'stained-glass': 'filter',
+      'sumi-ink': 'filter', 'thermal-vision': 'filter',
+      'underwater-caustics': 'filter', 'vhs-tracking': 'filter',
+      'watercolor-wash': 'filter', 'woodcut-print': 'filter',
+    };
+    let backfilled = 0;
+    for (const artwork of this.artworks) {
+      for (const actor of artwork.contributingActors) {
+        if (!actor.actorRole) {
+          actor.actorRole = ACTOR_ROLE_MAP[actor.actorId] ?? 'foreground';
+          backfilled++;
+        }
+      }
+    }
+    if (backfilled > 0) {
+      await this.save();
+      console.log(`[Storage] Backfilled actorRole for ${backfilled} actor entries`);
+    }
+
     // Remove artworks whose image files are missing from disk
     const before = this.artworks.length;
     this.artworks = this.artworks.filter(a => {

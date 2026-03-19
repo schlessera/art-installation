@@ -149,8 +149,18 @@ export class WeatherProvider implements WeatherContext {
     );
   }
 
+  /** Optional connectivity check function — set via setOnlineCheck(). */
+  private isOnlineCheck: (() => boolean) | null = null;
+
   /**
-   * Fetch weather data from API.
+   * Set a function to check connectivity before fetching.
+   */
+  setOnlineCheck(check: () => boolean): void {
+    this.isOnlineCheck = check;
+  }
+
+  /**
+   * Fetch weather data from API with timeout and offline awareness.
    */
   private async fetchWeatherData(): Promise<void> {
     if (!this.config.apiEndpoint) {
@@ -159,9 +169,19 @@ export class WeatherProvider implements WeatherContext {
       return;
     }
 
+    // Skip fetch when offline
+    if (this.isOnlineCheck && !this.isOnlineCheck()) {
+      this.updateMockWeather();
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     try {
       const response = await fetch(this.config.apiEndpoint, {
         headers: this.config.apiKey ? { 'Authorization': `Bearer ${this.config.apiKey}` } : {},
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -173,7 +193,10 @@ export class WeatherProvider implements WeatherContext {
       this.mapApiResponse(data);
     } catch (error) {
       console.error('[WeatherProvider] Failed to fetch weather:', error);
-      // Keep current data on error
+      // Fall back to mock data
+      this.updateMockWeather();
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

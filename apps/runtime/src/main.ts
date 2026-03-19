@@ -394,6 +394,9 @@ async function main(): Promise<void> {
       retryQueue.drain().catch(console.error);
     });
 
+    // Wire connectivity to weather provider (skip fetch when offline)
+    contextManager.getWeatherProvider().setOnlineCheck(() => connectivityMonitor.isOnline());
+
     // Initialize QR overlay immediately (hidden until gallery is confirmed available)
     qrOverlay = new QROverlay({
       galleryUrl: CONFIG.galleryUrl,

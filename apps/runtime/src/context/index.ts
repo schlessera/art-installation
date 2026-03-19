@@ -17,5 +17,8 @@ export type { VideoProviderConfig } from './VideoProvider';
 export { DisplayProvider } from './DisplayProvider';
 export type { DisplayProviderConfig } from './DisplayProvider';
 
+export { SocialProvider } from './SocialProvider';
+export type { SocialProviderConfig } from './SocialProvider';
+
 export { ContextManager } from './ContextManager';
 export type { ContextManagerConfig } from './ContextManager';

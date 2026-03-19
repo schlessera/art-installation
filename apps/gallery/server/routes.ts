@@ -8,13 +8,14 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import type { GalleryStorage, ArtworkSubmission } from './storage';
 import type { ArtworkReviewer } from './reviewer';
+import type { BuzzManager } from './buzz';
 
 export interface RuntimeIdConfig {
   sampleRuntimeId: string;
   officialRuntimeId: string;
 }
 
-export function createApiRoutes(storage: GalleryStorage, runtimeIdConfig: RuntimeIdConfig, reviewer?: ArtworkReviewer): Router {
+export function createApiRoutes(storage: GalleryStorage, runtimeIdConfig: RuntimeIdConfig, reviewer?: ArtworkReviewer, buzzManager?: BuzzManager): Router {
   const router = Router();
 
   /**
@@ -217,6 +218,25 @@ export function createApiRoutes(storage: GalleryStorage, runtimeIdConfig: Runtim
       console.error('[API] Failed to clear gallery:', err);
       res.status(500).json({ error: 'Failed to clear gallery' });
     }
+  });
+
+  /**
+   * GET /api/buzz
+   * Get current social media buzz data.
+   */
+  router.get('/buzz', (_req: Request, res: Response) => {
+    if (!buzzManager) {
+      res.json({
+        keywords: [],
+        rawKeywords: [],
+        sources: [],
+        sentiment: 0,
+        updatedAt: new Date().toISOString(),
+        distilled: false,
+      });
+      return;
+    }
+    res.json(buzzManager.getBuzzData());
   });
 
   /**

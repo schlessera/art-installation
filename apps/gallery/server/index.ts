@@ -16,6 +16,15 @@ import { fileURLToPath } from 'url';
 import { GalleryStorage } from './storage';
 import { ArtworkReviewer } from './reviewer';
 import { createApiRoutes } from './routes';
+import {
+  BuzzManager,
+  BuzzDistiller,
+  MastodonBuzzSource,
+  BlueskyTrendingSource,
+  BlueskySearchSource,
+  TwitterBuzzSource,
+  MattermostBuzzSource,
+} from './buzz';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -68,6 +77,44 @@ async function main() {
   });
   reviewer.start();
 
+  // Initialize buzz sources (social media monitoring)
+  const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || '';
+  const RAPIDAPI_TWITTER_HOST = process.env.RAPIDAPI_TWITTER_HOST || '';
+  const MATTERMOST_URL = process.env.MATTERMOST_URL || '';
+  const MATTERMOST_TOKEN = process.env.MATTERMOST_TOKEN || '';
+  const MATTERMOST_CHANNEL_IDS = (process.env.MATTERMOST_CHANNEL_IDS || '').split(',').filter(Boolean);
+  const BUZZ_POLL_INTERVAL = parseInt(process.env.BUZZ_POLL_INTERVAL || '300000', 10);
+
+  const BLUESKY_IDENTIFIER = process.env.BLUESKY_IDENTIFIER || '';
+  const BLUESKY_PASSWORD = process.env.BLUESKY_PASSWORD || '';
+
+  const buzzSources = [
+    new MastodonBuzzSource(),
+    new BlueskyTrendingSource(),
+    ...(BLUESKY_IDENTIFIER && BLUESKY_PASSWORD
+      ? [new BlueskySearchSource({ identifier: BLUESKY_IDENTIFIER, password: BLUESKY_PASSWORD })]
+      : []),
+    ...(RAPIDAPI_KEY ? [new TwitterBuzzSource({ rapidApiKey: RAPIDAPI_KEY, ...(RAPIDAPI_TWITTER_HOST ? { rapidApiHost: RAPIDAPI_TWITTER_HOST } : {}) })] : []),
+    ...(MATTERMOST_URL && MATTERMOST_TOKEN && MATTERMOST_CHANNEL_IDS.length > 0
+      ? [new MattermostBuzzSource({ url: MATTERMOST_URL, token: MATTERMOST_TOKEN, channelIds: MATTERMOST_CHANNEL_IDS })]
+      : []),
+  ];
+
+  const buzzDistiller = OPENROUTER_API_KEY
+    ? new BuzzDistiller({ apiKey: OPENROUTER_API_KEY })
+    : undefined;
+
+  const buzzManager = new BuzzManager({
+    sources: buzzSources,
+    distiller: buzzDistiller,
+    pollInterval: BUZZ_POLL_INTERVAL,
+  });
+  buzzManager.start();
+
+  console.log(`[Gallery] Buzz sources: ${buzzSources.map((s) => s.name).join(', ') || 'none'}`);
+  console.log(`[Gallery] Buzz distiller: ${buzzDistiller ? 'enabled' : 'disabled (no OPENROUTER_API_KEY)'}`);
+
+
   // Create Express app
   const app = express();
 
@@ -100,7 +147,7 @@ async function main() {
   app.use('/api', createApiRoutes(storage, {
     sampleRuntimeId: SAMPLE_RUNTIME_ID,
     officialRuntimeId: OFFICIAL_RUNTIME_ID,
-  }, reviewer));
+  }, reviewer, buzzManager));
 
   // Static file serving for images — immutable once written, cache aggressively
   app.use('/images', express.static(path.join(DATA_DIR, 'images'), {
@@ -152,12 +199,14 @@ async function main() {
   process.on('SIGTERM', () => {
     console.log('[Gallery] Shutting down...');
     reviewer.stop();
+    buzzManager.stop();
     process.exit(0);
   });
 
   process.on('SIGINT', () => {
     console.log('[Gallery] Shutting down...');
     reviewer.stop();
+    buzzManager.stop();
     process.exit(0);
   });
 }

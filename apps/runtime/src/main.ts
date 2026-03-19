@@ -267,6 +267,8 @@ async function main(): Promise<void> {
   contextManager = new ContextManager({
     enableAudio: false, // Disable audio for now
     enableVideo: urlConfig.enableVideo ?? false,
+    enableSocial: true,
+    galleryApiUrl: import.meta.env.VITE_GALLERY_API_URL || 'http://localhost:3001/api',
     forcedDisplayMode: urlConfig.displayMode,
   });
   await contextManager.start();

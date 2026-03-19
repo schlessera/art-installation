@@ -26,6 +26,7 @@ import { WeatherProvider } from './WeatherProvider';
 import { AudioProvider } from './AudioProvider';
 import { VideoProvider } from './VideoProvider';
 import { DisplayProvider } from './DisplayProvider';
+import { SocialProvider } from './SocialProvider';
 
 /**
  * Mock VideoContext implementation.
@@ -119,8 +120,11 @@ export interface ContextManagerConfig {
   /** Enable video input */
   enableVideo?: boolean;
 
-  /** Enable social context (requires API) */
+  /** Enable social context (fetches from gallery /api/buzz) */
   enableSocial?: boolean;
+
+  /** Gallery API URL for social buzz data */
+  galleryApiUrl?: string;
 
   /** Force display mode (bypasses random selection per cycle) */
   forcedDisplayMode?: DisplayMode;
@@ -141,10 +145,12 @@ export class ContextManager implements ContextAPI {
   private weatherProvider: WeatherProvider;
   private audioProvider: AudioProvider;
   private videoProvider: VideoProvider | null = null;
+  private socialProvider: SocialProvider | null = null;
   private displayProvider: DisplayProvider;
 
-  private config: Required<Omit<ContextManagerConfig, 'forcedDisplayMode'>> & {
+  private config: Required<Omit<ContextManagerConfig, 'forcedDisplayMode' | 'galleryApiUrl'>> & {
     forcedDisplayMode?: DisplayMode;
+    galleryApiUrl?: string;
   };
 
   constructor(config: ContextManagerConfig = {}) {
@@ -153,6 +159,7 @@ export class ContextManager implements ContextAPI {
       enableVideo: config.enableVideo ?? false,
       enableSocial: config.enableSocial ?? false,
       forcedDisplayMode: config.forcedDisplayMode,
+      galleryApiUrl: config.galleryApiUrl,
     };
 
     // Initialize providers
@@ -181,8 +188,15 @@ export class ContextManager implements ContextAPI {
       this.video = new MockVideoContext();
     }
 
-    // Use mock implementation for social
-    this.social = new MockSocialContext();
+    // Initialize social provider or use mock
+    if (this.config.enableSocial && config.galleryApiUrl) {
+      this.socialProvider = new SocialProvider({
+        galleryApiUrl: config.galleryApiUrl,
+      });
+      this.social = this.socialProvider;
+    } else {
+      this.social = new MockSocialContext();
+    }
   }
 
   /**
@@ -204,6 +218,11 @@ export class ContextManager implements ContextAPI {
       await this.videoProvider.start();
     }
 
+    // Start social if enabled
+    if (this.socialProvider) {
+      this.socialProvider.start();
+    }
+
     console.log('[ContextManager] Context providers started');
   }
 
@@ -215,6 +234,9 @@ export class ContextManager implements ContextAPI {
     this.audioProvider.stop();
     if (this.videoProvider) {
       this.videoProvider.stop();
+    }
+    if (this.socialProvider) {
+      this.socialProvider.stop();
     }
     console.log('[ContextManager] Context providers stopped');
   }

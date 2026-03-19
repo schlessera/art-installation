@@ -12,7 +12,7 @@
     "test": "pnpm -r test",
     "test:watch": "pnpm -r --parallel test:watch",
     "validate:actors": "pnpm -r --filter './actors/**' validate",
-    "new:actor": "pnpm --filter @art/actor-template create"
+    "new:actor": "node tools/create-actor.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

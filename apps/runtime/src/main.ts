@@ -40,6 +40,7 @@ import {
  *   - bgFilters: Fixed background filter IDs (comma-separated) or count (0-2)
  *   - fgFilters: Fixed foreground filter IDs (comma-separated) or count (0-2)
  *   - enableVideo: Enable webcam video input (default: false)
+ *   - videoRotation: Rotate video mapping 0/90/180/270 degrees CW (for physically rotated cameras)
  *   - mode: Force display mode ('light' or 'dark'), otherwise random per cycle
  */
 function parseUrlConfig(): {
@@ -56,6 +57,7 @@ function parseUrlConfig(): {
   fixedForegroundFilterIds?: string[];
   enableVideo?: boolean;
   debugVideo?: boolean;
+  videoRotation?: 0 | 90 | 180 | 270;
   displayMode?: DisplayMode;
   runtimeId?: string;
 } {
@@ -127,6 +129,14 @@ function parseUrlConfig(): {
   const debugVideo = params.get('debugVideo');
   if (debugVideo !== null) {
     config.debugVideo = debugVideo === 'true' || debugVideo === '1';
+  }
+
+  const videoRotation = params.get('videoRotation');
+  if (videoRotation !== null) {
+    const parsed = parseInt(videoRotation, 10);
+    if (parsed === 90 || parsed === 180 || parsed === 270) {
+      config.videoRotation = parsed;
+    }
   }
 
   // Background actor override
@@ -313,6 +323,7 @@ async function main(): Promise<void> {
   contextManager = new ContextManager({
     enableAudio: false, // Disable audio for now
     enableVideo: urlConfig.enableVideo ?? false,
+    videoRotation: urlConfig.videoRotation,
     enableSocial: true,
     galleryApiUrl: import.meta.env.VITE_GALLERY_API_URL || 'http://localhost:3001/api',
     forcedDisplayMode: urlConfig.displayMode,
@@ -630,6 +641,18 @@ async function main(): Promise<void> {
 
   // Load actors from filesystem
   await loadActors();
+
+  // In production, start ActorLoader for hot-loaded community actors
+  if (import.meta.env.PROD) {
+    const { ActorLoader } = await import('./actors/ActorLoader');
+    const actorLoader = new ActorLoader(actorRegistry, {
+      basePath: '/actors/community',
+      scanInterval: 30000,
+      enablePolling: true,
+    });
+    actorLoader.start();
+    console.log('[Runtime] ActorLoader started for community actors');
+  }
 
   // Start first cycle after actors are loaded
   setTimeout(() => {

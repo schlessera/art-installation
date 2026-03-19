@@ -1,0 +1,13 @@
+# Polychorus - Collaborative Art Installation
+
+> Interactive digital art installation where automated actors collaboratively paint on a shared 2D canvas. Build an actor and deploy it live at CloudFest Hackathon 2026.
+
+Polychorus renders at 60fps using Pixi.js. Multiple actors paint simultaneously on a shared canvas. Each cycle selects a background actor, 2-5 foreground actors, and optional filter actors. Artworks are captured and displayed in a gallery with AI review and audience voting.
+
+## Actor Development
+
+- [Complete Actor Development Guide](https://polychorus.art/llms-full.txt): Everything you need to build and deploy an actor — API reference, best practices, security constraints, and examples.
+
+## Getting Started
+
+Clone the repository and run `pnpm new:actor my-actor-name` to scaffold a new actor. See the development guide linked above for the full API reference and submission instructions.

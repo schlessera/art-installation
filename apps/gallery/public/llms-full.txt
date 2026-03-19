@@ -1,0 +1,359 @@
+# Polychorus Actor Development Guide
+
+> Build a visual actor for the Polychorus collaborative art installation. Actors are TypeScript modules that draw on a shared 2D canvas using a sandboxed API. Deploy your actor live at CloudFest Hackathon 2026.
+
+## What is an Actor?
+
+An actor is a self-contained visual module that draws on a shared canvas. Multiple actors paint simultaneously — your actor will collaborate with others to create unique artworks. The runtime renders at 60fps using Pixi.js 8.x at 360x640 pixels (9:16 portrait).
+
+## Requirements
+
+- Node.js >= 22.0.0
+- pnpm >= 9.0.0
+
+## Quick Start
+
+```bash
+git clone <repository-url>
+cd art-installation
+pnpm install
+pnpm new:actor my-actor-name
+# Edit actors/community/my-actor-name/src/index.ts
+pnpm dev  # Visit http://localhost:3000?actor=my-actor-name
+```
+
+## Actor Interface
+
+```typescript
+import { registerActor } from '@art/actor-sdk';
+import type { Actor, ActorMetadata, ActorSetupAPI, ActorUpdateAPI, FrameContext } from '@art/types';
+
+const metadata: ActorMetadata = {
+  id: 'my-actor-name',           // Unique kebab-case ID
+  name: 'My Actor Name',         // Display name
+  description: 'What it does',   // Short description
+  author: { name: 'Your Name', github: 'your-github' },
+  version: '1.0.0',              // Semver
+  tags: ['generative', 'particles'],
+  createdAt: new Date(),
+  preferredDuration: 30,          // Seconds
+  requiredContexts: ['time'],     // Optional: 'time' | 'weather' | 'audio' | 'video' | 'social'
+};
+
+const actor: Actor = {
+  metadata,
+
+  // Optional: called once when actor loads
+  async setup(api: ActorSetupAPI): Promise<void> {
+    const { width, height } = api.canvas.getSize();
+    // Initialize state, pre-allocate arrays
+  },
+
+  // REQUIRED: called every frame (~60fps)
+  update(api: ActorUpdateAPI, frame: FrameContext): void {
+    // frame.time = elapsed ms, frame.deltaTime = ms since last frame
+    // Draw using api.brush.*, read canvas with api.canvas.*
+  },
+
+  // Optional: cleanup when deactivated
+  async teardown(): Promise<void> {},
+};
+
+registerActor(actor);
+export default actor;
+```
+
+## Actor Roles
+
+| Role | Description | Count per Cycle |
+|------|-------------|-----------------|
+| `foreground` | Standard drawing actors (default) | 2-5 per cycle |
+| `background` | Renders behind everything | Exactly 1 |
+| `filter` | Post-processing effects | 0-2 per layer |
+
+Set role in metadata: `role: 'background'` or `role: 'filter'`. Default is `foreground`.
+
+## Drawing API (api.brush)
+
+### Shapes
+```typescript
+api.brush.circle(x, y, radius, style?)
+api.brush.ellipse(x, y, width, height, style?)
+api.brush.rect(x, y, width, height, style?)
+api.brush.polygon(points, style?)          // points: {x, y}[]
+api.brush.star(x, y, outerR, innerR, numPoints, style?)
+```
+
+### Lines
+```typescript
+api.brush.line(x1, y1, x2, y2, style?)
+api.brush.stroke(points, style?)           // points: {x, y}[]
+api.brush.bezier(start, cp1, cp2, end, style?)
+```
+
+### Text and Images
+```typescript
+api.brush.text('Hello', x, y, style?)
+api.brush.image(src, x, y, options?)       // src: URL or data URL
+```
+
+### Transforms
+```typescript
+api.brush.pushMatrix()    // Save transform state
+api.brush.popMatrix()     // Restore transform state
+api.brush.translate(x, y)
+api.brush.rotate(angle)   // Radians
+api.brush.scale(sx, sy?)
+```
+
+### ShapeStyle
+```typescript
+{
+  fill: '#ff6600',         // Color string, number (0xff6600), or gradient
+  stroke: '#ffffff',       // Stroke color
+  strokeWidth: 2,          // Stroke width in pixels
+  alpha: 0.7,              // Opacity 0-1
+  blendMode: 'add',        // 'normal' | 'add' | 'multiply' | 'screen' | etc.
+}
+```
+
+### LineStyle
+```typescript
+{
+  color: '#ffffff',        // Color string or number
+  width: 2,               // Line width
+  alpha: 0.7,             // Opacity
+  cap: 'round',           // 'butt' | 'round' | 'square'
+}
+```
+
+### Gradients (CRITICAL: use 0-1 coordinates)
+
+Gradient coordinates are relative to the shape's bounding box, NOT pixel values.
+
+```typescript
+// Radial gradient
+api.brush.circle(x, y, 100, {
+  fill: {
+    type: 'radial',
+    cx: 0.5, cy: 0.5, radius: 0.5,  // 0-1 range, centered
+    stops: [
+      { offset: 0, color: 'rgba(255,255,255,1)' },
+      { offset: 1, color: 'rgba(255,255,255,0)' },
+    ],
+  },
+  blendMode: 'add',
+});
+
+// Linear gradient
+api.brush.rect(x, y, w, h, {
+  fill: {
+    type: 'linear',
+    x0: 0, y0: 0, x1: 1, y1: 1,  // Diagonal
+    stops: [
+      { offset: 0, color: '#ff0000' },
+      { offset: 1, color: '#0000ff' },
+    ],
+  },
+});
+```
+
+## Canvas API (api.canvas — read-only)
+
+```typescript
+api.canvas.getSize()                     // { width: number, height: number }
+api.canvas.getPixel(x, y)               // { r, g, b, a }
+api.canvas.getDominantColors(count)      // Color[]
+api.canvas.isEmpty(x, y)                // boolean
+api.canvas.findEmptyRegions(minSize)     // Rectangle[]
+```
+
+## Filter API (api.filter — for filter-role actors)
+
+```typescript
+api.filter.blur(amount)
+api.filter.brightness(amount)       // 0-2, 1 = normal
+api.filter.contrast(amount)
+api.filter.saturate(amount)
+api.filter.hueRotate(degrees)
+api.filter.grayscale(amount?)
+api.filter.noise(amount)
+api.filter.pixelate(size)
+api.filter.glow(color, intensity)
+api.filter.vignette(amount)
+```
+
+## Context API (api.context — environment data)
+
+```typescript
+// Time
+api.context.time.hour()              // 0-23
+api.context.time.dayProgress()       // 0-1
+api.context.time.season()           // 'spring' | 'summer' | 'autumn' | 'winter'
+
+// Weather
+api.context.weather.condition()      // 'clear' | 'clouds' | 'rain' | 'snow' | etc.
+api.context.weather.temperature()    // Celsius
+
+// Audio
+api.context.audio.bass()             // 0-1
+api.context.audio.isBeat()           // boolean
+api.context.audio.bpm()             // number | null
+
+// Social
+api.context.social.sentiment()       // -1 to 1
+api.context.social.viewerCount()     // number
+```
+
+## Best Practices
+
+### Performance (CRITICAL)
+- Keep frame time under 16.67ms for 60fps
+- Target <300 draw calls per frame
+- Use numeric colors (0xff6600) + separate alpha instead of rgba strings
+- Pre-render textures in setup() for repeated elements
+- Avoid O(n^2) — use squared distance checks with early-out
+
+### Blend Modes
+- NEVER use `api.brush.setBlendMode()` in the update loop — causes flickering
+- ALWAYS pass `blendMode` in each shape's style object
+- Use 'add' or 'screen' for glow effects on dark backgrounds
+- Avoid 'overlay' on dark backgrounds
+
+### Visibility
+- Use alpha >= 0.6 for main shapes (lower values are nearly invisible)
+- Use stroke widths >= 2.5px for visible lines
+- Test on dark backgrounds (canvas is typically dark)
+- Skip rendering when alpha < 0.05 (prevents fade-out flickering)
+
+### Transforms
+- Always pair pushMatrix() with popMatrix()
+- Don't set global state inside a push/pop block
+
+### Memory Management (MANDATORY)
+- Pre-allocate arrays/objects in setup(), never in update()
+- Use object pools with `active` flag instead of create/destroy
+- Cap all collections with MAX constants
+- Use circular buffers for history/trail data, not push/shift
+
+```typescript
+// BAD — allocates every frame
+state.particles.push(createParticle());
+state.particles = state.particles.filter(p => p.alive);
+
+// GOOD — uses pre-allocated pool
+const p = pool.find(p => !p.active);
+if (p) { p.active = true; initParticle(p); }
+```
+
+### Animation Patterns
+```typescript
+// Fade timing: 20% in, 60% full, 20% out
+const progress = elapsed / duration;
+let alpha = 1;
+if (progress < 0.2) alpha = progress / 0.2;
+else if (progress > 0.8) alpha = (1 - progress) / 0.2;
+```
+
+## Security Constraints
+
+Actors run in a sandbox and CANNOT access:
+- Network: fetch, XMLHttpRequest, WebSocket, EventSource
+- Storage: localStorage, sessionStorage, indexedDB
+- DOM: document (except createElement('canvas')), window (except crypto)
+- Dynamic code: eval, new Function, dynamic import()
+- Timing: setInterval is forbidden, setTimeout only in teardown
+
+## Submitting Your Actor
+
+1. Create actor: `pnpm new:actor my-actor-name`
+2. Implement `actors/community/my-actor-name/src/index.ts`
+3. Preview: visit `http://localhost:3000?actor=my-actor-name` while `pnpm dev` is running
+4. Validate: `cd actors/community/my-actor-name && pnpm validate`
+5. Create a PR adding only your `actors/community/my-actor-name/` folder
+6. CI validates and auto-merges — your actor appears on the live display within 30 seconds
+
+## Example: Audio-Reactive Circles
+
+```typescript
+import { registerActor } from '@art/actor-sdk';
+import type { Actor, ActorUpdateAPI, FrameContext } from '@art/types';
+
+const actor: Actor = {
+  metadata: {
+    id: 'pulse-circles',
+    name: 'Pulse Circles',
+    description: 'Circles that pulse with audio',
+    author: { name: 'Hacker', github: 'hacker' },
+    version: '1.0.0',
+    tags: ['audio', 'circles'],
+    createdAt: new Date(),
+    requiredContexts: ['audio'],
+  },
+  update(api: ActorUpdateAPI, frame: FrameContext): void {
+    const { width, height } = api.canvas.getSize();
+    const bass = api.context.audio.bass();
+    const time = frame.time / 1000;
+
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2 + time * 0.5;
+      const radius = 80 + bass * 60;
+      const x = width / 2 + Math.cos(angle) * radius;
+      const y = height / 2 + Math.sin(angle) * radius;
+      const size = 15 + bass * 25;
+      const hue = (i * 72 + time * 30) % 360;
+
+      api.brush.circle(x, y, size, {
+        fill: `hsla(${hue}, 80%, 60%, 0.8)`,
+        blendMode: 'add',
+      });
+    }
+  },
+};
+
+registerActor(actor);
+export default actor;
+```
+
+## Example: Weather-Responsive Background
+
+```typescript
+import { registerActor } from '@art/actor-sdk';
+import type { Actor, ActorUpdateAPI, FrameContext } from '@art/types';
+
+const actor: Actor = {
+  metadata: {
+    id: 'weather-bg',
+    name: 'Weather Background',
+    description: 'Background that changes with weather',
+    author: { name: 'Hacker', github: 'hacker' },
+    version: '1.0.0',
+    tags: ['weather', 'background'],
+    role: 'background',
+    createdAt: new Date(),
+    requiredContexts: ['weather', 'time'],
+  },
+  update(api: ActorUpdateAPI, frame: FrameContext): void {
+    const { width, height } = api.canvas.getSize();
+    const weather = api.context.weather.condition();
+    const dayProgress = api.context.time.dayProgress();
+
+    const colors: Record<string, number> = {
+      clear: 0x1a0a2e,
+      clouds: 0x1a1a2e,
+      rain: 0x0a1a2e,
+      snow: 0x1a1a3e,
+    };
+    const bg = colors[weather] ?? 0x0a0a1e;
+    const brightness = 0.3 + dayProgress * 0.4;
+
+    api.brush.rect(0, 0, width, height, {
+      fill: bg,
+      alpha: brightness,
+    });
+  },
+};
+
+registerActor(actor);
+export default actor;
+```

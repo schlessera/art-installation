@@ -1,0 +1,63 @@
+name: Deploy Community Actors
+
+on:
+  push:
+    branches: [main]
+    paths: ['actors/community/**']
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # No --frozen-lockfile: community actors may not be in the lockfile yet
+      - run: pnpm install
+
+      - name: Build community actors
+        run: pnpm --filter './actors/community/*' build
+
+      - name: Generate manifest
+        run: |
+          ACTORS_JSON="["
+          FIRST=true
+          for bundle in actors/community/*/dist/index.js; do
+            ACTOR_NAME=$(echo "$bundle" | sed 's|actors/community/\([^/]*\)/.*|\1|')
+            if [ "$FIRST" = true ]; then FIRST=false; else ACTORS_JSON+=","; fi
+            ACTORS_JSON+="\"${ACTOR_NAME}/index.js\""
+          done
+          ACTORS_JSON+="]"
+          echo "{\"actors\": $ACTORS_JSON}" > actors/community/manifest.json
+          echo "Generated manifest:"
+          cat actors/community/manifest.json
+
+      - name: Prepare deploy directory
+        run: |
+          mkdir -p deploy
+          for dir in actors/community/*/; do
+            NAME=$(basename "$dir")
+            if [ -f "$dir/dist/index.js" ]; then
+              mkdir -p "deploy/$NAME"
+              cp "$dir/dist/index.js" "deploy/$NAME/index.js"
+            fi
+          done
+          cp actors/community/manifest.json deploy/manifest.json
+          echo "Deploy contents:"
+          find deploy -type f
+
+      - name: Deploy to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "deploy/*"
+          target: ${{ secrets.DEPLOY_PATH }}
+          strip_components: 1

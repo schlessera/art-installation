@@ -22,19 +22,37 @@ RUN pnpm build
 # Stage 2: Serve static files
 FROM nginx:alpine AS production
 
-# Copy built runtime
+# Copy built runtime (includes builtin actors via Vite bundle)
 COPY --from=build /app/apps/runtime/dist/ /usr/share/nginx/html/
 
-# Copy built actor bundles
-COPY --from=build /app/actors/builtin/*/dist/ /usr/share/nginx/html/actors/
+# Create mount point for community actors (Coolify persistent volume)
+RUN mkdir -p /usr/share/nginx/html/actors/community
 
-# SPA fallback — serve index.html for all routes
-RUN echo 'server { \
-    listen 80; \
-    root /usr/share/nginx/html; \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# nginx config: SPA fallback + community actor serving
+RUN cat > /etc/nginx/conf.d/default.conf << 'NGINX'
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+
+    # Community actor manifest — never cache (polled every 30s by ActorLoader)
+    location = /actors/community/manifest.json {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Access-Control-Allow-Origin "*";
+        try_files $uri =404;
+    }
+
+    # Community actor bundles — short cache (immutable once deployed)
+    location /actors/community/ {
+        add_header Cache-Control "public, max-age=3600";
+        add_header Access-Control-Allow-Origin "*";
+        try_files $uri =404;
+    }
+
+    # SPA fallback for everything else
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+NGINX
 
 EXPOSE 80

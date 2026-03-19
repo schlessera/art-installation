@@ -59,6 +59,9 @@ export interface VideoProviderConfig {
 
   /** Preferred camera facing mode (default: 'user') */
   facingMode?: 'user' | 'environment';
+
+  /** Rotation in degrees CW to apply to camera feed (default: 0) */
+  rotation?: 0 | 90 | 180 | 270;
 }
 
 /**
@@ -114,15 +117,22 @@ export class VideoProvider implements VideoContext {
   private readonly MAX_FACES = 5;
 
   constructor(config: VideoProviderConfig = {}) {
+    // For 90/270 rotation, swap analysis dimensions to match rotated output
+    const rotation = config.rotation ?? 0;
+    const isRotated90 = rotation === 90 || rotation === 270;
+    const baseWidth = config.analysisWidth ?? 160;
+    const baseHeight = config.analysisHeight ?? 120;
+
     this.config = {
-      analysisWidth: config.analysisWidth ?? 160,
-      analysisHeight: config.analysisHeight ?? 120,
+      analysisWidth: isRotated90 ? baseHeight : baseWidth,
+      analysisHeight: isRotated90 ? baseWidth : baseHeight,
       analysisInterval: config.analysisInterval ?? 50,
-      motionSensitivity: config.motionSensitivity ?? 0.05, // Reduced from 0.15
-      motionThreshold: config.motionThreshold ?? 30, // Increased from 20
+      motionSensitivity: config.motionSensitivity ?? 0.05,
+      motionThreshold: config.motionThreshold ?? 30,
       dominantColorCount: config.dominantColorCount ?? 5,
       maxMotionRegions: config.maxMotionRegions ?? 5,
       facingMode: config.facingMode ?? 'user',
+      rotation: rotation,
     };
   }
 
@@ -362,14 +372,27 @@ export class VideoProvider implements VideoContext {
     this.analysisContext.translate(this.config.analysisWidth, 0);
     this.analysisContext.scale(-1, 1);
 
-    // Draw video frame to analysis canvas (downscaled)
-    this.analysisContext.drawImage(
-      this.video,
-      0,
-      0,
-      this.config.analysisWidth,
-      this.config.analysisHeight
-    );
+    // Apply rotation for physically rotated cameras
+    // The rotation rotates the camera-space mapping into canvas-space
+    const rotation = this.config.rotation;
+    const aw = this.config.analysisWidth;
+    const ah = this.config.analysisHeight;
+    if (rotation === 90) {
+      this.analysisContext.translate(aw, 0);
+      this.analysisContext.rotate(Math.PI / 2);
+      this.analysisContext.drawImage(this.video, 0, 0, ah, aw);
+    } else if (rotation === 180) {
+      this.analysisContext.translate(aw, ah);
+      this.analysisContext.rotate(Math.PI);
+      this.analysisContext.drawImage(this.video, 0, 0, aw, ah);
+    } else if (rotation === 270) {
+      this.analysisContext.translate(0, ah);
+      this.analysisContext.rotate(-Math.PI / 2);
+      this.analysisContext.drawImage(this.video, 0, 0, ah, aw);
+    } else {
+      // No rotation
+      this.analysisContext.drawImage(this.video, 0, 0, aw, ah);
+    }
 
     // Restore context state
     this.analysisContext.restore();
@@ -474,6 +497,8 @@ export class VideoProvider implements VideoContext {
       const dirY = totalDiffY / totalDiff;
       const magnitude = Math.sqrt(dirX * dirX + dirY * dirY);
       if (magnitude > 0.001) {
+        // Note: motion direction is already in rotated analysis-canvas space
+        // (rotation was applied during drawImage), so no extra rotation needed
         this.motionData.direction.x = dirX / magnitude;
         this.motionData.direction.y = dirY / magnitude;
       } else {
@@ -646,19 +671,43 @@ export class VideoProvider implements VideoContext {
       const targetW = this.targetWidth || this.dimensions.width;
       const targetH = this.targetHeight || this.dimensions.height;
 
+      const rotation = this.config.rotation;
+
       for (let i = 0; i < this.activeFaceCount; i++) {
         const detection = result.detections[i];
         const face = this.detectedFaces[i];
         const bbox = detection.boundingBox;
 
         if (bbox) {
-          // Map bounding box to target canvas coordinates
-          // Note: Video is mirrored horizontally for natural interaction
-          const mirroredX = this.dimensions.width - bbox.originX - bbox.width;
-          face.bounds.x = (mirroredX / this.dimensions.width) * targetW;
-          face.bounds.y = (bbox.originY / this.dimensions.height) * targetH;
-          face.bounds.width = (bbox.width / this.dimensions.width) * targetW;
-          face.bounds.height = (bbox.height / this.dimensions.height) * targetH;
+          // Normalize bounding box to 0-1 range in video space
+          let nx = bbox.originX / this.dimensions.width;
+          let ny = bbox.originY / this.dimensions.height;
+          let nw = bbox.width / this.dimensions.width;
+          let nh = bbox.height / this.dimensions.height;
+
+          // Mirror X for natural interaction
+          nx = 1 - nx - nw;
+
+          // Apply rotation to normalized coordinates
+          if (rotation === 90) {
+            const tmp = nx;
+            nx = 1 - ny - nh;
+            ny = tmp;
+            const tmpS = nw; nw = nh; nh = tmpS;
+          } else if (rotation === 180) {
+            nx = 1 - nx - nw;
+            ny = 1 - ny - nh;
+          } else if (rotation === 270) {
+            const tmp = nx;
+            nx = ny;
+            ny = 1 - tmp - nw;
+            const tmpS = nw; nw = nh; nh = tmpS;
+          }
+
+          face.bounds.x = nx * targetW;
+          face.bounds.y = ny * targetH;
+          face.bounds.width = nw * targetW;
+          face.bounds.height = nh * targetH;
         }
 
         // Get confidence score
@@ -668,19 +717,33 @@ export class VideoProvider implements VideoContext {
         // Order: left eye, right eye, nose tip, mouth, left ear tragion, right ear tragion
         if (detection.keypoints && detection.keypoints.length >= 6 && face.landmarks) {
           const kp = detection.keypoints;
-          // Mirror X coordinates for natural interaction
-          face.landmarks.leftEye.x = (1 - kp[0].x) * targetW;
-          face.landmarks.leftEye.y = kp[0].y * targetH;
-          face.landmarks.rightEye.x = (1 - kp[1].x) * targetW;
-          face.landmarks.rightEye.y = kp[1].y * targetH;
-          face.landmarks.noseTip.x = (1 - kp[2].x) * targetW;
-          face.landmarks.noseTip.y = kp[2].y * targetH;
-          face.landmarks.mouth.x = (1 - kp[3].x) * targetW;
-          face.landmarks.mouth.y = kp[3].y * targetH;
-          face.landmarks.leftEarTragion.x = (1 - kp[4].x) * targetW;
-          face.landmarks.leftEarTragion.y = kp[4].y * targetH;
-          face.landmarks.rightEarTragion.x = (1 - kp[5].x) * targetW;
-          face.landmarks.rightEarTragion.y = kp[5].y * targetH;
+          const landmarks = [
+            face.landmarks.leftEye, face.landmarks.rightEye,
+            face.landmarks.noseTip, face.landmarks.mouth,
+            face.landmarks.leftEarTragion, face.landmarks.rightEarTragion,
+          ];
+
+          for (let j = 0; j < 6; j++) {
+            // Mirror X, then rotate
+            let px = 1 - kp[j].x;
+            let py = kp[j].y;
+
+            if (rotation === 90) {
+              const tmp = px;
+              px = 1 - py;
+              py = tmp;
+            } else if (rotation === 180) {
+              px = 1 - px;
+              py = 1 - py;
+            } else if (rotation === 270) {
+              const tmp = px;
+              px = py;
+              py = 1 - tmp;
+            }
+
+            landmarks[j].x = px * targetW;
+            landmarks[j].y = py * targetH;
+          }
         }
       }
     } catch (error) {

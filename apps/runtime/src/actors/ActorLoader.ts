@@ -190,11 +190,15 @@ export class ActorLoader {
 
     // Otherwise, try to fetch a manifest file
     try {
-      const manifestPath = `${this.config.basePath}/manifest.json`;
+      // Cache-bust to ensure we always get the latest manifest
+      const manifestPath = `${this.config.basePath}/manifest.json?t=${Date.now()}`;
       const response = await fetch(manifestPath);
       if (response.ok) {
         const manifest = await response.json();
-        return manifest.actors || [];
+        // Resolve relative paths against basePath
+        return (manifest.actors || []).map((p: string) =>
+          p.startsWith('/') || p.startsWith('http') ? p : `${this.config.basePath}/${p}`
+        );
       }
     } catch {
       // Manifest not found, which is OK

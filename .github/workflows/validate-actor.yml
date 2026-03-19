@@ -1,0 +1,91 @@
+name: Validate Actor PR
+
+on:
+  pull_request:
+    paths: ['actors/community/**']
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check file scope
+        run: |
+          # Get all changed files
+          CHANGED=$(gh pr diff ${{ github.event.pull_request.number }} --name-only)
+
+          # Every changed file must be under actors/community/
+          INVALID=$(echo "$CHANGED" | grep -v '^actors/community/' || true)
+          if [ -n "$INVALID" ]; then
+            echo "::error::PR must only modify files in actors/community/. Found changes in: $INVALID"
+            exit 1
+          fi
+
+          # Extract actor folder name(s) — must be exactly one new actor
+          ACTORS=$(echo "$CHANGED" | sed 's|actors/community/\([^/]*\)/.*|\1|' | sort -u)
+          ACTOR_COUNT=$(echo "$ACTORS" | wc -l)
+          if [ "$ACTOR_COUNT" -ne 1 ]; then
+            echo "::error::PR must add exactly one actor. Found: $ACTORS"
+            exit 1
+          fi
+
+          echo "ACTOR_NAME=$ACTORS" >> "$GITHUB_ENV"
+          echo "Validating actor: $ACTORS"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Check actor ID uniqueness
+        run: |
+          if [ -d "actors/builtin/$ACTOR_NAME" ]; then
+            echo "::error::Actor name '$ACTOR_NAME' conflicts with a builtin actor"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # No --frozen-lockfile: PR adds a new workspace package not in the lockfile
+      - run: pnpm install
+
+      - name: Build actor
+        run: pnpm --filter "@art/actor-$ACTOR_NAME" build
+
+      - name: Validate actor
+        run: |
+          cd "actors/community/$ACTOR_NAME"
+          npx tsx ../../../packages/actor-devtools/bin/validate-actor.ts src/index.ts
+
+      - name: Check bundle
+        run: |
+          BUNDLE="actors/community/$ACTOR_NAME/dist/index.js"
+          if [ ! -f "$BUNDLE" ]; then
+            echo "::error::Built bundle not found at $BUNDLE"
+            exit 1
+          fi
+          SIZE=$(stat -c%s "$BUNDLE" 2>/dev/null || stat -f%z "$BUNDLE")
+          if [ "$SIZE" -gt 102400 ]; then
+            echo "::error::Bundle too large: ${SIZE} bytes (max 100KB)"
+            exit 1
+          fi
+          echo "Bundle size: ${SIZE} bytes"
+
+  auto-merge:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Enable auto-merge
+        run: gh pr merge --auto --squash "${{ github.event.pull_request.html_url }}"
+        env:
+          GH_TOKEN: ${{ github.token }}

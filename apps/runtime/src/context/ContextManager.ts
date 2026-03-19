@@ -120,6 +120,9 @@ export interface ContextManagerConfig {
   /** Enable video input */
   enableVideo?: boolean;
 
+  /** Rotate video input mapping (for physically rotated cameras) */
+  videoRotation?: 0 | 90 | 180 | 270;
+
   /** Enable social context (fetches from gallery /api/buzz) */
   enableSocial?: boolean;
 
@@ -148,9 +151,10 @@ export class ContextManager implements ContextAPI {
   private socialProvider: SocialProvider | null = null;
   private displayProvider: DisplayProvider;
 
-  private config: Required<Omit<ContextManagerConfig, 'forcedDisplayMode' | 'galleryApiUrl'>> & {
+  private config: Required<Omit<ContextManagerConfig, 'forcedDisplayMode' | 'galleryApiUrl' | 'videoRotation'>> & {
     forcedDisplayMode?: DisplayMode;
     galleryApiUrl?: string;
+    videoRotation?: 0 | 90 | 180 | 270;
   };
 
   constructor(config: ContextManagerConfig = {}) {
@@ -160,6 +164,7 @@ export class ContextManager implements ContextAPI {
       enableSocial: config.enableSocial ?? false,
       forcedDisplayMode: config.forcedDisplayMode,
       galleryApiUrl: config.galleryApiUrl,
+      videoRotation: config.videoRotation,
     };
 
     // Initialize providers
@@ -182,6 +187,7 @@ export class ContextManager implements ContextAPI {
         analysisWidth: 160,
         analysisHeight: 120,
         analysisInterval: 50,
+        rotation: config.videoRotation,
       });
       this.video = this.videoProvider;
     } else {

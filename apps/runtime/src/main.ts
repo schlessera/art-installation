@@ -338,49 +338,113 @@ async function main(): Promise<void> {
   contextManager.setVideoTargetDimensions(CONFIG.canvas.width, CONFIG.canvas.height);
 
   // Create debug video overlay if enabled
+  // Shows the rotated analysis canvas + face detection boxes
   if (urlConfig.debugVideo && urlConfig.enableVideo) {
     const videoProvider = contextManager.getVideoProvider();
-    const videoEl = videoProvider?.getVideoElement();
-    if (videoEl) {
-      // Create video element that overlays the canvas exactly
-      const debugVideo = document.createElement('video');
-      debugVideo.id = 'video-debug-overlay';
-      debugVideo.srcObject = videoEl.srcObject;
-      debugVideo.muted = true;
-      debugVideo.playsInline = true;
-      debugVideo.autoplay = true;
-      debugVideo.style.cssText = `
+    if (videoProvider) {
+      // Create a canvas overlay that shows the rotated video feed + face boxes
+      const debugCanvas = document.createElement('canvas');
+      debugCanvas.id = 'video-debug-overlay';
+      debugCanvas.style.cssText = `
         position: absolute;
-        object-fit: fill;
         opacity: 0.3;
-        transform: scaleX(-1);
         pointer-events: none;
         z-index: 100;
+        image-rendering: pixelated;
       `;
+      container.appendChild(debugCanvas);
 
-      container.appendChild(debugVideo);
-      debugVideo.play();
+      const debugCtx = debugCanvas.getContext('2d')!;
 
-      // Function to sync video overlay position with canvas
+      // Temp canvas for scaling analysis frame pixels to overlay size
+      const frameCanvas = document.createElement('canvas');
+      const frameCtx = frameCanvas.getContext('2d')!;
+
+      // Sync overlay position with canvas
       const syncOverlayPosition = () => {
         const canvas = canvasManager.getCanvas();
-        if (canvas && debugVideo) {
+        if (canvas && debugCanvas) {
           const rect = canvas.getBoundingClientRect();
           const containerRect = container.getBoundingClientRect();
-          debugVideo.style.left = `${rect.left - containerRect.left}px`;
-          debugVideo.style.top = `${rect.top - containerRect.top}px`;
-          debugVideo.style.width = `${rect.width}px`;
-          debugVideo.style.height = `${rect.height}px`;
+          debugCanvas.style.left = `${rect.left - containerRect.left}px`;
+          debugCanvas.style.top = `${rect.top - containerRect.top}px`;
+          debugCanvas.style.width = `${rect.width}px`;
+          debugCanvas.style.height = `${rect.height}px`;
+          debugCanvas.width = CONFIG.canvas.width;
+          debugCanvas.height = CONFIG.canvas.height;
         }
       };
-
-      // Sync on load and resize
       syncOverlayPosition();
       window.addEventListener('resize', syncOverlayPosition);
-      // Also sync after a short delay to catch any layout shifts
       setTimeout(syncOverlayPosition, 100);
 
-      console.log('[Runtime] Debug video overlay enabled');
+      // Render debug overlay each frame
+      const renderDebugOverlay = () => {
+        requestAnimationFrame(renderDebugOverlay);
+        if (!videoProvider.isAvailable()) return;
+
+        const frame = videoProvider.getFrame();
+        if (!frame) return;
+
+        const cw = CONFIG.canvas.width;
+        const ch = CONFIG.canvas.height;
+
+        // Draw the analysis frame scaled up to canvas size
+        debugCtx.clearRect(0, 0, cw, ch);
+        if (frameCanvas.width !== frame.width || frameCanvas.height !== frame.height) {
+          frameCanvas.width = frame.width;
+          frameCanvas.height = frame.height;
+        }
+        frameCtx.putImageData(frame, 0, 0);
+        debugCtx.drawImage(frameCanvas, 0, 0, cw, ch);
+
+        // Draw face detection boxes
+        const faces = videoProvider.getFaces();
+        debugCtx.strokeStyle = '#00ff00';
+        debugCtx.lineWidth = 2;
+        debugCtx.font = '12px monospace';
+        debugCtx.fillStyle = '#00ff00';
+        for (const face of faces) {
+          debugCtx.strokeRect(face.bounds.x, face.bounds.y, face.bounds.width, face.bounds.height);
+          debugCtx.fillText(
+            `${Math.round(face.confidence * 100)}%`,
+            face.bounds.x, face.bounds.y - 4
+          );
+          // Draw landmark dots
+          if (face.landmarks) {
+            debugCtx.fillStyle = '#ff0000';
+            for (const point of Object.values(face.landmarks)) {
+              const p = point as { x: number; y: number };
+              debugCtx.fillRect(p.x - 2, p.y - 2, 4, 4);
+            }
+            debugCtx.fillStyle = '#00ff00';
+          }
+        }
+
+        // Draw motion regions
+        const motion = videoProvider.getMotion();
+        debugCtx.strokeStyle = '#ffff00';
+        debugCtx.lineWidth = 1;
+        for (const region of motion.regions) {
+          debugCtx.strokeRect(region.x, region.y, region.width, region.height);
+        }
+
+        // Draw motion intensity + direction
+        if (motion.intensity > 0.01) {
+          const cx = cw / 2;
+          const cy = ch / 2;
+          const len = motion.intensity * 80;
+          debugCtx.strokeStyle = '#ff8800';
+          debugCtx.lineWidth = 2;
+          debugCtx.beginPath();
+          debugCtx.moveTo(cx, cy);
+          debugCtx.lineTo(cx + motion.direction.x * len, cy + motion.direction.y * len);
+          debugCtx.stroke();
+        }
+      };
+      requestAnimationFrame(renderDebugOverlay);
+
+      console.log('[Runtime] Debug video overlay enabled (rotated view + face/motion boxes)');
     }
   }
 

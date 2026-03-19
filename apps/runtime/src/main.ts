@@ -39,6 +39,7 @@ import {
  *   - bgActor: Fixed background actor ID
  *   - bgFilters: Fixed background filter IDs (comma-separated) or count (0-2)
  *   - fgFilters: Fixed foreground filter IDs (comma-separated) or count (0-2)
+ *   - enableAudio: Enable microphone audio input (default: false)
  *   - enableVideo: Enable webcam video input (default: false)
  *   - videoRotation: Rotate video mapping 0/90/180/270 degrees CW (for physically rotated cameras)
  *   - mode: Force display mode ('light' or 'dark'), otherwise random per cycle
@@ -55,6 +56,8 @@ function parseUrlConfig(): {
   fixedBackgroundActorId?: string;
   fixedBackgroundFilterIds?: string[];
   fixedForegroundFilterIds?: string[];
+  enableAudio?: boolean;
+  debugAudio?: boolean;
   enableVideo?: boolean;
   debugVideo?: boolean;
   videoRotation?: 0 | 90 | 180 | 270;
@@ -119,6 +122,16 @@ function parseUrlConfig(): {
     if (!isNaN(parsed) && parsed > 0) {
       config.height = parsed;
     }
+  }
+
+  const enableAudio = params.get('enableAudio');
+  if (enableAudio !== null) {
+    config.enableAudio = enableAudio === 'true' || enableAudio === '1';
+  }
+
+  const debugAudio = params.get('debugAudio');
+  if (debugAudio !== null) {
+    config.debugAudio = debugAudio === 'true' || debugAudio === '1';
   }
 
   const enableVideo = params.get('enableVideo');
@@ -321,7 +334,7 @@ async function main(): Promise<void> {
 
   // Initialize context manager
   contextManager = new ContextManager({
-    enableAudio: false, // Disable audio for now
+    enableAudio: urlConfig.enableAudio ?? false,
     enableVideo: urlConfig.enableVideo ?? false,
     videoRotation: urlConfig.videoRotation,
     enableSocial: true,
@@ -446,6 +459,143 @@ async function main(): Promise<void> {
 
       console.log('[Runtime] Debug video overlay enabled (rotated view + face/motion boxes)');
     }
+  }
+
+  // Create debug audio overlay if enabled
+  if (urlConfig.debugAudio) {
+    const audioProvider = contextManager.getAudioProvider();
+    const PANEL_W = 200;
+    const PANEL_H = 150;
+
+    const audioCanvas = document.createElement('canvas');
+    audioCanvas.id = 'audio-debug-overlay';
+    audioCanvas.width = PANEL_W;
+    audioCanvas.height = PANEL_H;
+    audioCanvas.style.cssText = `
+      position: absolute;
+      width: ${PANEL_W}px;
+      height: ${PANEL_H}px;
+      pointer-events: none;
+      z-index: 101;
+    `;
+    container.appendChild(audioCanvas);
+
+    const aCtx = audioCanvas.getContext('2d')!;
+    let beatFlash = 0;
+
+    // Position the panel at bottom-left of the canvas
+    const syncAudioPosition = () => {
+      const canvas = canvasManager.getCanvas();
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        audioCanvas.style.left = `${rect.left - containerRect.left + 4}px`;
+        audioCanvas.style.top = `${rect.bottom - containerRect.top - PANEL_H - 4}px`;
+      }
+    };
+    syncAudioPosition();
+    window.addEventListener('resize', syncAudioPosition);
+    setTimeout(syncAudioPosition, 100);
+
+    const renderAudioDebug = () => {
+      requestAnimationFrame(renderAudioDebug);
+
+      const available = audioProvider.isAvailable();
+
+      // Beat flash decay
+      if (available && audioProvider.isBeat()) beatFlash = 1;
+      beatFlash *= 0.85;
+
+      // Background
+      aCtx.fillStyle = `rgba(0, 0, 0, ${0.7 + beatFlash * 0.2})`;
+      aCtx.fillRect(0, 0, PANEL_W, PANEL_H);
+
+      // Beat flash border
+      if (beatFlash > 0.05) {
+        aCtx.strokeStyle = `rgba(255, 255, 0, ${beatFlash})`;
+        aCtx.lineWidth = 2;
+        aCtx.strokeRect(1, 1, PANEL_W - 2, PANEL_H - 2);
+      }
+
+      aCtx.font = '10px monospace';
+
+      if (!available) {
+        aCtx.fillStyle = '#ff4444';
+        aCtx.fillText('MIC: OFF', 6, 14);
+        aCtx.fillStyle = '#888';
+        aCtx.fillText('Add ?enableAudio=true', 6, 30);
+        return;
+      }
+
+      // Header
+      aCtx.fillStyle = '#00ff00';
+      aCtx.fillText('MIC: ON', 6, 14);
+
+      const bpmVal = audioProvider.bpm();
+      aCtx.fillStyle = '#ffffff';
+      aCtx.fillText(`BPM: ${bpmVal !== null ? Math.round(bpmVal) : '—'}`, 70, 14);
+
+      const vol = audioProvider.volume();
+      aCtx.fillText(`VOL: ${(vol * 100).toFixed(0)}%`, 140, 14);
+
+      // Spectrum bars (group 128 bins into 32 bars)
+      const spectrum = audioProvider.spectrum();
+      const numBars = 32;
+      const binsPerBar = Math.floor(spectrum.length / numBars);
+      const barW = (PANEL_W - 12) / numBars;
+      const spectrumTop = 22;
+      const spectrumH = 60;
+
+      for (let i = 0; i < numBars; i++) {
+        // Average bins in this group
+        let sum = 0;
+        for (let j = 0; j < binsPerBar; j++) {
+          sum += spectrum[i * binsPerBar + j];
+        }
+        const val = sum / binsPerBar;
+        const barH = val * spectrumH;
+
+        // Color by frequency range: bass=red, mid=green, treble=blue
+        const t = i / numBars;
+        if (t < 0.15) {
+          aCtx.fillStyle = '#ff4444';
+        } else if (t < 0.5) {
+          aCtx.fillStyle = '#44ff44';
+        } else {
+          aCtx.fillStyle = '#4488ff';
+        }
+
+        aCtx.fillRect(6 + i * barW, spectrumTop + spectrumH - barH, barW - 1, barH);
+      }
+
+      // Level meters
+      const metersTop = spectrumTop + spectrumH + 8;
+      const meterH = 8;
+      const meterW = PANEL_W - 50;
+      const levels = [
+        { label: 'BASS', value: audioProvider.bass(), color: '#ff4444' },
+        { label: 'MID', value: audioProvider.mid(), color: '#44ff44' },
+        { label: 'TREB', value: audioProvider.treble(), color: '#4488ff' },
+      ];
+
+      for (let i = 0; i < levels.length; i++) {
+        const y = metersTop + i * (meterH + 4);
+        aCtx.fillStyle = '#888';
+        aCtx.font = '9px monospace';
+        aCtx.fillText(levels[i].label, 6, y + meterH - 1);
+
+        // Background
+        aCtx.fillStyle = '#333';
+        aCtx.fillRect(42, y, meterW, meterH);
+
+        // Fill
+        aCtx.fillStyle = levels[i].color;
+        aCtx.fillRect(42, y, meterW * levels[i].value, meterH);
+      }
+    };
+    requestAnimationFrame(renderAudioDebug);
+
+    console.log('[Runtime] Debug audio overlay enabled');
   }
 
   console.log('[Runtime] Context manager started');

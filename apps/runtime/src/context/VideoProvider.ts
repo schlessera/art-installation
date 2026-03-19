@@ -3,6 +3,23 @@
  *
  * Provides video input from webcam with motion detection and color analysis.
  * Follows the AudioProvider pattern for resource cleanup.
+ *
+ * TODO(resilience): Add auto-reconnect for webcam device changes.
+ * The webcam stream can drop when the device is physically disconnected,
+ * USB resets, or the OS revokes camera access (e.g., another app claims it).
+ * Currently the provider silently fails and returns stale motion/face data.
+ * Implementation:
+ * - Listen for navigator.mediaDevices 'devicechange' events
+ * - Monitor video track health (track.onended / track.readyState === 'ended')
+ * - Periodic health check: verify video frames are updating (compare consecutive
+ *   getImageData or check video.currentTime is advancing)
+ * - Re-acquire getUserMedia with exponential backoff on failure
+ * - Reinitialize the analysis canvas and face detector after reconnect
+ * - Consider: on device change, re-enumerate devices and prefer the same
+ *   device ID if still available, otherwise fall back to default
+ * Reference: the previous implementation had this in the hardening commit
+ * (d5557f9) but was not merged because the VideoProvider was heavily
+ * refactored on the remote branch (object pools, face detection, etc.).
  */
 
 import type {

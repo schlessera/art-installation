@@ -2,6 +2,20 @@
  * Audio Context Provider
  *
  * Provides audio-reactive context data using Web Audio API.
+ *
+ * TODO(resilience): Add auto-reconnect for audio device changes.
+ * The browser can lose the audio stream when devices are plugged/unplugged,
+ * Bluetooth disconnects, or the OS reassigns the default input. Currently
+ * this silently fails and the provider returns stale/zero data.
+ * Implementation:
+ * - Listen for navigator.mediaDevices 'devicechange' events
+ * - Detect when the active track ends (track.onended / track.readyState)
+ * - Periodic health check: verify analyser is producing non-zero data
+ * - Re-acquire getUserMedia with exponential backoff on failure
+ * - Reconnect AudioContext -> MediaStreamSource -> AnalyserNode chain
+ * - Emit a 'reconnected' event so callers know data was interrupted
+ * Reference: the previous implementation had this in the hardening commit
+ * (d5557f9) but was not merged because audio is currently disabled.
  */
 
 import type { AudioContext as AudioContextType, AudioLevels } from '@art/types';

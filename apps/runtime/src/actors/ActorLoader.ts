@@ -6,6 +6,40 @@
  *
  * Actors are loaded as standalone JavaScript bundles that self-register
  * with a global registry upon execution.
+ *
+ * TODO(hot-reload): Re-implement hot actor deployment for the kiosk.
+ * The production runtime needs to pick up new/updated actors without a
+ * restart (the kiosk runs 24/7, restarts lose the current cycle).
+ *
+ * Previous approach (d5557f9, removed): file watcher + debounced builds
+ * + manifest generator + deploy script. This was tightly coupled to the
+ * old docker-compose deployment and didn't integrate with the Git-based
+ * actor submission workflow.
+ *
+ * New approach should combine:
+ * 1. Actor submission via PR: contributors push to actors/community/,
+ *    CI validates (lint, type-check, bundle size, sandbox compliance),
+ *    auto-merge on pass.
+ * 2. Deployment trigger: on merge to main, the Coolify deployment
+ *    rebuilds the runtime Docker image (which bundles all actors).
+ *    But this requires a container restart — defeats hot-reload.
+ * 3. Hot-reload without restart: the ActorLoader already supports
+ *    scanning for new bundles via manifest.json or probing paths.
+ *    Options to explore:
+ *    a) Sidecar process that watches a shared volume, pulls new actor
+ *       bundles from a CDN/S3 bucket, writes to /actors/deployed/.
+ *       ActorLoader polls every 30s and picks up new bundles.
+ *    b) Gallery server acts as actor bundle registry — runtime polls
+ *       GET /api/actors/manifest for new bundles, downloads and loads.
+ *    c) WebSocket push from gallery to runtime on new actor merge,
+ *       runtime fetches the new bundle on demand.
+ * 4. Actor validation at load time: the loader should validate bundles
+ *    before registration (timeout on setup, memory cap, sandbox check).
+ * 5. Actor removal/disable: ability to remotely disable a misbehaving
+ *    actor without redeployment.
+ *
+ * Key constraint: Vite's import.meta.glob (used in dev) is compile-time
+ * only. Hot-reload is exclusively a production feature via ActorLoader.
  */
 
 import type { Actor } from '@art/types';

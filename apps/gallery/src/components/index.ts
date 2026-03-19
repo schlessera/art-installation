@@ -5,3 +5,4 @@ export { ArtworkModal } from './ArtworkModal';
 export { StarRating } from './StarRating';
 export { VoterNameModal } from './VoterNameModal';
 export { LandingPage } from './LandingPage';
+export { ErrorBoundary } from './ErrorBoundary';

@@ -211,6 +211,17 @@ async function main() {
   });
 }
 
+// Process crash recovery — log and exit so Docker/process manager can restart
+process.on('uncaughtException', (err) => {
+  console.error('[Gallery] Uncaught exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Gallery] Unhandled rejection:', reason);
+  process.exit(1);
+});
+
 main().catch((err) => {
   console.error('[Gallery] Fatal error:', err);
   process.exit(1);

@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths: ['actors/community/**']
+  workflow_dispatch:
 
 jobs:
   deploy:

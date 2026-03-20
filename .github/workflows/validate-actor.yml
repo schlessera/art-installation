@@ -60,7 +60,7 @@ jobs:
       - name: Validate actor
         run: |
           cd "actors/community/$ACTOR_NAME"
-          npx tsx ../../../packages/actor-devtools/bin/validate-actor.ts src/index.ts
+          pnpm exec tsx ../../../packages/actor-devtools/bin/validate-actor.ts src/index.ts
 
       - name: Check bundle
         run: |

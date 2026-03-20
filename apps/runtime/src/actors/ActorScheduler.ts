@@ -738,6 +738,11 @@ export class ActorScheduler {
       score += reviewBonus;
     }
 
+    // Community actor boost: 4x selection weight over builtins
+    if (registered.sourcePath && registered.sourcePath.includes('community')) {
+      score *= 4;
+    }
+
     // Ensure minimum score
     return Math.max(score, 1);
   }

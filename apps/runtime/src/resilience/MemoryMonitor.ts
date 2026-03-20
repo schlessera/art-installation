@@ -15,10 +15,10 @@ interface PerformanceMemory {
   jsHeapSizeLimit: number;
 }
 
-const POLL_INTERVAL_MS = 30000;
-const WARNING_THRESHOLD = 0.7;
-const CRITICAL_THRESHOLD = 0.85;
-const CRITICAL_RELOAD_DELAY_MS = 5000;
+const POLL_INTERVAL_MS = 5000;
+const WARNING_THRESHOLD = 0.5;
+const CRITICAL_THRESHOLD = 0.7;
+const CRITICAL_RELOAD_DELAY_MS = 2000;
 
 export class MemoryMonitor {
   private timer: ReturnType<typeof setInterval> | null = null;

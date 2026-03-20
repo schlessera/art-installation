@@ -2,9 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# Art Installation - Cloudfest Hackathon 2026
+# PRODUCTION MODE
 
-Interactive digital art installation where multiple automated actors collaboratively paint on a shared 2D canvas. Hackathon attendees can deploy their own actors via Git.
+This project is running live in production at Cloudfest Hackathon 2026. The runtime is at `https://live.polychorus.art` and the gallery at `https://polychorus.art`.
+
+**All changes should add new actors to `actors/community/` only.** Do not modify runtime, gallery, packages, builtin actors, or infrastructure code.
+
+## Workflow for Adding a New Actor
+
+1. `pnpm new:actor <name>` — scaffold from template
+2. Edit `actors/community/<name>/src/index.ts` — implement your actor
+3. Preview: restart `pnpm dev`, visit `http://localhost:3000?actor=<name>`
+4. Validate: `cd actors/community/<name> && pnpm validate`
+5. Submit: `pnpm submit:actor <name>` — creates PR, CI auto-validates and auto-merges
+6. Once merged, the actor deploys automatically and appears on the live canvas within 30 seconds
+
+**Complete API reference with examples:** See [`docs/ACTOR_GUIDE.md`](docs/ACTOR_GUIDE.md)
 
 ## Requirements
 
@@ -14,156 +27,44 @@ Interactive digital art installation where multiple automated actors collaborati
 ## Quick Commands
 
 ```bash
-pnpm dev              # Start runtime development server (port 3000)
-pnpm dev:gallery      # Start gallery (API server + React frontend)
-pnpm build            # Build all packages
-pnpm lint             # Lint all packages
-pnpm test             # Run all tests
-pnpm test:watch       # Run tests in watch mode
-pnpm new:actor        # Create new actor from template
-pnpm validate:actors  # Validate all community actors
-```
-
-### Running Single Package Commands
-```bash
-# Runtime (port 3000)
-pnpm --filter @art/runtime dev                # Dev server
-pnpm --filter @art/runtime exec tsc --noEmit  # Type-check
-
-# Gallery (API on port 3001, frontend on port 5173)
-pnpm --filter @art/gallery dev                # Both server + client
-pnpm --filter @art/gallery dev:server         # API server only
-pnpm --filter @art/gallery dev:client         # React frontend only
-
-# Actor development
-pnpm --filter @art/actor-wave-painter dev     # Preview actor
-pnpm --filter @art/actor-wave-painter build   # Build actor bundle
+pnpm new:actor <name>       # Create new actor from template
+pnpm submit:actor <name>    # Validate, build, and submit actor as PR
+pnpm generate:actor "<desc>"  # Generate actor from description using AI (requires ANTHROPIC_API_KEY)
+pnpm dev                    # Start runtime dev server (port 3000)
+pnpm validate:actors        # Validate all community actors
 ```
 
 ## Project Structure
 
 ```
-apps/
-  runtime/              # Main Pixi.js renderer (frontend only)
-    src/
-      main.ts           # Entry point
-      engine/           # CanvasManager, RenderLoop
-      drawing/          # BrushAPIImpl, FilterAPIImpl
-      actors/           # ActorRegistry, ActorScheduler, ActorLoader
-      context/          # TimeProvider, WeatherProvider, AudioProvider
-      api/              # GalleryClient (sends snapshots to Gallery API)
-      ui/               # QROverlay
-  gallery/              # Gallery app (API server + React frontend)
-    server/             # Express API server
-      index.ts          # Server entry point
-      storage.ts        # File-based artwork storage
-      reviewer.ts       # Async AI review using Claude API
-      routes.ts         # REST API endpoints
-    src/                # React frontend
-      App.tsx           # Main app component
-      hooks/            # useGalleryApi, useLocalStorage
-      components/       # GalleryGrid, ArtworkCard, StarRating, etc.
+actors/
+  builtin/              # Built-in actors (52 actors — DO NOT MODIFY)
+  community/            # Community actors (add yours here)
 
 packages/
-  types/                # @art/types - Shared TypeScript interfaces
-  actor-sdk/            # @art/actor-sdk - Self-registration helper
-  actor-devtools/       # @art/actor-devtools - Validators, mocks
+  types/                # @art/types — Shared TypeScript interfaces
+  actor-sdk/            # @art/actor-sdk — Self-registration helper
+  actor-devtools/       # @art/actor-devtools — Validators, mocks
   actor-template/       # Template for new actors
 
-actors/
-  builtin/              # Built-in actors (wave-painter, particle-flow, etc.)
-  community/            # Hackathon participant actors
+apps/
+  runtime/              # Main Pixi.js renderer (DO NOT MODIFY)
+  gallery/              # Gallery API + React frontend (DO NOT MODIFY)
 
 docs/
-  PRD.md                # Product requirements document
+  ACTOR_GUIDE.md        # Complete API reference for actor development
   MEMORY_MANAGEMENT.md  # Memory management best practices (MUST READ)
 ```
 
-## Architecture
+## Architecture Overview
 
-- **Runtime**: Pixi.js 8.x renderer, captures snapshots, sends to Gallery API
-- **Gallery Server**: Express API, file-based storage, async AI review via Claude
-- **Gallery Frontend**: React app for viewing/voting on artworks
-- **Actor Selection per Cycle**:
-  - 1 background actor (or solid color fallback)
-  - 0-2 background filters (weighted towards 0)
-  - 2-5 foreground actors (favoring unused)
-  - 0-2 foreground filters (weighted towards 1-2)
+The runtime renders art using actors at 60fps, captures snapshots at cycle end, and sends them to the gallery for AI review and public voting. Community actors are deployed via GitHub Actions and hot-loaded by the runtime within 30 seconds of merge.
 
-### System Architecture
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                           RUNTIME (port 3000)                        │
-│  ┌──────────────┐   ┌──────────────┐   ┌─────────────────────────┐  │
-│  │ ActorSystem  │──▶│ RenderLoop   │──▶│ SnapshotCapture         │  │
-│  │              │   │ (60fps)      │   │ (end of cycle)          │  │
-│  └──────────────┘   └──────────────┘   └───────────┬─────────────┘  │
-│                                                     │                │
-│                                         POST /api/artworks           │
-│                                                     │                │
-└─────────────────────────────────────────────────────┼────────────────┘
-                                                      │
-                                                      ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                      GALLERY SERVER (port 3001)                      │
-│  ┌──────────────┐   ┌──────────────┐   ┌─────────────────────────┐  │
-│  │ REST API     │──▶│ Storage      │──▶│ Async Reviewer          │  │
-│  │ /api/*       │   │ (file-based) │   │ (Claude API)            │  │
-│  └──────────────┘   └──────────────┘   └─────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────┘
-                                                      │
-                                               GET /api/artworks
-                                                      │
-                                                      ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                    GALLERY FRONTEND (port 5173)                      │
-│  ┌──────────────┐   ┌──────────────┐   ┌─────────────────────────┐  │
-│  │ GalleryGrid  │   │ ArtworkModal │   │ VotingUI                │  │
-│  │              │   │              │   │                         │  │
-│  └──────────────┘   └──────────────┘   └─────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-### Data Flow
-
-1. **Runtime** renders art using actors, captures snapshot at cycle end
-2. **Runtime** sends snapshot + metadata to Gallery API (POST /api/artworks)
-3. **Gallery Server** stores artwork (pending review), queues for async review
-4. **Async Reviewer** processes queue, calls Claude API, updates artwork scores
-5. **Gallery Frontend** displays reviewed artworks, allows voting
-6. **Pruning** removes lowest-scoring artworks when limit exceeded
-
-### Hot-Loading Architecture
-
-Actors can be deployed while the runtime is running - no restart needed:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     RUNTIME (always running)                 │
-│  ┌─────────────┐    ┌──────────────┐    ┌───────────────┐  │
-│  │ ActorLoader │───▶│ ActorRegistry│───▶│ ActorScheduler│  │
-│  │  (scans)    │    │  (stores)    │    │  (selects)    │  │
-│  └─────────────┘    └──────────────┘    └───────────────┘  │
-│         ▲                                                   │
-│         │ window.__registerActor()                          │
-└─────────│───────────────────────────────────────────────────┘
-          │
-┌─────────▼───────────────────────────────────────────────────┐
-│                    ACTOR BUNDLES (deployed separately)       │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
-│  │wave-painter │    │weather-mood │    │user-actor-X │     │
-│  │   .js       │    │    .js      │    │    .js      │     │
-│  └─────────────┘    └─────────────┘    └─────────────┘     │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Deployment flow:**
-1. Build actor: `pnpm --filter @art/actor-my-actor build`
-2. Deploy bundle to `/actors/deployed/`
-3. ActorLoader scans every 30s, loads new bundles
-4. Actor self-registers via `registerActor()`
-5. Available for next selection cycle (high novelty score)
+**Actor Selection per Cycle:**
+- 1 background actor (or solid color fallback)
+- 0-2 background filters (weighted towards 0)
+- 2-5 foreground actors (favoring unused/new actors)
+- 0-2 foreground filters (weighted towards 1-2)
 
 ## Actor Development
 
@@ -171,9 +72,9 @@ Actors can be deployed while the runtime is running - no restart needed:
 
 1. Run `pnpm new:actor my-actor-name`
 2. Edit `actors/community/my-actor-name/src/index.ts`
-3. Preview: `pnpm --filter @art/actor-my-actor-name dev`
-4. Validate: `pnpm --filter @art/actor-my-actor-name validate`
-5. Submit PR
+3. Preview: `pnpm dev` then visit `http://localhost:3000?actor=my-actor-name`
+4. Validate: `cd actors/community/my-actor-name && pnpm validate`
+5. Submit: `pnpm submit:actor my-actor-name`
 
 ### Actor Interface
 
@@ -199,7 +100,6 @@ Actors have one of three roles that determine where they render in the layer sta
 **Rendering Pipeline:**
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  [Overlay]        - UI elements (future)                    │
 │  [Foreground Effects] - 0-2 filter actors                   │
 │  [Foreground]     - 2-5 foreground actors (z-ordered)       │
 │  [Background Effects] - 0-2 filter actors                   │
@@ -269,6 +169,8 @@ When no background actors are registered, a random solid color (max 50% brightne
 - `api.context.video.*` - Video data (getMotion, getDominantColor)
 - `api.context.social.*` - Social data (sentiment, viewerCount)
 
+**Full API signatures and examples:** See [`docs/ACTOR_GUIDE.md`](docs/ACTOR_GUIDE.md)
+
 ### Rendering Best Practices
 
 **Blend Modes:**
@@ -292,14 +194,6 @@ When no background actors are registered, a random solid color (max 50% brightne
 **Transforms:**
 - Always pair `pushMatrix()` with `popMatrix()` to restore transform state
 - Don't set global state (like blend mode) inside a push/pop block
-
-**Graphics Pool Implementation (Internal):**
-The BrushAPI uses a GraphicsPool that reuses Pixi.js Graphics objects across frames to avoid allocation/destruction overhead. Key implementation details:
-- Graphics objects are pooled and reused each frame
-- `acquire()` MUST reset transform state (position, rotation, scale, alpha) before returning the object
-- Without reset, transforms accumulate across frames causing objects to drift off-screen
-- The `applyTransform()` method uses `+=` operators, so any leftover state from previous frames will compound
-- If objects appear for 1 frame then disappear, or positions drift, check that `acquire()` resets transforms
 
 **Gradients (CRITICAL - Use Relative Coordinates):**
 
@@ -501,107 +395,14 @@ Actors **CANNOT** access:
 
 ## Key Files
 
+- `docs/ACTOR_GUIDE.md` - Complete API reference with signatures and examples
 - `packages/types/src/actor.ts` - Actor interface definition
 - `packages/types/src/brush.ts` - BrushAPI definition
 - `packages/types/src/filter.ts` - FilterAPI definition
+- `packages/types/src/canvas.ts` - CanvasReadAPI definition
+- `packages/types/src/context.ts` - Context API definitions
 - `packages/actor-template/src/index.ts` - Actor template
-- `docs/PRD.md` - Full product requirements
-
-## Environment Variables
-
-### Runtime (`apps/runtime/.env`)
-```bash
-VITE_GALLERY_URL=http://localhost:5173        # Gallery frontend URL (for QR code)
-VITE_GALLERY_API_URL=http://localhost:3001/api # Gallery API URL (for submitting artworks)
-```
-
-### Gallery (`apps/gallery/.env`)
-```bash
-GALLERY_PORT=3001                    # API server port
-GALLERY_DATA_DIR=./data              # Data storage directory
-GEMINI_API_KEY=...                   # Gemini API key (optional, uses mock if not set)
-GALLERY_MAX_ARTWORKS=30              # Max artworks before pruning
-GALLERY_PRUNE_PERCENTAGE=0.1         # Prune bottom 10%
-GALLERY_MIN_SCORE=40                 # Minimum AI score for visibility
-RUNTIME_URL=http://localhost:3000    # Runtime URL for CORS
-```
-
-## Deployment (Coolify)
-
-Infrastructure is managed via a self-hosted Coolify instance on a shared Hetzner server. Both apps deploy from the `main` branch via Dockerfile builds. **Pushes to `main` should be deployable** — never push untested or partial work.
-
-The server IP is stored in `COOLIFY_SERVER_IP` (set in `.env` at repo root, gitignored). All commands and URLs below use `$COOLIFY_SERVER_IP` — source `.env` or substitute the value.
-
-### Connection Details
-
-- **Coolify URL**: `http://$COOLIFY_SERVER_IP:8000`
-- **Server**: Hetzner shared
-- **Context name**: `shared-hetzner`
-- **Domains**: `polychorus.art` (gallery), `live.polychorus.art` (runtime)
-
-### Current Resources
-
-| UUID | Name | Description | Domain |
-|------|------|-------------|--------|
-| `iosg8o8wg8w8cok4o0ok0884` | polychorus-runtime | Live canvas renderer | `https://live.polychorus.art` |
-| `fscw4wwo8k8k4gskgc0woswg` | polychorus-gallery | API server + React frontend | `https://polychorus.art` |
-
-### Deploying
-
-```bash
-coolify deploy uuid iosg8o8wg8w8cok4o0ok0884   # Deploy runtime
-coolify deploy uuid fscw4wwo8k8k4gskgc0woswg   # Deploy gallery
-coolify deploy batch polychorus-runtime,polychorus-gallery  # Deploy both
-```
-
-### Checking Deployments
-
-```bash
-coolify resource list                    # List all resources with status
-coolify app get <UUID>                   # Get application details
-coolify app logs <UUID>                  # View application logs
-coolify app logs <UUID> --lines 500      # View more log lines
-coolify deploy list <UUID>               # List deployments for a resource
-```
-
-### IP Allowlisting (Required for API Access)
-
-Coolify restricts API access to allowlisted IPs. When the machine's public IP changes (e.g., ISP reassignment, VPN, new network), API calls will return **403 "You are not allowed to access the API"**. This is NOT a token issue.
-
-To fix:
-1. Get current public IP: `curl -s https://api.ipify.org`
-2. Go to `http://$COOLIFY_SERVER_IP:8000/settings`
-3. Add the IP to the API allowed IPs list
-4. Verify: `coolify context verify`
-
-### Setup for New Agents/Machines
-
-1. Install CLI: `go install github.com/AlejandroSuero/coolify-cli/cmd/coolify@latest`
-2. Add context: `coolify context add shared-hetzner http://$COOLIFY_SERVER_IP:8000 <TOKEN>`
-3. Allowlist machine IP in Coolify settings (see above)
-4. Verify: `coolify context verify`
-
-API tokens are generated at `http://$COOLIFY_SERVER_IP:8000/security/api-tokens`.
-
-### Troubleshooting Deployments
-
-1. **Service down**: `coolify resource list` → check status → `coolify app logs <UUID>` → fix → restart
-2. **403 on API**: IP not allowlisted (see IP Allowlisting section above)
-3. **Deploy failed**: `coolify deploy list <UUID>` → check logs → fix → redeploy
-4. **Direct API access**: `curl -H "Authorization: Bearer $COOLIFY_API_TOKEN" http://$COOLIFY_SERVER_IP:8000/api/v1/resources`
-
-## Gallery Features
-
-- QR code overlay on display links to gallery
-- Artworks submitted from runtime, reviewed asynchronously
-- User voting (1-5 stars) with name attribution
-- Pruning: remove bottom 10% when >30 artworks
-- Combined score: AI(60%) + UserRating(40%)
-
-## Development Progress
-
-Check `.claude/progress/current-session.md` for ongoing work.
-Check `.claude/progress/decisions.md` for architectural decisions.
+- `docs/MEMORY_MANAGEMENT.md` - Memory management best practices
 
 ## Canvas Resolution and Aspect Ratio
 
@@ -634,95 +435,42 @@ http://localhost:3000/?width=360&height=640&maxActors=4&cycleDuration=30000
 | `bgFilters` | random 0-2 | Fixed background filter IDs (e.g., `?bgFilters=film-grain,vhs-tracking`) |
 | `fgFilters` | random 0-2 | Fixed foreground filter IDs (e.g., `?fgFilters=chromatic-pulse`) |
 
-### Display Scaling
-
-The canvas maintains its native resolution and is scaled via CSS to fit the viewport:
-
-- **Portrait canvas on landscape screen**: Fills height, black bars on left/right (pillarbox)
-- **Landscape canvas on portrait screen**: Fills width, black bars on top/bottom (letterbox)
-- **Matching aspect ratio**: Fills entire viewport
-
-### Gallery Aspect Ratio
-
-The Gallery automatically detects the aspect ratio from the first submitted artwork:
-
-1. Runtime sends artwork with `width` and `height` metadata
-2. Gallery stores dimensions and returns `aspectRatio` in stats API
-3. Frontend sets `--artwork-aspect-ratio` CSS variable
-4. All thumbnail cards and modal images use the dynamic aspect ratio
-
 ## Actor Discovery and Loading (IMPORTANT)
-
-Actors are discovered and loaded differently in development vs production:
 
 ### Development Mode (`pnpm dev`)
 
-Actors are discovered via Vite's `import.meta.glob()` in `apps/runtime/src/main.ts`:
+Actors are discovered via Vite's `import.meta.glob()` at dev server startup.
 
-```typescript
-const actorModules = import.meta.glob<{ default: Actor }>(
-  '../../../actors/**/src/index.ts',
-  { eager: false }
-);
-```
-
-**CRITICAL**: `import.meta.glob()` is evaluated at dev server startup. If you create new actors while the dev server is running, they **will not be detected** until you restart the server.
+**CRITICAL**: If you create new actors while the dev server is running, they **will not be detected** until you restart the server.
 
 ### For New Actors to Appear in Runtime
 
-1. **Create the actor files** in `actors/community/{name}/` or `actors/builtin/{name}/`:
-   - `package.json` - Package definition with `@art/actor-{name}` naming
-   - `src/index.ts` - Actor implementation that calls `registerActor()`
-   - `tsconfig.json` - TypeScript config extending `../../../tsconfig.base.json`
-   - `vite.config.ts` - Vite build config
-
+1. **Create the actor files** with `pnpm new:actor <name>`
 2. **Run `pnpm install`** to register the new workspace package
+3. **Restart the dev server** (`pnpm dev`)
 
-3. **Restart the dev server** (`pnpm dev`) - This is required because Vite's glob patterns are evaluated at startup
+### Production Mode
 
-4. **Build the actor** (for production): `pnpm --filter @art/actor-{name} build`
+Community actors are built and deployed by GitHub Actions on merge to main. The runtime's ActorLoader polls for new bundles every 30 seconds and hot-loads them without restart.
 
-### Production Mode (Built/Deployed)
-
-The ActorLoader (`apps/runtime/src/actors/ActorLoader.ts`) scans for built bundles:
-1. Looks for `/actors/manifest.json` (if exists)
-2. Falls back to probing known paths: `/actors/*/dist/index.js`
-3. Loads bundles via dynamic `<script type="module">` injection
-4. Actors self-register via `window.__registerActor()`
-
-### Troubleshooting: Actors Not Appearing
+### Troubleshooting
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | New actor not in runtime | Dev server not restarted | Restart `pnpm dev` |
-| Actor not discovered | Missing `src/index.ts` | Ensure file path is `actors/{type}/{name}/src/index.ts` |
-| TypeScript errors | Missing config files | Add `tsconfig.json` and `vite.config.ts` |
+| Actor not discovered | Missing `src/index.ts` | Ensure file path is `actors/community/{name}/src/index.ts` |
+| TypeScript errors | Missing config files | Use `pnpm new:actor` to scaffold correctly |
 | Actor not registering | Missing `registerActor()` call | Add `registerActor(actor)` at end of index.ts |
-
-### Troubleshooting: Runtime Errors
-
-| Error | Cause | Fix |
-|-------|-------|-----|
-| `TypeError: Cannot read properties of null (reading 'style')` at `generateTextureMatrix` | Gradient using absolute pixel coordinates instead of relative (0-1) | Change gradient `cx`, `cy`, `radius`, `x0`, `y0`, `x1`, `y1` to use 0-1 range. See **Gradients** section above. |
-| Objects drift off-screen or appear for 1 frame | Graphics pool not resetting transforms | Check that `GraphicsPool.acquire()` resets position, rotation, scale, alpha |
-| Flickering blend modes | Using `setBlendMode()` in update loop | Pass `blendMode` in each shape's style object instead |
-| Shapes nearly invisible | Alpha too low or colors too dark | Use alpha >= 0.6 for main shapes, test on dark backgrounds |
-| Shapes flicker during fade-out | Alpha values near zero cause rendering instability | Add minimum alpha threshold: skip rendering when `alpha < 0.05` |
-| Entire actor flickers when using snapshots | Layer-aware snapshots do extra render with container hidden | Don't use `belowActorId: 'self'` unless you specifically need layer-aware behavior |
-| Snapshot shows wrong portion of canvas | Using `scale < 1` with `getCanvasSnapshotAsync` | Always use `scale=1.0` - the scale parameter crops instead of scaling |
-
-## Important Notes
-
-- Keep frame time under 16.67ms for 60 FPS
-- Use `preserveDrawingBuffer: true` for canvas snapshots
-- MSW is used for mocking Claude API in tests
-- Vitest Browser Mode required for WebGL tests (JSDOM doesn't support it)
-- Actor bundles are ES modules that self-register on load
-- Type-check with `pnpm --filter @art/runtime exec tsc --noEmit`
+| `TypeError: null (reading 'style')` | Gradient with pixel coordinates | Use 0-1 range for gradient coords |
+| Objects drift off-screen | Transform state not restored | Pair `pushMatrix()` / `popMatrix()` |
+| Flickering blend modes | `setBlendMode()` in update loop | Pass `blendMode` in each shape's style |
+| Shapes nearly invisible | Alpha too low | Use alpha >= 0.6, test on dark backgrounds |
+| Shapes flicker during fade-out | Alpha near zero | Skip rendering when `alpha < 0.05` |
+| Snapshot shows wrong portion | Using `scale < 1` | Always use `scale=1.0` |
 
 ## Memory Management (CRITICAL)
 
-**All code changes MUST follow memory management best practices.** See `docs/MEMORY_MANAGEMENT.md` for detailed guidelines.
+**All actors MUST follow memory management best practices.** See `docs/MEMORY_MANAGEMENT.md` for detailed guidelines.
 
 ### Mandatory Rules
 
@@ -730,7 +478,6 @@ The ActorLoader (`apps/runtime/src/actors/ActorLoader.ts`) scans for built bundl
 2. **Use object pools** - Reuse objects via `active` flag instead of create/destroy
 3. **Use circular buffers** - For history/trail data, not push/shift or push/slice
 4. **Cap all collections** - Define MAX constants, enforce limits
-5. **Destroy Pixi.js resources** - Always call `.destroy()` when removing Graphics/Filters/Textures
 
 ### Quick Reference
 
@@ -746,8 +493,4 @@ if (p) { p.active = true; initParticle(p); }
 p.active = false;  // "despawn" without allocation
 ```
 
-### When Adding New Features
-
-- Update `docs/MEMORY_MANAGEMENT.md` if you discover new pitfalls or best practices
-- Review the builtin actors (`wave-painter`, `particle-flow`, `weather-mood`, `audio-reactive`) for reference implementations
-- Run memory profiling in Chrome DevTools to verify no leaks
+Review the builtin actors (`wave-painter`, `particle-flow`, `constellation-weaver`) for reference implementations.

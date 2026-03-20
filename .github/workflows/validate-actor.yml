@@ -20,14 +20,14 @@ jobs:
           CHANGED=$(gh pr diff ${{ github.event.pull_request.number }} --name-only)
 
           # Every changed file must be under actors/community/
-          INVALID=$(echo "$CHANGED" | grep -v '^actors/community/' || true)
+          INVALID=$(echo "$CHANGED" | grep -v '^actors/community/' | grep -v '^pnpm-lock.yaml$' || true)
           if [ -n "$INVALID" ]; then
             echo "::error::PR must only modify files in actors/community/. Found changes in: $INVALID"
             exit 1
           fi
 
           # Extract actor folder name(s) — must be exactly one new actor
-          ACTORS=$(echo "$CHANGED" | sed 's|actors/community/\([^/]*\)/.*|\1|' | sort -u)
+          ACTORS=$(echo "$CHANGED" | grep '^actors/community/' | sed 's|actors/community/\([^/]*\)/.*|\1|' | sort -u)
           ACTOR_COUNT=$(echo "$ACTORS" | wc -l)
           if [ "$ACTOR_COUNT" -ne 1 ]; then
             echo "::error::PR must add exactly one actor. Found: $ACTORS"

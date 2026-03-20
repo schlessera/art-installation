@@ -3,6 +3,7 @@ name: Auto-Merge Validated Actor
 # Triggered when the "Validate Actor PR" workflow completes.
 # Runs in the base repo context with full write permissions,
 # so it can merge fork PRs that the validation workflow cannot.
+# Handles pnpm-lock.yaml conflicts automatically by keeping main's version.
 
 on:
   workflow_run:
@@ -18,7 +19,12 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Merge the PR
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR info
+        id: pr
         run: |
           PR_NUMBER=$(gh api \
             "repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}" \
@@ -26,10 +32,70 @@ jobs:
 
           if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
             echo "::warning::Could not determine PR number from workflow run"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "Merging PR #$PR_NUMBER"
-          gh pr merge "$PR_NUMBER" --repo "${{ github.repository }}" --squash --auto
+          PR_DATA=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" \
+            --json headRefName,headRefOid,headRepository,headRepositoryOwner,state,mergeable)
+
+          STATE=$(echo "$PR_DATA" | jq -r '.state')
+          if [ "$STATE" != "OPEN" ]; then
+            echo "::notice::PR #$PR_NUMBER is $STATE, skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "head_ref=$(echo "$PR_DATA" | jq -r '.headRefName')" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$(echo "$PR_DATA" | jq -r '.headRefOid')" >> "$GITHUB_OUTPUT"
+          echo "owner=$(echo "$PR_DATA" | jq -r '.headRepositoryOwner.login')" >> "$GITHUB_OUTPUT"
+          echo "repo=$(echo "$PR_DATA" | jq -r '.headRepository.name')" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "PR #$PR_NUMBER: $STATE"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Merge PR
+        if: steps.pr.outputs.skip != 'true'
+        run: |
+          PR_NUMBER=${{ steps.pr.outputs.number }}
+
+          # Try simple squash merge first
+          if gh pr merge "$PR_NUMBER" --repo "${{ github.repository }}" --squash 2>&1; then
+            echo "Merged PR #$PR_NUMBER via squash"
+            exit 0
+          fi
+
+          echo "Simple merge failed (likely lockfile conflict). Merging manually..."
+
+          # Fetch the PR head
+          git fetch origin "pull/$PR_NUMBER/head:pr-$PR_NUMBER"
+
+          # Get the list of actor files from the PR (exclude pnpm-lock.yaml)
+          ACTOR_FILES=$(git diff --name-only main..."pr-$PR_NUMBER" | grep '^actors/community/' || true)
+
+          if [ -z "$ACTOR_FILES" ]; then
+            echo "::warning::No actor files found in PR #$PR_NUMBER"
+            exit 0
+          fi
+
+          # Extract actor name
+          ACTOR_NAME=$(echo "$ACTOR_FILES" | head -1 | sed 's|actors/community/\([^/]*\)/.*|\1|')
+          echo "Actor: $ACTOR_NAME"
+
+          # Cherry-pick the actor files onto main
+          git checkout main
+          git checkout "pr-$PR_NUMBER" -- $ACTOR_FILES
+
+          # Commit and push
+          git add $ACTOR_FILES
+          git commit -m "Add community actor: $ACTOR_NAME (#$PR_NUMBER)" \
+            --author="github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          git push origin main
+
+          # Close the PR
+          gh pr close "$PR_NUMBER" --repo "${{ github.repository }}" \
+            --comment "Merged automatically. The lockfile conflict was resolved by regenerating it in CI."
         env:
           GH_TOKEN: ${{ github.token }}

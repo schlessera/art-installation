@@ -1,0 +1,5 @@
+# Auto-resolve pnpm-lock.yaml conflicts by keeping the base (main) version.
+# CI runs pnpm install --no-frozen-lockfile, so the lockfile is regenerated
+# during validation. This prevents cascading merge conflicts when multiple
+# actor PRs are open concurrently.
+pnpm-lock.yaml merge=ours

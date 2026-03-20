@@ -131,6 +131,40 @@ export class GalleryStorage {
       console.log(`[Storage] Backfilled actorRole for ${backfilled} actor entries`);
     }
 
+    // Retroactively apply visualUnity penalty for all-builtin / majority-builtin artworks
+    let penaltyApplied = 0;
+    for (const artwork of this.artworks) {
+      if (artwork.review.modelId === 'pending' || artwork.review.modelId === 'mock') continue;
+      const foregroundActors = artwork.contributingActors.filter(
+        a => !a.actorRole || a.actorRole === 'foreground'
+      );
+      if (foregroundActors.length === 0) continue;
+      const builtinCount = foregroundActors.filter(a => a.authorGithub === 'cloudfest').length;
+      let penalty = 0;
+      if (builtinCount === foregroundActors.length) {
+        penalty = 10; // All foreground actors are builtin
+      } else if (builtinCount > foregroundActors.length / 2) {
+        penalty = 5;  // Majority are builtin
+      }
+      if (penalty > 0) {
+        // Check if penalty tag is already present to avoid re-applying
+        if (!(artwork.review as unknown as Record<string, unknown>).__builtinPenalty) {
+          artwork.review.visualUnity = Math.max(0, artwork.review.visualUnity - penalty);
+          const dims = ['colorHarmony', 'composition', 'visualUnity', 'depthAndLayering', 'rhythmAndFlow', 'intentionalComplexity'] as const;
+          artwork.review.overallScore = Math.round(
+            dims.reduce((sum, d) => sum + artwork.review[d], 0) / dims.length
+          );
+          artwork.combinedScore = calculateCombinedScore(artwork.review.overallScore, artwork.voteCount, artwork.isSample);
+          (artwork.review as unknown as Record<string, unknown>).__builtinPenalty = penalty;
+          penaltyApplied++;
+        }
+      }
+    }
+    if (penaltyApplied > 0) {
+      await this.save();
+      console.log(`[Storage] Applied builtin actor visualUnity penalty to ${penaltyApplied} artworks`);
+    }
+
     // Remove artworks whose image files are missing from disk
     const before = this.artworks.length;
     this.artworks = this.artworks.filter(a => {

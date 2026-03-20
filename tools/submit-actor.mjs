@@ -127,15 +127,9 @@ function main() {
   info('Staging files...');
   run(`git add actors/community/${name}/`);
 
-  // Also stage pnpm-lock.yaml if it changed (new workspace package modifies it)
-  try {
-    const lockStatus = run('git diff --name-only pnpm-lock.yaml');
-    if (lockStatus) {
-      run('git add pnpm-lock.yaml');
-    }
-  } catch {
-    // No changes to lockfile, that's fine
-  }
+  // Note: pnpm-lock.yaml is NOT staged — CI runs pnpm install without
+  // --frozen-lockfile, so the lockfile is regenerated there. Including it
+  // in PRs causes cascading merge conflicts when multiple actors are submitted.
 
   // Check if there's anything to commit
   const staged = run('git diff --cached --name-only');

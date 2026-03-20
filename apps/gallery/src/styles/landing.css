@@ -774,6 +774,116 @@
 }
 
 /* ================================================================
+   GET STARTED
+   ================================================================ */
+
+.section-getstarted {
+  background:
+    radial-gradient(ellipse 50% 40% at 80% 60%, rgba(0, 216, 255, 0.05) 0%, transparent 100%),
+    radial-gradient(ellipse 40% 30% at 20% 40%, rgba(106, 56, 255, 0.04) 0%, transparent 100%),
+    var(--cf-bg);
+}
+
+.getstarted-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.getstarted-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 2rem 1.75rem 1.75rem;
+  background: var(--cf-bg-card);
+  border: 1px solid var(--cf-border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: border-color 0.3s ease,
+              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.getstarted-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--card-accent, var(--cf-cyan)) 30%, transparent);
+}
+
+.getstarted-card-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(to right, var(--card-accent, var(--cf-cyan)), transparent 80%);
+}
+
+.getstarted-card-number {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--card-accent, var(--cf-cyan));
+  opacity: 0.35;
+}
+
+.getstarted-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cf-text);
+}
+
+.getstarted-card-desc {
+  font-size: 0.9rem;
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--cf-text-muted);
+  flex: 1;
+}
+
+.getstarted-card-desc a {
+  color: var(--cf-cyan);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.getstarted-card-desc a:hover {
+  color: var(--cf-text);
+}
+
+.getstarted-card-desc code {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82em;
+  padding: 0.15em 0.4em;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  color: var(--cf-text);
+}
+
+.getstarted-card-cmd {
+  display: block;
+  margin-top: auto;
+  padding: 0.6rem 0.85rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--cf-border);
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.8rem;
+  color: var(--card-accent, var(--cf-cyan));
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+.getstarted-cta {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ================================================================
    CLOUDFEST
    ================================================================ */
 
@@ -1093,6 +1203,24 @@
 
   .gallery-preview-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .getstarted-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .getstarted-card {
+    padding: 1.5rem;
+  }
+
+  .getstarted-cta {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .getstarted-cta .btn {
+    width: 100%;
+    max-width: 320px;
   }
 
   .cloudfest-cards {

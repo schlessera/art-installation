@@ -680,6 +680,83 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ===== GET STARTED ===== */}
+      <section className="landing-section section-getstarted">
+        <div className="section-inner">
+          <h2 className="section-heading reveal-on-scroll">
+            <span className="heading-accent">Create</span>
+            Join the Canvas
+          </h2>
+          <p className="section-intro reveal-on-scroll">
+            Use your favorite LLM to design an actor, submit a PR, and watch it
+            paint live on the shared canvas &mdash; no deep coding knowledge required.
+          </p>
+
+          <div className="getstarted-steps reveal-on-scroll">
+            <div className="getstarted-card" style={{ '--card-accent': 'var(--cf-cyan)' } as React.CSSProperties}>
+              <span className="getstarted-card-accent" aria-hidden="true" />
+              <span className="getstarted-card-number">1</span>
+              <h3 className="getstarted-card-title">Clone the Repo</h3>
+              <p className="getstarted-card-desc">
+                Fork or clone the repository from GitHub. You&rsquo;ll need Node.js&nbsp;22+
+                and pnpm installed.
+              </p>
+              <code className="getstarted-card-cmd">git clone &amp;&amp; pnpm install</code>
+            </div>
+
+            <div className="getstarted-card" style={{ '--card-accent': 'var(--cf-purple)' } as React.CSSProperties}>
+              <span className="getstarted-card-accent" aria-hidden="true" />
+              <span className="getstarted-card-number">2</span>
+              <h3 className="getstarted-card-title">Generate with AI</h3>
+              <p className="getstarted-card-desc">
+                Point your LLM at{' '}
+                <a
+                  href="https://github.com/schlessera/art-installation/blob/main/docs/ACTOR_GUIDE.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ACTOR_GUIDE.md
+                </a>{' '}
+                and describe what you want. Run{' '}
+                <code>pnpm new:actor &lt;name&gt;</code> to scaffold, then paste
+                the generated code.
+              </p>
+              <code className="getstarted-card-cmd">pnpm new:actor my-vision</code>
+            </div>
+
+            <div className="getstarted-card" style={{ '--card-accent': 'var(--cf-pink)' } as React.CSSProperties}>
+              <span className="getstarted-card-accent" aria-hidden="true" />
+              <span className="getstarted-card-number">3</span>
+              <h3 className="getstarted-card-title">Submit &amp; Go Live</h3>
+              <p className="getstarted-card-desc">
+                One command validates, builds, and opens a PR. CI auto-merges
+                passing actors &mdash; yours goes live within 30&nbsp;seconds.
+              </p>
+              <code className="getstarted-card-cmd">pnpm submit:actor my-vision</code>
+            </div>
+          </div>
+
+          <div className="getstarted-cta reveal-on-scroll">
+            <a
+              href="https://github.com/schlessera/art-installation/blob/main/docs/ACTOR_GUIDE.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+            >
+              View the Actor Guide
+            </a>
+            <a
+              href="https://github.com/schlessera/art-installation"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-secondary"
+            >
+              Browse the Source
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ===== THE GALLERY ===== */}
       <section className="landing-section section-gallery">
         <div className="section-inner">

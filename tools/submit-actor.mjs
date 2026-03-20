@@ -8,10 +8,11 @@
  * Requires: gh CLI installed and authenticated.
  */
 
-import { existsSync, statSync, readFileSync } from 'fs';
+import { existsSync, statSync, readFileSync, writeFileSync, unlinkSync } from 'fs';
 import { execSync } from 'child_process';
 import { resolve, join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { tmpdir } from 'os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -195,9 +196,15 @@ function main() {
         '*Submitted via `pnpm submit:actor`*',
       ].join('\n');
 
-      prUrl = run(
-        `gh pr create --title "Add community actor: ${name}" --body "${body.replace(/"/g, '\\"')}" --base main`
-      );
+      const bodyFile = join(tmpdir(), `actor-pr-${name}.md`);
+      writeFileSync(bodyFile, body);
+      try {
+        prUrl = run(
+          `gh pr create --title "Add community actor: ${name}" --body-file "${bodyFile}" --base main`
+        );
+      } finally {
+        try { unlinkSync(bodyFile); } catch {}
+      }
       console.log(`   PR created: ${prUrl}`);
     } catch (e) {
       console.error(`   Warning: Could not create PR: ${e.message}`);

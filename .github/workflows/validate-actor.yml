@@ -59,8 +59,8 @@ jobs:
 
       - name: Validate actor
         run: |
-          cd "actors/community/$ACTOR_NAME"
-          pnpm exec tsx ../../../packages/actor-devtools/bin/validate-actor.ts src/index.ts
+          pnpm --filter @art/actor-devtools exec \
+            tsx bin/validate-actor.ts "$GITHUB_WORKSPACE/actors/community/$ACTOR_NAME/src/index.ts"
 
       - name: Check bundle
         run: |

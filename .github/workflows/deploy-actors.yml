@@ -68,12 +68,8 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            # Find the runtime container by name pattern (Coolify naming convention)
-            CONTAINER=$(docker ps --format '{{.Names}}' | grep -i polychorus-runtime | head -1)
-            if [ -z "$CONTAINER" ]; then
-              # Fallback: search by image or any coolify label
-              CONTAINER=$(docker ps --filter "label=coolify.name=polychorus-runtime" --format '{{.Names}}' | head -1)
-            fi
+            # Find the runtime container (Coolify names containers as {uuid}-{timestamp})
+            CONTAINER=$(docker ps --format '{{.Names}}' | grep '^iosg8o8wg8w8cok4o0ok0884' | head -1)
             if [ -z "$CONTAINER" ]; then
               echo "WARNING: Runtime container not found, skipping docker cp"
               echo "Running containers:"

@@ -1,0 +1,35 @@
+name: Auto-Merge Validated Actor
+
+# Triggered when the "Validate Actor PR" workflow completes.
+# Runs in the base repo context with full write permissions,
+# so it can merge fork PRs that the validation workflow cannot.
+
+on:
+  workflow_run:
+    workflows: ['Validate Actor PR']
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge the PR
+        run: |
+          PR_NUMBER=$(gh api \
+            "repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}" \
+            --jq '.pull_requests[0].number')
+
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "::warning::Could not determine PR number from workflow run"
+            exit 0
+          fi
+
+          echo "Merging PR #$PR_NUMBER"
+          gh pr merge "$PR_NUMBER" --repo "${{ github.repository }}" --squash --auto
+        env:
+          GH_TOKEN: ${{ github.token }}

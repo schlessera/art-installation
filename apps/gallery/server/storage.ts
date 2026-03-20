@@ -332,7 +332,7 @@ export class GalleryStorage {
     if (!artwork) return null;
 
     artwork.review = review;
-    artwork.combinedScore = calculateCombinedScore(review.overallScore, artwork.voteCount);
+    artwork.combinedScore = calculateCombinedScore(review.overallScore, artwork.voteCount, artwork.isSample ?? false);
     artwork.isVisible = true; // Make visible after review
 
     await this.save();
@@ -466,7 +466,7 @@ export class GalleryStorage {
 
     artwork.votes.push(vote);
     artwork.voteCount = artwork.votes.length;
-    artwork.combinedScore = calculateCombinedScore(artwork.review.overallScore, artwork.voteCount);
+    artwork.combinedScore = calculateCombinedScore(artwork.review.overallScore, artwork.voteCount, artwork.isSample ?? false);
 
     await this.save();
     return vote;

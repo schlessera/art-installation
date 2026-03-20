@@ -267,12 +267,16 @@ export interface PruningResult {
  */
 export function calculateCombinedScore(
   aiOverallScore: number,
-  voteCount: number
+  voteCount: number,
+  isSample: boolean = false
 ): number {
   // Vote bonus: 3 points per vote, max 30 points
   // Using sqrt for diminishing returns: bonus = 30 * (1 - e^(-voteCount/5))
   const voteBonus = Math.min(30, 30 * (1 - Math.exp(-voteCount / 5)));
-  return aiOverallScore + voteBonus;
+  const score = aiOverallScore + voteBonus;
+  // Sample artworks score at half so real artworks take precedence
+  // in sorting and get pruned last
+  return isSample ? score * 0.5 : score;
 }
 
 /**

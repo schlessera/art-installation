@@ -11,6 +11,7 @@ import type {
   ActorUpdateAPI,
   FrameContext,
   RegisteredActor,
+  ActorCatalogEntry,
   ActorRole,
 } from '@art/types';
 import { getActorRole } from '@art/types';
@@ -216,6 +217,9 @@ export class ActorScheduler {
     // Get all actor IDs for logging and callbacks
     const allActorIds = this.activeActors.map((a) => a.actor.metadata.id);
 
+    // Mark active actors in registry (protects from LRU eviction)
+    this.registry.setActiveActors(new Set(allActorIds));
+
     console.log(`[ActorScheduler] Started cycle ${this.cycleNumber}:`);
     console.log(`  - Background: ${bgActorId || 'solid color'}`);
     console.log(`  - Background filters: ${bgFilterIds.length > 0 ? bgFilterIds.join(', ') : 'none'}`);
@@ -235,25 +239,26 @@ export class ActorScheduler {
    * @returns Actor ID or null for solid color fallback
    */
   private async selectAndSetupBackgroundActor(): Promise<string | null> {
-    let registered: RegisteredActor | undefined;
+    let entry: ActorCatalogEntry | undefined;
 
     if (this.config.fixedBackgroundActorId) {
-      registered = this.registry.get(this.config.fixedBackgroundActorId);
-      if (!registered) {
+      entry = this.registry.getCatalogEntry(this.config.fixedBackgroundActorId);
+      if (!entry) {
         console.warn(`[ActorScheduler] Fixed background actor not found: ${this.config.fixedBackgroundActorId}`);
       }
     } else {
-      // Select from background actors
       const bgActors = this.selectActorsByRole('background', 1);
-      registered = bgActors[0];
+      entry = bgActors[0];
     }
 
-    if (!registered) {
-      // No background actor available - solid color fallback
+    if (!entry) {
       return null;
     }
 
-    // Setup the actor
+    // Load the actor and set it up
+    const registered = await this.loadAndWrap(entry);
+    if (!registered) return null;
+
     const activeActor = await this.setupActor(registered, 'background');
     if (activeActor) {
       this.backgroundActor = activeActor;
@@ -268,24 +273,24 @@ export class ActorScheduler {
    * @returns Array of filter actor IDs
    */
   private async selectAndSetupBackgroundFilters(): Promise<string[]> {
-    let selectedActors: RegisteredActor[];
+    let entries: ActorCatalogEntry[];
 
-    // Check if fixed filter IDs are specified (including empty array to disable filters)
     if (this.config.fixedBackgroundFilterIds !== undefined) {
-      // Empty array means no filters (disabled)
       if (this.config.fixedBackgroundFilterIds.length === 0) {
         return [];
       }
-      selectedActors = this.config.fixedBackgroundFilterIds
-        .map(id => this.registry.get(id))
-        .filter((r): r is RegisteredActor => r !== undefined);
+      entries = this.config.fixedBackgroundFilterIds
+        .map(id => this.registry.getCatalogEntry(id))
+        .filter((e): e is ActorCatalogEntry => e !== undefined);
     } else {
       const count = this.weightedRandomCount(this.config.backgroundFilterWeights);
-      selectedActors = this.selectActorsByRole('filter', count);
+      entries = this.selectActorsByRole('filter', count);
     }
 
     const ids: string[] = [];
-    for (const registered of selectedActors) {
+    for (const entry of entries) {
+      const registered = await this.loadAndWrap(entry);
+      if (!registered) continue;
       const activeActor = await this.setupActor(registered, 'filter');
       if (activeActor) {
         this.backgroundFilterActors.push(activeActor);
@@ -301,23 +306,24 @@ export class ActorScheduler {
    * @returns Array of actor IDs
    */
   private async selectAndSetupForegroundActors(): Promise<string[]> {
-    let selectedActors: RegisteredActor[];
+    let entries: ActorCatalogEntry[];
 
     if (this.config.fixedActorIds && this.config.fixedActorIds.length > 0) {
-      // Filter to only foreground actors
-      selectedActors = this.config.fixedActorIds
-        .map(id => this.registry.get(id))
-        .filter((r): r is RegisteredActor => {
-          if (!r) return false;
-          return getActorRole(r.actor.metadata) === 'foreground';
+      entries = this.config.fixedActorIds
+        .map(id => this.registry.getCatalogEntry(id))
+        .filter((e): e is ActorCatalogEntry => {
+          if (!e) return false;
+          return getActorRole(e.metadata) === 'foreground';
         });
     } else {
       const count = this.randomInt(this.config.minActors, this.config.maxActors);
-      selectedActors = this.selectActorsByRole('foreground', count);
+      entries = this.selectActorsByRole('foreground', count);
     }
 
     const ids: string[] = [];
-    for (const registered of selectedActors) {
+    for (const entry of entries) {
+      const registered = await this.loadAndWrap(entry);
+      if (!registered) continue;
       const activeActor = await this.setupActor(registered, 'foreground');
       if (activeActor) {
         this.foregroundActors.push(activeActor);
@@ -333,26 +339,25 @@ export class ActorScheduler {
    * @returns Array of filter actor IDs
    */
   private async selectAndSetupForegroundFilters(): Promise<string[]> {
-    let selectedActors: RegisteredActor[];
+    let entries: ActorCatalogEntry[];
 
-    // Check if fixed filter IDs are specified (including empty array to disable filters)
     if (this.config.fixedForegroundFilterIds !== undefined) {
-      // Empty array means no filters (disabled)
       if (this.config.fixedForegroundFilterIds.length === 0) {
         return [];
       }
-      selectedActors = this.config.fixedForegroundFilterIds
-        .map(id => this.registry.get(id))
-        .filter((r): r is RegisteredActor => r !== undefined);
+      entries = this.config.fixedForegroundFilterIds
+        .map(id => this.registry.getCatalogEntry(id))
+        .filter((e): e is ActorCatalogEntry => e !== undefined);
     } else {
       const count = this.weightedRandomCount(this.config.foregroundFilterWeights);
-      // Exclude filters already used for background
       const usedFilterIds = new Set(this.backgroundFilterActors.map(a => a.actor.metadata.id));
-      selectedActors = this.selectActorsByRole('filter', count, usedFilterIds);
+      entries = this.selectActorsByRole('filter', count, usedFilterIds);
     }
 
     const ids: string[] = [];
-    for (const registered of selectedActors) {
+    for (const entry of entries) {
+      const registered = await this.loadAndWrap(entry);
+      if (!registered) continue;
       const activeActor = await this.setupActor(registered, 'filter');
       if (activeActor) {
         this.foregroundFilterActors.push(activeActor);
@@ -361,6 +366,20 @@ export class ActorScheduler {
     }
 
     return ids;
+  }
+
+  /**
+   * Load an actor from the catalog and return a RegisteredActor view.
+   */
+  private async loadAndWrap(entry: ActorCatalogEntry): Promise<RegisteredActor | null> {
+    const actor = await this.registry.ensureLoaded(entry.metadata.id);
+    if (!actor) return null;
+    return {
+      actor,
+      sourcePath: entry.sourcePath,
+      registeredAt: entry.registeredAt,
+      stats: entry.stats,
+    };
   }
 
   /**
@@ -393,27 +412,28 @@ export class ActorScheduler {
   /**
    * Select actors by role using weighted selection.
    */
-  private selectActorsByRole(role: ActorRole, count: number, exclude?: Set<string>): RegisteredActor[] {
-    const allActors = this.registry.getAll().filter(r => {
-      const actorRole = getActorRole(r.actor.metadata);
+  private selectActorsByRole(role: ActorRole, count: number, exclude?: Set<string>): ActorCatalogEntry[] {
+    // Select from the full catalog (all known actors, not just loaded ones)
+    const allActors = this.registry.getCatalog().filter(entry => {
+      const actorRole = getActorRole(entry.metadata);
       if (actorRole !== role) return false;
-      if (exclude && exclude.has(r.actor.metadata.id)) return false;
+      if (exclude && exclude.has(entry.metadata.id)) return false;
       return true;
     });
 
     if (allActors.length === 0) return [];
 
     // Calculate selection scores
-    const scored = allActors.map((registered) => ({
-      registered,
-      score: this.calculateSelectionScore(registered),
+    const scored = allActors.map((entry) => ({
+      entry,
+      score: this.calculateSelectionScore(entry),
     }));
 
     // Sort by score (highest first)
     scored.sort((a, b) => b.score - a.score);
 
     // Weighted random selection
-    const selected: RegisteredActor[] = [];
+    const selected: ActorCatalogEntry[] = [];
     const available = [...scored];
 
     while (selected.length < count && available.length > 0) {
@@ -423,7 +443,7 @@ export class ActorScheduler {
       for (let i = 0; i < available.length; i++) {
         random -= available[i].score;
         if (random <= 0) {
-          selected.push(available[i].registered);
+          selected.push(available[i].entry);
           available.splice(i, 1);
           break;
         }
@@ -431,7 +451,7 @@ export class ActorScheduler {
 
       // Fallback: take the first available
       if (random > 0 && available.length > 0) {
-        selected.push(available[0].registered);
+        selected.push(available[0].entry);
         available.shift();
       }
     }
@@ -493,6 +513,12 @@ export class ActorScheduler {
 
     // Brief delay to ensure snapshot capture completes
     await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Clear active actor protection and unload from memory
+    this.registry.setActiveActors(new Set());
+    for (const activeActor of this.activeActors) {
+      this.registry.unloadActor(activeActor.actor.metadata.id);
+    }
 
     // Clear per-actor containers
     if (this.containerManager) {
@@ -709,8 +735,8 @@ export class ActorScheduler {
    *   - 30 if usedRecently                     // Used recently = penalty
    *   +/- reviewFeedbackBonus                  // AI feedback influences selection
    */
-  private calculateSelectionScore(registered: RegisteredActor): number {
-    const { stats } = registered;
+  private calculateSelectionScore(entry: ActorCatalogEntry): number {
+    const { stats } = entry;
     const { noveltyBias, recentUsePenalty, recentUseWindow } = this.config;
 
     let score = 100;
@@ -739,7 +765,7 @@ export class ActorScheduler {
     }
 
     // Community actor boost: 4x selection weight over builtins
-    if (registered.sourcePath && registered.sourcePath.includes('community')) {
+    if (entry.sourcePath && entry.sourcePath.includes('community')) {
       score *= 4;
     }
 

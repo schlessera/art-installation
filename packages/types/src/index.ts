@@ -14,6 +14,7 @@ export type {
   ActorModule,
   FrameContext,
   RegisteredActor,
+  ActorCatalogEntry,
   ActorUsageStats,
   ContextType,
   ActorRole,

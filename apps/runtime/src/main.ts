@@ -266,9 +266,16 @@ function setupActorRegistration() {
     actor: Actor,
     path: string
   ) => {
-    const result = actorRegistry.register(actor, path);
+    // Register to catalog with a loader that returns the captured actor.
+    // The actor object is held in this closure — the registry only stores metadata
+    // until the actor is selected for a cycle.
+    const result = actorRegistry.registerCatalog(
+      actor.metadata,
+      path,
+      () => Promise.resolve(actor)
+    );
     if (result.success) {
-      console.log(`[Runtime] Actor registered: ${actor.metadata.id}`);
+      console.log(`[Runtime] Actor cataloged: ${actor.metadata.id}`);
     } else {
       console.error(`[Runtime] Failed to register actor: ${result.error}`);
     }
@@ -1158,28 +1165,38 @@ async function loadActors(): Promise<void> {
     console.log(`[Runtime] Solo mode: Loading only "${CONFIG.soloActorId}"`);
   }
 
-  // Load each actor module
+  // Register each actor to the catalog with a lazy loader.
+  // In solo mode, eagerly load the target actor. Otherwise, actors are loaded
+  // on demand when selected for a cycle (bounded by LRU eviction).
   for (const path of pathsToLoad) {
     try {
-      console.log(`[Runtime] Loading actor from: ${path}`);
+      // We need to load the module once to get metadata for the catalog.
+      // The module factory is reusable — Vite caches the import.
       const module = await actorModules[path]();
 
-      if (module.default) {
-        // Register the actor if not already registered
-        // Actors will be started automatically when a cycle begins
-        if (!actorRegistry.has(module.default.metadata.id)) {
-          const result = actorRegistry.register(module.default, path);
-          if (result.success) {
-            console.log(`[Runtime] Registered actor: ${module.default.metadata.id}`);
-          }
+      if (module.default && !actorRegistry.has(module.default.metadata.id)) {
+        const actor = module.default;
+        const loader = async () => {
+          // Vite caches dynamic imports, so this returns the same module
+          const m = await actorModules[path]();
+          return m.default;
+        };
+
+        if (CONFIG.soloMode) {
+          // In solo mode, eagerly load into cache
+          actorRegistry.register(actor, path);
+          console.log(`[Runtime] Registered + loaded actor: ${actor.metadata.id}`);
+        } else {
+          // Normal mode: catalog-only registration (lazy load on selection)
+          actorRegistry.registerCatalog(actor.metadata, path, loader);
         }
       }
     } catch (error) {
-      console.error(`[Runtime] Failed to load actor from ${path}:`, error);
+      console.error(`[Runtime] Failed to catalog actor from ${path}:`, error);
     }
   }
 
-  console.log(`[Runtime] Loaded ${actorRegistry.count} actors`);
+  console.log(`[Runtime] Cataloged ${actorRegistry.count} actors (${actorRegistry.loadedCount} loaded)`);
 }
 
 // Start the application

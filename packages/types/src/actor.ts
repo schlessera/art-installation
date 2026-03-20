@@ -199,6 +199,25 @@ export type ActorModule = {
 };
 
 /**
+ * Lightweight catalog entry for actor selection.
+ * Contains metadata and stats but NOT the full actor implementation.
+ * Used by the scheduler to make selection decisions without loading the actor module.
+ */
+export interface ActorCatalogEntry {
+  /** Actor metadata */
+  metadata: ActorMetadata;
+
+  /** Path to actor source/bundle */
+  sourcePath: string;
+
+  /** When actor was registered */
+  registeredAt: Date;
+
+  /** Usage statistics */
+  stats: ActorUsageStats;
+}
+
+/**
  * Actor registration info stored in registry.
  */
 export interface RegisteredActor {

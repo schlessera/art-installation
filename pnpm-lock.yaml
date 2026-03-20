@@ -857,6 +857,116 @@ importers:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
 
+  actors/community/aperitivo-hour:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/bocce-balls:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/cathedral-rose:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/crowd-mosaic:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/cypress-row:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/dutch-master:
     dependencies:
       '@art/actor-sdk':
@@ -1121,6 +1231,28 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/fireflies-at-dusk:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/fresco-crack:
     dependencies:
       '@art/actor-sdk':
@@ -1165,6 +1297,50 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/golden-hour-flare:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/grape-vine:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/lemon-tree:
     dependencies:
       '@art/actor-sdk':
@@ -1188,6 +1364,50 @@ importers:
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
   actors/community/limonaia:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/marble-veins:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/mediterranean-tiles:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*

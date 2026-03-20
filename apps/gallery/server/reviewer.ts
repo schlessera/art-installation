@@ -166,6 +166,26 @@ export class ArtworkReviewer {
         const results = await Promise.allSettled(
           batch.map(async (artwork) => {
             const review = await this.reviewArtwork(artwork);
+            // Penalize visualUnity when artwork lacks community actor diversity
+            // to incentivize collaboration with hackathon participants' actors
+            const foregroundActors = artwork.contributingActors.filter(
+              a => !a.actorRole || a.actorRole === 'foreground'
+            );
+            if (foregroundActors.length > 0) {
+              const builtinCount = foregroundActors.filter(a => a.authorGithub === 'cloudfest').length;
+              if (builtinCount === foregroundActors.length) {
+                // All foreground actors are builtin — subtract 10
+                review.visualUnity = Math.max(0, review.visualUnity - 10);
+              } else if (builtinCount > foregroundActors.length / 2) {
+                // More than half are builtin — subtract 5
+                review.visualUnity = Math.max(0, review.visualUnity - 5);
+              }
+              // Recalculate overallScore with adjusted visualUnity
+              const dims = ['colorHarmony', 'composition', 'visualUnity', 'depthAndLayering', 'rhythmAndFlow', 'intentionalComplexity'] as const;
+              review.overallScore = Math.round(
+                dims.reduce((sum, d) => sum + review[d], 0) / dims.length
+              );
+            }
             await this.storage.updateReview(artwork.id, review);
           })
         );

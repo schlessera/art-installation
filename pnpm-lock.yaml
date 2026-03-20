@@ -857,6 +857,28 @@ importers:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
 
+  actors/community/snow:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   apps/gallery:
     dependencies:
       '@art/types':

@@ -60,3 +60,21 @@ jobs:
           source: "deploy/*"
           target: ${{ secrets.DEPLOY_PATH }}
           strip_components: 1
+
+      - name: Copy into runtime container
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            # Find the runtime container name
+            CONTAINER=$(docker ps --filter "label=coolify.applicationId=iosg8o8wg8w8cok4o0ok0884" --format '{{.Names}}' | head -1)
+            if [ -z "$CONTAINER" ]; then
+              echo "::warning::Runtime container not found, skipping docker cp"
+              exit 0
+            fi
+            echo "Copying to container: $CONTAINER"
+            docker cp ${{ secrets.DEPLOY_PATH }}/. "$CONTAINER:/usr/share/nginx/html/actors/community/"
+            echo "Deployed community actors into runtime container"
+            docker exec "$CONTAINER" ls -la /usr/share/nginx/html/actors/community/

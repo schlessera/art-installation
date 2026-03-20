@@ -30,7 +30,6 @@ const HITS_TO_BREAK_MIN = 3;
 const HITS_TO_BREAK_MAX = 5;
 const SPAWN_INTERVAL_MS = 4000; // new block every 4s
 const HIT_COOLDOWN_MS = 300; // min time between hits on same block
-const PICKAXE_SIZE = 40;
 const HEAD_HIT_RADIUS = 50; // how close head must be to block center to hit
 
 // Block types with Minecraft-ish colors
@@ -94,8 +93,6 @@ const blockSideStyle = { fill: 0x000000 as number, alpha: 0.9 };
 const crackStyle = { fill: 0x000000 as number, alpha: 0.0 };
 const outlineStyle = { color: 0x000000 as number, width: 2.5, alpha: 0.5 };
 const particleStyle = { fill: 0x000000 as number, alpha: 1.0 };
-const textStyle = { fontSize: 10, fill: 0xffffff as number, alpha: 0.7, font: 'monospace', align: 'center' as const };
-const noVideoStyle = { fontSize: 14, fill: 0xffffff as number, alpha: 0.8, font: 'monospace', align: 'center' as const };
 
 function spawnBlock(time: number): void {
   // Find inactive slot
@@ -248,39 +245,48 @@ function drawBlock(api: ActorUpdateAPI, block: Block, time: number): void {
   }
 }
 
+// Pixel-art pickaxe grid (10x10, each cell = PX_CELL pixels)
+// 0=empty, 1=handle(dark brown), 2=handle(light brown), 3=iron dark, 4=iron mid, 5=iron light
+const PX_GRID = [
+  [0,0,0,0,5,4,4,3,0,0],
+  [0,0,0,0,0,5,4,4,3,0],
+  [0,0,0,0,0,0,5,4,0,0],
+  [0,0,0,0,0,2,1,5,0,0],
+  [0,0,0,0,2,1,0,0,0,0],
+  [0,0,0,2,1,0,0,0,0,0],
+  [0,0,2,1,0,0,0,0,0,0],
+  [0,2,1,0,0,0,0,0,0,0],
+  [2,1,0,0,0,0,0,0,0,0],
+  [1,0,0,0,0,0,0,0,0,0],
+];
+const PX_COLORS = [0, 0x5C3A0E, 0x8B6914, 0x666666, 0x999999, 0xCCCCCC];
+const PX_CELL = 5; // size of each pixel cell
+const PX_GRID_SIZE = 10;
+const pxStyle = { fill: 0x000000 as number, alpha: 0.95 };
+
 function drawPickaxe(api: ActorUpdateAPI, x: number, y: number, angle: number): void {
   api.brush.pushMatrix();
   api.brush.translate(x, y);
   api.brush.rotate(angle);
 
-  // Handle (brown stick)
-  api.brush.line(0, 0, PICKAXE_SIZE * 0.7, PICKAXE_SIZE * 0.7, {
-    color: 0x8B6914,
-    width: 4,
-    alpha: 0.9,
-  });
+  // Offset so handle end is at origin (bottom-left of grid)
+  const offsetX = -PX_CELL * PX_GRID_SIZE;
+  const offsetY = 0;
 
-  // Head (gray/iron pickaxe shape)
-  const hx = PICKAXE_SIZE * 0.7;
-  const hy = PICKAXE_SIZE * 0.7;
-  // Left pick
-  api.brush.line(hx - 12, hy - 12, hx + 4, hy - 4, {
-    color: 0xAAAAAA,
-    width: 5,
-    alpha: 0.9,
-  });
-  // Right pick
-  api.brush.line(hx + 4, hy - 4, hx + 12, hy + 8, {
-    color: 0xAAAAAA,
-    width: 5,
-    alpha: 0.9,
-  });
-  // Pick edge highlight
-  api.brush.line(hx - 12, hy - 12, hx + 12, hy + 8, {
-    color: 0xCCCCCC,
-    width: 2.5,
-    alpha: 0.7,
-  });
+  for (let row = 0; row < PX_GRID_SIZE; row++) {
+    const gridRow = PX_GRID[row];
+    for (let col = 0; col < PX_GRID_SIZE; col++) {
+      const val = gridRow[col];
+      if (val === 0) continue;
+      pxStyle.fill = PX_COLORS[val];
+      api.brush.rect(
+        offsetX + col * PX_CELL,
+        offsetY + row * PX_CELL,
+        PX_CELL, PX_CELL,
+        pxStyle,
+      );
+    }
+  }
 
   api.brush.popMatrix();
 }
@@ -454,13 +460,6 @@ const actor: Actor = {
       drawPickaxe(api, pickaxeX, pickaxeY, pickaxeAngle);
     }
 
-    // HUD text
-    const hintColor = isDark ? 0xffffff : 0x222222;
-    textStyle.fill = hintColor;
-    if (!hasFace) {
-      noVideoStyle.fill = hintColor;
-      api.brush.text('Move your head in front of the camera!', canvasW * 0.5, canvasH * 0.5, noVideoStyle);
-    }
   },
 
   async teardown(): Promise<void> {

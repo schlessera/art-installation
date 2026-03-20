@@ -51,8 +51,8 @@ jobs:
           node-version: 22
       - uses: pnpm/action-setup@v4
 
-      # No --frozen-lockfile: PR adds a new workspace package not in the lockfile
-      - run: pnpm install
+      # Actor PRs add a new workspace package not in the lockfile
+      - run: pnpm install --no-frozen-lockfile
 
       - name: Build actor
         run: pnpm --filter "@art/actor-$ACTOR_NAME" build

@@ -17,8 +17,8 @@ jobs:
           node-version: 22
       - uses: pnpm/action-setup@v4
 
-      # No --frozen-lockfile: community actors may not be in the lockfile yet
-      - run: pnpm install
+      # Actor PRs add new workspace packages not in the lockfile
+      - run: pnpm install --no-frozen-lockfile
 
       - name: Build community actors
         run: pnpm --filter './actors/community/*' build

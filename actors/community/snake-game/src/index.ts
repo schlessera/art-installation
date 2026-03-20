@@ -10,7 +10,7 @@ import type {
 const metadata: ActorMetadata = {
   id: 'snake-game',
   name: 'Snake Game',
-  description: 'A self-playing Snake game with perfect AI that chases food and dies after 50 seconds',
+  description: 'A self-playing Snake game with AI that eventually bites itself and flashes on death',
   author: {
     name: 'Lucas Radke',
     github: 'lucasradke',
@@ -26,7 +26,7 @@ const metadata: ActorMetadata = {
 const GRID_COLS = 18;
 const GRID_ROWS = 32;
 const MAX_SNAKE_LENGTH = GRID_COLS * GRID_ROWS;
-const DEATH_TIME_MS = 50000;
+const DEATH_TIME_MS = 45000;
 const MOVE_INTERVAL_MS = 100; // snake moves every 100ms
 
 // Direction vectors
@@ -52,7 +52,6 @@ let cellH = 0;
 let marginX = 0;
 let marginY = 0;
 let lastMoveTime = 0;
-let score = 0;
 let isDead = false;
 let deathTime = 0;
 let foodPulsePhase = 0;
@@ -65,9 +64,6 @@ const bodyStyle = { fill: 0x00ff00 as number, alpha: 0.85 };
 const headStyle = { fill: 0x44ff44 as number, alpha: 1.0 };
 const foodStyle = { fill: 0xff3333 as number, alpha: 0.9 };
 const borderStyle = { color: 0x33ff33 as number, width: 2.5, alpha: 0.6 };
-const textStyle = { fontSize: 12, fill: 0x33ff33 as number, alpha: 0.8, font: 'monospace' };
-const gameOverStyle = { fontSize: 18, fill: 0xff4444 as number, alpha: 1.0, font: 'monospace', align: 'center' as const };
-const scoreTextStyle = { fontSize: 14, fill: 0x33ff33 as number, alpha: 0.9, font: 'monospace', align: 'center' as const };
 
 function gridIndex(x: number, y: number): number {
   return y * GRID_COLS + x;
@@ -188,11 +184,37 @@ function findBestDirection(): number {
   return direction;
 }
 
+// After death time, steer INTO the snake body to self-destruct
+function findSuicideDirection(): number {
+  const headX = snakeX[snakeHead];
+  const headY = snakeY[snakeHead];
+
+  // Try to steer into own body
+  for (let d = 0; d < 4; d++) {
+    const nx = headX + DX[d];
+    const ny = headY + DY[d];
+    if (nx >= 0 && nx < GRID_COLS && ny >= 0 && ny < GRID_ROWS && isOnSnake(nx, ny)) {
+      return d;
+    }
+  }
+
+  // If can't hit body yet, just move forward (will eventually collide)
+  return findBestDirection();
+}
+
+let elapsedMs = 0;
+
 function moveSnake(): void {
   if (isDead) return;
 
   markSnakeOnGrid();
-  direction = findBestDirection();
+
+  // After 45s, steer into own body to self-destruct
+  if (elapsedMs >= DEATH_TIME_MS) {
+    direction = findSuicideDirection();
+  } else {
+    direction = findBestDirection();
+  }
 
   const headX = snakeX[snakeHead];
   const headY = snakeY[snakeHead];
@@ -213,7 +235,6 @@ function moveSnake(): void {
   // Check food
   if (newX === foodX && newY === foodY) {
     snakeLength++;
-    score++;
     markSnakeOnGrid();
     placeFood();
   }
@@ -231,7 +252,7 @@ const actor: Actor = {
     // Calculate cell size with margin for border
     const margin = 8;
     marginX = margin;
-    marginY = margin + 20; // extra top margin for score
+    marginY = margin;
     cellW = (canvasW - margin * 2) / GRID_COLS;
     cellH = (canvasH - margin - marginY) / GRID_ROWS;
 
@@ -256,11 +277,11 @@ const actor: Actor = {
     snakeY[2] = startY;
     direction = DIR_RIGHT;
 
-    score = 0;
     isDead = false;
     deathTime = 0;
     lastMoveTime = 0;
     foodPulsePhase = 0;
+    elapsedMs = 0;
 
     // Place initial food
     markSnakeOnGrid();
@@ -276,20 +297,12 @@ const actor: Actor = {
     const snakeHeadColor = isDark ? 0x66ff99 : 0x33aa55;
     const foodColor = isDark ? 0xff4444 : 0xcc2222;
     const borderColor = isDark ? 0x33ff33 : 0x227722;
-    const textColor = isDark ? 0x33ff33 : 0x227722;
-
     bodyStyle.fill = snakeColor;
     headStyle.fill = snakeHeadColor;
     foodStyle.fill = foodColor;
     borderStyle.color = borderColor;
-    textStyle.fill = textColor;
-    scoreTextStyle.fill = textColor;
 
-    // Force death after 50 seconds
-    if (!isDead && t >= DEATH_TIME_MS) {
-      isDead = true;
-      deathTime = t;
-    }
+    elapsedMs = t;
 
     // Move snake at fixed intervals
     if (!isDead && t - lastMoveTime >= MOVE_INTERVAL_MS) {
@@ -319,8 +332,11 @@ const actor: Actor = {
       api.brush.circle(fx, fy, fr, foodStyle);
     }
 
+    // Flash effect when dead — toggle visibility rapidly
+    const flashVisible = !isDead || Math.sin(t * 0.02) > 0;
+
     // Draw snake body
-    if (snakeLength > 0) {
+    if (snakeLength > 0 && flashVisible) {
       for (let i = 0; i < snakeLength; i++) {
         const idx = (snakeHead - i + MAX_SNAKE_LENGTH) % MAX_SNAKE_LENGTH;
         const sx = marginX + snakeX[idx] * cellW;
@@ -328,7 +344,10 @@ const actor: Actor = {
         const padding = 0.5;
 
         if (i === 0) {
-          // Head - slightly brighter
+          // Head — red when dead, normal otherwise
+          if (isDead) {
+            headStyle.fill = 0xff4444;
+          }
           api.brush.rect(sx + padding, sy + padding, cellW - padding * 2, cellH - padding * 2, headStyle);
         } else {
           // Body - gradient fade towards tail
@@ -338,53 +357,43 @@ const actor: Actor = {
         }
       }
 
-      // Draw eyes on head
+      // Draw eyes on head (X eyes when dead)
       const hx = snakeX[snakeHead];
       const hy = snakeY[snakeHead];
       const cx = marginX + hx * cellW + cellW * 0.5;
       const cy = marginY + hy * cellH + cellH * 0.5;
-      const eyeOff = cellW * 0.2;
-      const eyeR = cellW * 0.12;
 
-      let ex1 = cx, ey1 = cy, ex2 = cx, ey2 = cy;
-      if (direction === DIR_UP || direction === DIR_DOWN) {
-        ex1 = cx - eyeOff; ey1 = cy;
-        ex2 = cx + eyeOff; ey2 = cy;
+      if (isDead) {
+        // X eyes
+        const xSize = cellW * 0.18;
+        const eyeStyle = { color: 0x000000 as number, width: 2.5, alpha: 0.9 };
+        // Left X
+        api.brush.line(cx - cellW * 0.2 - xSize, cy - xSize, cx - cellW * 0.2 + xSize, cy + xSize, eyeStyle);
+        api.brush.line(cx - cellW * 0.2 + xSize, cy - xSize, cx - cellW * 0.2 - xSize, cy + xSize, eyeStyle);
+        // Right X
+        api.brush.line(cx + cellW * 0.2 - xSize, cy - xSize, cx + cellW * 0.2 + xSize, cy + xSize, eyeStyle);
+        api.brush.line(cx + cellW * 0.2 + xSize, cy - xSize, cx + cellW * 0.2 - xSize, cy + xSize, eyeStyle);
       } else {
-        ex1 = cx; ey1 = cy - eyeOff;
-        ex2 = cx; ey2 = cy + eyeOff;
-      }
-      api.brush.circle(ex1, ey1, eyeR, { fill: 0x000000, alpha: 0.9 });
-      api.brush.circle(ex2, ey2, eyeR, { fill: 0x000000, alpha: 0.9 });
-    }
-
-    // Draw score
-    api.brush.text(`SCORE: ${score}`, marginX + 2, 4, textStyle);
-
-    // Draw death screen
-    if (isDead) {
-      const deathElapsed = t - deathTime;
-      const fadeIn = Math.min(deathElapsed / 500, 1.0);
-
-      // Darken overlay
-      api.brush.rect(0, 0, canvasW, canvasH, {
-        fill: 0x000000,
-        alpha: fadeIn * 0.4,
-      });
-
-      if (fadeIn > 0.3) {
-        gameOverStyle.alpha = Math.min((fadeIn - 0.3) / 0.4, 1.0);
-        api.brush.text('GAME OVER', canvasW * 0.5, canvasH * 0.45, gameOverStyle);
-        scoreTextStyle.alpha = Math.min((fadeIn - 0.3) / 0.4, 1.0);
-        api.brush.text(`Score: ${score}`, canvasW * 0.5, canvasH * 0.45 + 28, scoreTextStyle);
+        const eyeOff = cellW * 0.2;
+        const eyeR = cellW * 0.12;
+        let ex1 = cx, ey1 = cy, ex2 = cx, ey2 = cy;
+        if (direction === DIR_UP || direction === DIR_DOWN) {
+          ex1 = cx - eyeOff; ey1 = cy;
+          ex2 = cx + eyeOff; ey2 = cy;
+        } else {
+          ex1 = cx; ey1 = cy - eyeOff;
+          ex2 = cx; ey2 = cy + eyeOff;
+        }
+        api.brush.circle(ex1, ey1, eyeR, { fill: 0x000000, alpha: 0.9 });
+        api.brush.circle(ex2, ey2, eyeR, { fill: 0x000000, alpha: 0.9 });
       }
     }
+
   },
 
   async teardown(): Promise<void> {
     snakeLength = 0;
     snakeHead = 0;
-    score = 0;
     isDead = false;
     deathTime = 0;
     lastMoveTime = 0;

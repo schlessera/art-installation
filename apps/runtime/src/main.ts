@@ -873,6 +873,32 @@ async function main(): Promise<void> {
     });
     actorLoader.start();
     console.log('[Runtime] ActorLoader started for community actors');
+
+    // In solo mode with a community actor, wait for it to be loaded
+    if (CONFIG.soloMode && CONFIG.soloActorId && !actorRegistry.has(CONFIG.soloActorId)) {
+      console.log(`[Runtime] Solo mode: Waiting for community actor "${CONFIG.soloActorId}" to load...`);
+      // Force an immediate scan, then wait up to 10s for the actor to appear
+      await actorLoader.scan();
+      let waited = 0;
+      while (!actorRegistry.has(CONFIG.soloActorId) && waited < 10000) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        waited += 500;
+      }
+      if (!actorRegistry.has(CONFIG.soloActorId)) {
+        console.error(`[Runtime] Solo mode: Actor "${CONFIG.soloActorId}" not found in builtins or community actors`);
+        const container = document.getElementById('canvas-container');
+        if (container) {
+          container.innerHTML = `
+            <div class="loading" style="color: #f44; text-align: center; padding: 40px;">
+              <div style="font-size: 18px; margin-bottom: 10px;">Actor not found: "${CONFIG.soloActorId}"</div>
+              <div style="font-size: 14px; opacity: 0.7;">Not found in builtin or community actors</div>
+            </div>
+          `;
+        }
+        return;
+      }
+      console.log(`[Runtime] Solo mode: Community actor "${CONFIG.soloActorId}" loaded`);
+    }
   }
 
   // Start first cycle after actors are loaded
@@ -1146,23 +1172,13 @@ async function loadActors(): Promise<void> {
     // Match by actor ID in path (e.g., "wave-painter" matches ".../wave-painter/src/index.ts")
     pathsToLoad = paths.filter(path => path.includes(`/${CONFIG.soloActorId}/`));
     if (pathsToLoad.length === 0) {
-      console.error(`[Runtime] Solo mode: Actor "${CONFIG.soloActorId}" not found in paths:`, paths);
-      // Show error in UI
-      const container = document.getElementById('canvas-container');
-      if (container) {
-        container.innerHTML = `
-          <div class="loading" style="color: #f44; text-align: center; padding: 40px;">
-            <div style="font-size: 18px; margin-bottom: 10px;">Actor not found: "${CONFIG.soloActorId}"</div>
-            <div style="font-size: 14px; opacity: 0.7;">Available actors:</div>
-            <div style="font-size: 12px; opacity: 0.5; margin-top: 10px;">
-              ${paths.map(p => p.match(/actors\/[^/]+\/([^/]+)/)?.[1] || p).join(', ')}
-            </div>
-          </div>
-        `;
-      }
-      return;
+      // Not in builtin glob — may be a community actor loaded via ActorLoader.
+      // Don't show error yet; the ActorLoader will try to load it from the manifest.
+      console.log(`[Runtime] Solo mode: Actor "${CONFIG.soloActorId}" not in builtins, will check community actors`);
+      pathsToLoad = []; // Skip glob loading, let ActorLoader handle it
+    } else {
+      console.log(`[Runtime] Solo mode: Loading only "${CONFIG.soloActorId}"`);
     }
-    console.log(`[Runtime] Solo mode: Loading only "${CONFIG.soloActorId}"`);
   }
 
   // Register each actor to the catalog with a lazy loader.

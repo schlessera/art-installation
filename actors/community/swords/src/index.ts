@@ -12,8 +12,8 @@ const metadata: ActorMetadata = {
   name: 'Swords',
   description: 'A rain of medieval swords and lightsabers tumbling from the sky',
   author: {
-    name: 'Jan-Willem',
-    github: 'janw-me',
+    name: 'Jan W',
+    github: 'janw-ll',
   },
   version: '1.0.0',
   tags: ['swords', 'rain', 'lightsaber', 'medieval', 'epic'],

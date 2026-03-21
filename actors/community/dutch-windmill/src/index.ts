@@ -1,19 +1,3 @@
-/**
- * Actor Template
- *
- * This is a template for creating new actors for the Art Installation.
- * Replace the implementation with your own creative vision!
- *
- * Getting Started:
- * 1. Update the metadata below with your info
- * 2. Implement the update() method to draw on the canvas
- * 3. Optionally implement setup() for initialization
- * 4. Run `pnpm dev` to preview your actor
- * 5. Run `pnpm validate` before submitting
- *
- * @see https://github.com/cloudfest/art-installation/docs/actor-development.md
- */
-
 import { registerActor } from '@art/actor-sdk';
 import type {
   Actor,
@@ -23,192 +7,193 @@ import type {
   ActorMetadata,
 } from '@art/types';
 
-// ============================================================
-// ACTOR METADATA - Update this with your information!
-// ============================================================
-
 const metadata: ActorMetadata = {
-  // Unique ID for your actor (kebab-case, e.g., "rainbow-waves")
   id: 'dutch-windmill',
-
-  // Display name shown in gallery
   name: 'Dutch Windmill',
-
-  // Short description of what your actor does
   description: 'Dutch windmills with windmill at the end of the blades, making windmill inception.',
-
-  // Your information
-  author: {
-    name: 'Jan-Willem',      // Change this!
-    github: 'janw-me',  // Change this!
-  },
-
-  // Version of your actor
+  author: { name: 'Jan-Willem', github: 'janw-me' },
   version: '1.0.0',
-
-  // Tags for categorization
   tags: ['windmill', 'inception', 'netherlands'],
-
-  // When you created this actor
   createdAt: new Date(),
-
-  // How long your actor prefers to run (seconds)
   preferredDuration: 30,
-
-  // Which context APIs your actor uses (optional)
-  requiredContexts: ['time'],
+  requiredContexts: ['display'],
 };
 
-// ============================================================
-// ACTOR STATE - Store any state your actor needs between frames
-// ============================================================
+const MAX_DEPTH = 2;
+const BLADE_COUNT = 4;
+const BLADE_ANGLE_STEP = (Math.PI * 2) / BLADE_COUNT;
+const TULIP_COLORS = [0xff3366, 0xffaa00, 0xff6633, 0xff2244, 0xffcc00];
+const TULIP_COUNT = 8;
 
-interface ActorState {
-  // Example: track positions, colors, animation progress, etc.
-  hue: number;
-  points: Array<{ x: number; y: number; vx: number; vy: number }>;
+let canvasW = 0;
+let canvasH = 0;
+
+function drawWindmillBlades(
+  api: ActorUpdateAPI,
+  hubX: number,
+  hubY: number,
+  bladeLength: number,
+  depth: number,
+  time: number,
+  isDark: boolean,
+): void {
+  const bladeColor = isDark ? 0xccbb99 : 0x5a4a3a;
+  const sailColor = isDark ? 0xeeddcc : 0xd4c4a8;
+  const hubColor = isDark ? 0xaa9977 : 0x6b5b4b;
+  const hubRadius = Math.max(bladeLength * 0.08, 2);
+  const bladeWidth = Math.max(bladeLength * 0.04, 2.5);
+
+  // Each depth level rotates at different speed and alternating direction
+  const rotSpeed = 0.6 * Math.pow(1.7, depth);
+  const direction = depth % 2 === 0 ? 1 : -1;
+  const rotation = time * rotSpeed * direction;
+
+  const drawSails = bladeLength > 10;
+
+  for (let i = 0; i < BLADE_COUNT; i++) {
+    const angle = rotation + i * BLADE_ANGLE_STEP;
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+    const tipX = hubX + cosA * bladeLength;
+    const tipY = hubY + sinA * bladeLength;
+
+    // Blade spine
+    api.brush.line(hubX, hubY, tipX, tipY, {
+      color: bladeColor,
+      width: bladeWidth,
+      alpha: 0.9,
+    });
+
+    // Sail lattice — thin parallelogram along the blade
+    if (drawSails) {
+      const perpX = -sinA;
+      const perpY = cosA;
+      const sailW = bladeLength * 0.15;
+      const startX = hubX + cosA * bladeLength * 0.15;
+      const startY = hubY + sinA * bladeLength * 0.15;
+
+      api.brush.polygon(
+        [
+          { x: startX, y: startY },
+          { x: startX + perpX * sailW, y: startY + perpY * sailW },
+          { x: tipX + perpX * sailW * 0.3, y: tipY + perpY * sailW * 0.3 },
+          { x: tipX, y: tipY },
+        ],
+        { fill: sailColor, alpha: 0.6 },
+      );
+    }
+
+    // Recurse: smaller windmill at each blade tip
+    if (depth < MAX_DEPTH) {
+      drawWindmillBlades(
+        api,
+        tipX,
+        tipY,
+        bladeLength * 0.38,
+        depth + 1,
+        time,
+        isDark,
+      );
+    }
+  }
+
+  // Hub circle drawn on top of blades
+  api.brush.circle(hubX, hubY, hubRadius, {
+    fill: hubColor,
+    alpha: 0.9,
+  });
 }
-
-let state: ActorState = {
-  hue: 0,
-  points: [],
-};
-
-// ============================================================
-// ACTOR IMPLEMENTATION
-// ============================================================
 
 const actor: Actor = {
   metadata,
 
-  /**
-   * Setup is called once when your actor is loaded.
-   * Use this for initialization, loading assets, etc.
-   */
   async setup(api: ActorSetupAPI): Promise<void> {
-    const { width, height } = api.canvas.getSize();
-
-    // Initialize state
-    state.hue = Math.random() * 360;
-    state.points = [];
-
-    // Create some initial points with random positions and velocities
-    for (let i = 0; i < 5; i++) {
-      state.points.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 2,
-        vy: (Math.random() - 0.5) * 2,
-      });
-    }
-
-    console.log(`[${metadata.id}] Setup complete with ${state.points.length} points`);
+    const size = api.canvas.getSize();
+    canvasW = size.width;
+    canvasH = size.height;
   },
 
-  /**
-   * Update is called every frame while your actor is active.
-   * This is where you draw on the canvas!
-   *
-   * @param api - Drawing and context APIs
-   * @param frame - Frame timing information
-   */
   update(api: ActorUpdateAPI, frame: FrameContext): void {
-    const { width, height } = api.canvas.getSize();
-    const time = frame.time / 1000; // Convert to seconds
+    const size = api.canvas.getSize();
+    canvasW = size.width;
+    canvasH = size.height;
+    const time = frame.time / 1000;
+    const isDark = api.context.display.isDarkMode();
 
-    // Update hue over time for color cycling
-    state.hue = (state.hue + 0.5) % 360;
+    // --- Ground ---
+    const groundY = canvasH * 0.72;
+    api.brush.rect(0, groundY, canvasW, canvasH - groundY, {
+      fill: isDark ? 0x2a4a2a : 0x4a8a3a,
+      alpha: 0.7,
+    });
 
-    // Update and draw each point
-    for (let i = 0; i < state.points.length; i++) {
-      const point = state.points[i];
+    // Gentle hill beneath the windmill
+    api.brush.ellipse(canvasW * 0.5, groundY + 10, canvasW * 0.6, 40, {
+      fill: isDark ? 0x336633 : 0x5a9a4a,
+      alpha: 0.6,
+    });
 
-      // Update position
-      point.x += point.vx;
-      point.y += point.vy;
+    // --- Windmill tower ---
+    const baseX = canvasW * 0.5;
+    const baseY = groundY;
+    const mainSize = Math.min(canvasW, canvasH) * 0.32;
+    const towerH = mainSize * 0.55;
+    const towerTopW = mainSize * 0.08;
+    const towerBotW = mainSize * 0.18;
 
-      // Bounce off walls
-      if (point.x < 0 || point.x > width) point.vx *= -1;
-      if (point.y < 0 || point.y > height) point.vy *= -1;
+    // Tower body (trapezoid)
+    api.brush.polygon(
+      [
+        { x: baseX - towerBotW, y: baseY },
+        { x: baseX + towerBotW, y: baseY },
+        { x: baseX + towerTopW, y: baseY - towerH },
+        { x: baseX - towerTopW, y: baseY - towerH },
+      ],
+      { fill: isDark ? 0xccbbaa : 0x8b7355, alpha: 0.85 },
+    );
 
-      // Keep in bounds
-      point.x = Math.max(0, Math.min(width, point.x));
-      point.y = Math.max(0, Math.min(height, point.y));
+    // Tower cap (triangle roof)
+    const capH = mainSize * 0.1;
+    api.brush.polygon(
+      [
+        { x: baseX - towerTopW * 1.3, y: baseY - towerH },
+        { x: baseX + towerTopW * 1.3, y: baseY - towerH },
+        { x: baseX, y: baseY - towerH - capH },
+      ],
+      { fill: isDark ? 0x887766 : 0x5a4a3a, alpha: 0.85 },
+    );
 
-      // Calculate color for this point
-      const hue = (state.hue + i * 30) % 360;
+    // --- Recursive windmill blades ---
+    const hubX = baseX;
+    const hubY = baseY - towerH;
+    const bladeLength = mainSize * 0.5;
 
-      // Draw a circle at the point
-      api.brush.circle(point.x, point.y, 20 + Math.sin(time + i) * 10, {
-        fill: `hsla(${hue}, 70%, 60%, 0.7)`,
-        blendMode: 'add',
+    drawWindmillBlades(api, hubX, hubY, bladeLength, 0, time, isDark);
+
+    // --- Tulips for Dutch flavor ---
+    for (let i = 0; i < TULIP_COUNT; i++) {
+      const tx = canvasW * 0.1 + (canvasW * 0.8 / (TULIP_COUNT - 1)) * i;
+      const ty = groundY + 15 + Math.sin(i * 1.3) * 8;
+
+      // Stem
+      api.brush.line(tx, ty, tx, ty - 12, {
+        color: 0x336633,
+        width: 2.5,
+        alpha: 0.7,
       });
-
-      // Draw connections between points
-      for (let j = i + 1; j < state.points.length; j++) {
-        const other = state.points[j];
-        const dist = Math.hypot(other.x - point.x, other.y - point.y);
-
-        // Only draw connections for nearby points
-        if (dist < 200) {
-          const alpha = 1 - dist / 200;
-          api.brush.line(point.x, point.y, other.x, other.y, {
-            color: `hsla(${hue}, 70%, 60%, ${alpha * 0.5})`,
-            width: 2,
-          });
-        }
-      }
+      // Flower head
+      api.brush.circle(tx, ty - 14, 5, {
+        fill: TULIP_COLORS[i % TULIP_COLORS.length],
+        alpha: 0.75,
+      });
     }
-
-    // Example: React to time of day
-    const hour = api.context.time.hour();
-    if (hour >= 18 || hour < 6) {
-      // It's evening/night - make things darker
-      // This is just an example of using context!
-    }
-
-    // Example: Using gradients (IMPORTANT: coordinates must be 0-1 range!)
-    // Uncomment to try:
-    // api.brush.circle(width / 2, height / 2, 50, {
-    //   fill: {
-    //     type: 'radial',
-    //     cx: 0.5, cy: 0.5, radius: 0.5,  // 0-1 range, NOT pixel values!
-    //     stops: [
-    //       { offset: 0, color: 'rgba(255, 255, 255, 1)' },
-    //       { offset: 1, color: 'rgba(255, 255, 255, 0)' },
-    //     ],
-    //   },
-    //   blendMode: 'add',
-    // });
   },
 
-  /**
-   * Teardown is called when your actor is being deactivated.
-   * Clean up any resources, finish animations, etc.
-   */
   async teardown(): Promise<void> {
-    // Reset state for next activation
-    state = {
-      hue: 0,
-      points: [],
-    };
-
-    console.log(`[${metadata.id}] Teardown complete`);
-  },
-
-  /**
-   * Optional: React to context changes.
-   * Called when external conditions change (weather, audio beat, etc.)
-   */
-  onContextChange(_context): void {
-    // Example: Change behavior based on weather
-    // const weather = _context.weather.condition();
-    // if (weather === 'rain') {
-    //   // Do something rainy!
-    // }
+    canvasW = 0;
+    canvasH = 0;
   },
 };
 
-// Register and export the actor
 registerActor(actor);
 export default actor;

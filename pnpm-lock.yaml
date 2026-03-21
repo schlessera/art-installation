@@ -857,7 +857,73 @@ importers:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
 
+  actors/community/aged-parchment:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/amalfi-coast:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/aperitivo-hour:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/applause-meter:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -967,6 +1033,72 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/chianti-pour:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/chiaro-scuro:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/clothesline:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/colosseum:
     dependencies:
       '@art/actor-sdk':
@@ -1012,6 +1144,28 @@ importers:
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
   actors/community/cypress-row:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/dance-floor:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -1297,6 +1451,28 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/fibonacci-spiral:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/fireflies-at-dusk:
     dependencies:
       '@art/actor-sdk':
@@ -1319,7 +1495,51 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/florence-duomo:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/fresco-crack:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/gelato-scoop:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -1385,6 +1605,28 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/gondola:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/grape-vine:
     dependencies:
       '@art/actor-sdk':
@@ -1408,6 +1650,28 @@ importers:
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
   actors/community/hackathon-bounce:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/lavender-rows:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -1495,6 +1759,28 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/mediterranean-sea:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/mediterranean-tiles:
     dependencies:
       '@art/actor-sdk':
@@ -1539,7 +1825,95 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/mosaic-builder:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/murano-glass:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/olive-grove:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/olive-press:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/pantheon:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -1583,6 +1957,50 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/piazza-fountain:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/pizza-toss:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/polaroid-memory:
     dependencies:
       '@art/actor-sdk':
@@ -1605,7 +2023,51 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/rialto-bridge:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/rolling-hills:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/roman-aqueduct:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -1671,6 +2133,50 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/starry-campagna:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/sunflower-field:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/sunset-overdrive:
     dependencies:
       '@art/actor-sdk':
@@ -1715,6 +2221,28 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/tiramisu-layers:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/tower-of-pisa:
     dependencies:
       '@art/actor-sdk':
@@ -1737,7 +2265,7 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
-  actors/community/tuscan-road:
+  actors/community/trevi-fountain:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -1760,6 +2288,28 @@ importers:
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
   actors/community/tuscan-road:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/tuscan-storm:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*
@@ -1825,7 +2375,73 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
 
+  actors/community/venetian-fog:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/venetian-mask:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
   actors/community/vespa-trail:
+    dependencies:
+      '@art/actor-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/actor-sdk
+      '@art/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+    devDependencies:
+      '@art/actor-devtools':
+        specifier: workspace:*
+        version: link:../../../packages/actor-devtools
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@22.19.3)(tsx@4.21.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.3)(@vitest/browser@2.1.9)(msw@2.12.7(@types/node@22.19.3)(typescript@5.9.3))
+
+  actors/community/vineyard-rows:
     dependencies:
       '@art/actor-sdk':
         specifier: workspace:*

@@ -110,6 +110,9 @@ const actor: Actor = {
         items.push({type: 'tower', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
     }
 
+    // Euro-Sat Dome
+    items.push({type: 'euro-sat', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: 0, id2: 0, angle: 0});
+
     // Ferris Wheel
     for(let i=0; i<NUM_SPOKES; i++) {
         items.push({type: 'ferris-spoke', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});

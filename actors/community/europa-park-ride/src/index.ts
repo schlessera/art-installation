@@ -184,26 +184,34 @@ const actor: Actor = {
     });
 
     const orbitAngle = time * 0.25; 
-    const ORBIT_R = 3800 + Math.sin(time*0.5)*500;
+    const ORBIT_R = 4000 + Math.sin(time*0.5)*800;
     const camPosX = Math.sin(orbitAngle) * ORBIT_R;
     const camPosZ = Math.cos(orbitAngle) * ORBIT_R;
-    const camPosY = Math.sin(time * 0.35) * 600 - 800; // Safe isometric skycam
-    const camAngle = orbitAngle + Math.PI + Math.sin(time*1.2)*0.05; // Look at origin!
+    const camPosY = Math.sin(time * 0.35) * 775 - 425; // Swoops from high sky to just above ground level
+    const camAngle = orbitAngle + Math.PI + Math.sin(time*1.2)*0.05; 
+    const pitchAngle = Math.atan2(-camPosY, ORBIT_R); // Locks focus onto the ground zero origin physically!
 
-    const FOV_SCALE = 1800; // Wide cinematic angle!
+    const FOV_SCALE = 1800; 
 
     function applyCamera(p: Point3D) {
       p.x -= camPosX;
       p.y -= camPosY;
       p.z -= camPosZ;
+      
       const sA = Math.sin(camAngle); const cA = Math.cos(camAngle);
       const tx = p.x * cA - p.z * sA;
       const tz = p.x * sA + p.z * cA;
-      p.x = tx; p.z = tz;
+      
+      const sP = Math.sin(pitchAngle); const cP = Math.cos(pitchAngle);
+      const ty = p.y * cP - tz * sP;
+      const tzz = p.y * sP + tz * cP;
+
+      p.x = tx; p.y = ty; p.z = tzz;
       
       const zDepth = p.z;
       if (zDepth <= 10) { p.scale = -1; return; }
       p.scale = FOV_SCALE / zDepth;
+      
       p.projX = width / 2 + p.x * p.scale;
       p.projY = height * 0.55 + p.y * p.scale; 
     }
@@ -231,8 +239,13 @@ const actor: Actor = {
     for(let t=1; t<=2; t++) {
       for(let i=0; i<NUM_TRACK_POINTS; i++) {
          const getTrack = t===1 ? getTrack1 : getTrack2;
-         getTrack(i / NUM_TRACK_POINTS, tempP1); applyCamera(tempP1);
-         getTrack((i+1) / NUM_TRACK_POINTS, tempP2); applyCamera(tempP2);
+         
+         getTrack(i / NUM_TRACK_POINTS, tempP1); 
+         const origX = tempP1.x; const origY = tempP1.y; const origZ = tempP1.z;
+         applyCamera(tempP1);
+         
+         getTrack((i+1) / NUM_TRACK_POINTS, tempP2); 
+         applyCamera(tempP2);
          
          const item = items[itemIdx++];
          item.x1 = tempP1.projX!; item.y1 = tempP1.projY!; item.s1 = tempP1.scale!;
@@ -242,7 +255,11 @@ const actor: Actor = {
 
          if (i % 5 === 0) {
             const pitem = items[itemIdx++];
-            pitem.x1 = item.x1; pitem.y1 = item.y1; pitem.s1 = item.s1; pitem.z = item.z; pitem.angle = item.angle;
+            pitem.x1 = tempP1.projX!; pitem.y1 = tempP1.projY!; pitem.s1 = tempP1.scale!; pitem.z = tempP1.z; pitem.angle = item.angle;
+            
+            tempP2.x = origX; tempP2.y = 2000; tempP2.z = origZ; // Plunge to ocean floor
+            applyCamera(tempP2);
+            pitem.x2 = tempP2.projX!; pitem.y2 = tempP2.projY!; pitem.s2 = tempP2.scale!;
          }
          if (i % 12 === 0 && t === 2) {
             const rItem = items[itemIdx++];
@@ -335,24 +352,21 @@ const actor: Actor = {
         item.x1 = tempP1.projX!; item.y1 = tempP1.projY!; item.s1 = tempP1.scale!; item.z = tempP1.z;
     }
 
-    // Fireworks
+    // Fireworks natively bound to global physical space
     for(let i=0; i<NUM_FIREWORKS; i++) {
         const f = items[itemIdx++];
         const fCycle = (time * 0.35 + f.id2) % 1.0;
-        tempP1.x = (i - NUM_FIREWORKS/2) * 500;
-        tempP1.y = floorY - fCycle * 2500; 
-        tempP1.z = 2500;
-        // Deep background logic
-        tempP1.x -= camPosX * 0.2; tempP1.z -= camPosZ * 0.2; 
-        const sA = Math.sin(camAngle * 0.8); const cA = Math.cos(camAngle * 0.8);
-        const tx = tempP1.x * cA - tempP1.z * sA;
-        const tz = tempP1.x * sA + tempP1.z * cA;
-        const zH = tz;
-        if(zH > 10) {
-           f.s1 = FOV_SCALE / zH;
-           f.x1 = width / 2 + tx * f.s1;
-           f.y1 = height * 0.55 + (tempP1.y - camPosY * 0.2) * f.s1; 
-           f.z = tz;
+        const a = (i/NUM_FIREWORKS) * Math.PI * 2;
+        const R = 8000; 
+        tempP1.x = Math.sin(a) * R; 
+        tempP1.y = floorY - fCycle * 3500; 
+        tempP1.z = Math.cos(a) * R;
+        applyCamera(tempP1);
+        if(tempP1.scale! > 0) {
+           f.s1 = tempP1.scale!;
+           f.x1 = tempP1.projX!;
+           f.y1 = tempP1.projY!; 
+           f.z = tempP1.z;
         } else {
            f.s1 = -1;
         }
@@ -389,21 +403,24 @@ const actor: Actor = {
     // --- DRAW CYBER LAKE & GRID ---
     tempP1.x = 0; tempP1.y = floorY; tempP1.z = 0;
     applyCamera(tempP1);
-    const lx = tempP1.scale! > 0 ? tempP1.projX! : width/2;
-    const ly = tempP1.scale! > 0 ? tempP1.projY! : height*0.55 + floorY*(FOV_SCALE/4500);
-    const ls = tempP1.scale! > 0 ? tempP1.scale! : FOV_SCALE/4500;
-    
-    api.brush.ellipse(lx, ly, 6000*ls, 2000*ls, {
-        fill: { type: 'radial', cx: 0.5, cy: 0.5, radius: 0.5, stops: [
-            {offset:0, color: 0x0088cc}, {offset:0.4, color: 0x0044bb}, {offset:1, color: 0x000000}
-        ]},
-        alpha: 0.25, blendMode: 'add'
-    });
-    for(let r=1; r<=4; r++) {
-        const rippleR = ((time*0.4 + r*0.25) % 1.0);
-        api.brush.ellipse(lx, ly, 5000*ls*rippleR, 1800*ls*rippleR, {
-            fill: 0x00ffff, alpha: 0.15*(1-rippleR), blendMode: 'add'
-        });
+    if(tempP1.scale! > 0) {
+      const lx = tempP1.projX!;
+      const ly = tempP1.projY!;
+      const ls = tempP1.scale!;
+      const pitchSquash = Math.max(0.1, Math.abs(Math.sin(pitchAngle)));
+      
+      api.brush.ellipse(lx, ly, 6000*ls, 6000*ls*pitchSquash, {
+          fill: { type: 'radial', cx: 0.5, cy: 0.5, radius: 0.5, stops: [
+              {offset:0, color: 0x0088cc}, {offset:0.4, color: 0x0044bb}, {offset:1, color: 0x000000}
+          ]},
+          alpha: 0.25, blendMode: 'add'
+      });
+      for(let r=1; r<=4; r++) {
+          const rippleR = ((time*0.4 + r*0.25) % 1.0);
+          api.brush.ellipse(lx, ly, 5000*ls*rippleR, 5000*ls*pitchSquash*rippleR, {
+              fill: 0x00ffff, alpha: 0.15*(1-rippleR), blendMode: 'add'
+          });
+      }
     }
 
     const gridSize = 2500;
@@ -484,15 +501,15 @@ const actor: Actor = {
         }
       }
       else if (item.type === 'pillar') {
-         const gridFloorY = height * 0.55 + (floorY - camPosY) * item.s1;
+         if (item.s1 <= 0 || item.s2 <= 0) continue;
          const pw = 6 * item.s1; const dx = 15 * item.s1;
-         api.brush.line(item.x1, item.y1, item.x1 - dx, gridFloorY, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
-         api.brush.line(item.x1, item.y1, item.x1 + dx, gridFloorY, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
+         api.brush.line(item.x1, item.y1, item.x2 - dx, item.y2, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
+         api.brush.line(item.x1, item.y1, item.x2 + dx, item.y2, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
          
-         if(gridFloorY - item.y1 > 100 * item.s1) {
-            const steps = Math.floor((gridFloorY - item.y1) / (70 * item.s1));
+         if(item.y2 - item.y1 > 100 * item.s1) {
+            const steps = Math.floor((item.y2 - item.y1) / (70 * item.s1));
             for(let k=1; k<=steps; k++) {
-                const ky = item.y1 + k * 70 * item.s1;
+                const ky = item.y1 + (item.y2 - item.y1) * (k/steps);
                 api.brush.line(item.x1 - (k/steps)*dx, ky, item.x1 + (k/steps)*dx, ky, { color: isDark? 0x333333 : 0xaaaaaa, width: 2*item.s1 });
             }
          }

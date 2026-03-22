@@ -4,7 +4,7 @@ import type { Actor, ActorSetupAPI, ActorUpdateAPI, FrameContext, ActorMetadata 
 interface Point3D { x: number; y: number; z: number; projX?: number; projY?: number; scale?: number; }
 interface Point { x: number; y: number; }
 
-type RenderItemType = 'track-line' | 'shuttle-hyper' | 'shuttle-launch' | 'pillar' | 'tree' | 'particle' | 'ferris-spoke' | 'ferris-cart';
+type RenderItemType = 'track-line' | 'shuttle-hyper' | 'shuttle-launch' | 'pillar' | 'tower' | 'tree' | 'particle' | 'ferris-spoke' | 'ferris-cart';
 
 interface RenderItem {
   type: RenderItemType;
@@ -17,13 +17,13 @@ interface RenderItem {
 
 const metadata: ActorMetadata = {
   id: 'europa-park-ride',
-  name: 'Europa Park Ride: The Ultimate 3D Park',
-  description: 'An absolute masterpiece of dynamic 3D rendering in canvas. Features proper depth-sorted articulated coasters with realistic shuttles, sweeping camera, true projection, synthwave grids, and flawless performance.',
-  author: { name: 'Antigravity AI', github: 'artificial' },
-  version: '7.0.0',
-  tags: ['3d', 'coaster', 'theme-park', 'masterpiece', 'geometry', 'award-winning', 'epic'],
+  name: 'Europa Park Ride: Phase III Reality',
+  description: 'A benchmark 3D synthwave masterpiece. Features volumetric headlights, physical structural scaffolding, real spinning wheels, giant Euro-Mir towers, and a living sunset.',
+  author: { name: 'Antigravity AI Reality', github: 'artificial' },
+  version: '8.0.0',
+  tags: ['3d', 'coaster', 'theme-park', 'masterpiece', 'geometry', 'award-winning', 'epic', 'synthwave'],
   createdAt: new Date(),
-  preferredDuration: 120,
+  preferredDuration: 200,
   requiredContexts: ['display'],
 };
 
@@ -31,8 +31,8 @@ const metadata: ActorMetadata = {
 const NUM_TRACK_POINTS = 160; 
 const NUM_TRAINS = 3;
 const CARS_PER_TRAIN = 6;
-const NUM_TREES = 250;
-const NUM_PARTICLES = 300;
+const NUM_TREES = 150;
+const NUM_PARTICLES = 150;
 const NUM_SPOKES = 18;
 
 // Buffers
@@ -49,6 +49,14 @@ interface Tree { x: number; z: number; h: number; }
 const trees: Tree[] = [];
 interface Particle { x: number; y: number; z: number; phase: number; speed: number; }
 const particles: Particle[] = [];
+interface Tower { x: number; z: number; h: number; r: number; }
+const towers: Tower[] = [
+  {x: 0, z: 0, h: 400, r: 80},
+  {x: 180, z: 120, h: 320, r: 60},
+  {x: -160, z: 140, h: 360, r: 60},
+  {x: 140, z: -150, h: 340, r: 60},
+  {x: -120, z: -120, h: 280, r: 60},
+];
 
 let width = 0;
 let height = 0;
@@ -85,6 +93,11 @@ const actor: Actor = {
         }
     }
 
+    // Allocate Euro-Mir Towers
+    for(let i=0; i<towers.length; i++) {
+        items.push({type: 'tower', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
+    }
+
     // Allocate Ferris Wheel
     for(let i=0; i<NUM_SPOKES; i++) {
         items.push({type: 'ferris-spoke', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
@@ -103,7 +116,7 @@ const actor: Actor = {
         items.push({type: 'particle', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
     }
 
-    // Set up stable render queue tracking exact references
+    // Stable structure
     renderQueue = [...items];
   },
 
@@ -112,18 +125,33 @@ const actor: Actor = {
     const isDark = api.context.display.isDarkMode();
     
     // Bg
-    api.brush.background(isDark ? 0x05050a : 0xe0e5f0);
+    api.brush.background(isDark ? 0x030308 : 0x0a0515);
 
-    // Sky Horizon
-    const skyH = isDark ? 0x050a1a : 0xaa22bb;
-    const skyM = isDark ? 0x111122 : 0x551155;
-    const skyL = isDark ? 0x010204 : 0x110022;
+    // Dynamic Sunset Sky
+    const skyH = isDark ? 0x030410 : 0x050212;
+    const skyM = isDark ? 0x110022 : 0x330044;
+    const skyL = isDark ? 0x011122 : 0x551133;
     api.brush.rect(0, 0, width, height, {
       fill: {
         type: 'linear', x0: 0, y0: 0, x1: 0, y1: 1,
         stops: [{offset: 0, color: skyH}, {offset: 0.6, color: skyM}, {offset: 1, color: skyL}]
       },
-      alpha: 0.8
+      alpha: 1.0
+    });
+
+    // The Neon Horizon Sunset
+    const sunY = height * 0.45;
+    api.brush.circle(width / 2, sunY, width * 0.35, {
+        fill: {
+            type: 'radial', cx: 0.5, cy: 0.5, radius: 0.5,
+            stops: [
+                {offset: 0, color: 0xffffff},
+                {offset: 0.2, color: 0xffccaa},
+                {offset: 0.5, color: 0xee5522},
+                {offset: 1, color: 0x000000}
+            ]
+        },
+        blendMode: 'add', alpha: 0.7
     });
 
     const camAngle = time * 0.12; 
@@ -142,7 +170,7 @@ const actor: Actor = {
       const scale = FOV_SCALE / zDepth;
       p.scale = scale;
       p.projX = width / 2 + p.x * scale;
-      p.projY = height * 0.5 + p.y * scale; 
+      p.projY = height * 0.55 + p.y * scale; 
     }
 
     const floorY = 450;
@@ -190,8 +218,8 @@ const actor: Actor = {
       const gOffset = tr * 0.333; 
       const tSpeed1 = time * 0.08 + gOffset;
       for(let c=0; c<CARS_PER_TRAIN; c++) {
-        const tt1 = (tSpeed1 - c * 0.009) % 1.0;
-        const tt2 = (tSpeed1 - c * 0.009 + 0.005) % 1.0;
+        const tt1 = (tSpeed1 - c * 0.012) % 1.0;
+        const tt2 = (tSpeed1 - c * 0.012 + 0.005) % 1.0;
         getTrack1(tt1 < 0 ? tt1 + 1 : tt1, tempP1); rotateY(tempP1, camAngle); projectInPlace(tempP1);
         getTrack1(tt2 < 0 ? tt2 + 1 : tt2, tempP2); rotateY(tempP2, camAngle); projectInPlace(tempP2);
         const item = items[itemIdx++];
@@ -201,8 +229,8 @@ const actor: Actor = {
 
       const tSpeed2 = time * 0.06 + gOffset;
       for(let c=0; c<CARS_PER_TRAIN; c++) {
-        const tt1 = (tSpeed2 - c * 0.009) % 1.0;
-        const tt2 = (tSpeed2 - c * 0.009 + 0.005) % 1.0;
+        const tt1 = (tSpeed2 - c * 0.012) % 1.0;
+        const tt2 = (tSpeed2 - c * 0.012 + 0.005) % 1.0;
         getTrack2(tt1 < 0 ? tt1 + 1 : tt1, tempP1); rotateY(tempP1, camAngle); projectInPlace(tempP1);
         getTrack2(tt2 < 0 ? tt2 + 1 : tt2, tempP2); rotateY(tempP2, camAngle); projectInPlace(tempP2);
         const item = items[itemIdx++];
@@ -211,10 +239,19 @@ const actor: Actor = {
       }
     }
 
+    // Euro-Mir Towers
+    for(let i=0; i<towers.length; i++) {
+        const tObj = towers[i];
+        tempP1.x = tObj.x; tempP1.y = floorY; tempP1.z = tObj.z;
+        rotateY(tempP1, camAngle); projectInPlace(tempP1);
+        const item = items[itemIdx++];
+        item.x1 = tempP1.projX!; item.y1 = tempP1.projY!; item.s1 = tempP1.scale!; item.z = tempP1.z;
+    }
+
     // Ferris Wheel
-    const wheelX = -1200;
+    const wheelX = -1000;
     const wheelZ = 1600;
-    const wheelY = -400;
+    const wheelY = -200;
     const wheelR = 600;
     const wheelRot = time * 0.3;
     for(let i=0; i<NUM_SPOKES; i++) {
@@ -287,8 +324,8 @@ const actor: Actor = {
     }
 
     // --- MAIN DRAWING LOOP --- //
-    const shadowColor = isDark ? 0x000000 : 0x000000;
-    const shadowAlpha = isDark ? 0.3 : 0.15;
+    const shadowColor = 0x000000;
+    const shadowAlpha = 0.4;
     for(let i = 0; i < renderQueue.length; i++) {
       const item = renderQueue[i];
 
@@ -311,18 +348,38 @@ const actor: Actor = {
       }
       else if (item.type === 'pillar') {
          const groundScale = FOV_SCALE / (CAM_Z + item.z); 
-         const gridFloorY = height * 0.65 + floorY * groundScale;
+         const gridFloorY = height * 0.55 + floorY * groundScale;
          
-         const pw = 12 * item.s1;
+         const pw = 6 * item.s1;
          const pCol = isDark ? 0x22222a : 0xaabbcc;
-         api.brush.line(item.x1, item.y1, item.x1, gridFloorY, { color: pCol, width: pw, alpha: 0.8 });
+         
+         // A-frame scaffolding design!
+         const dx = 15 * item.s1;
+         api.brush.line(item.x1, item.y1, item.x1 - dx, gridFloorY, { color: pCol, width: pw, alpha: 0.8 });
+         api.brush.line(item.x1, item.y1, item.x1 + dx, gridFloorY, { color: pCol, width: pw, alpha: 0.8 });
+         
+         // Cross bracing
          if(gridFloorY - item.y1 > 100 * item.s1) {
-            const steps = Math.floor((gridFloorY - item.y1) / (80 * item.s1));
+            const steps = Math.floor((gridFloorY - item.y1) / (70 * item.s1));
             for(let k=1; k<=steps; k++) {
-                const ky = item.y1 + k * 80 * item.s1;
-                api.brush.line(item.x1 - pw*1.5, ky, item.x1 + pw*1.5, ky, { color: isDark? 0x333333 : 0xaaaaaa, width: 2*item.s1 });
+                const ky = item.y1 + k * 70 * item.s1;
+                // Interpolate width
+                const curW = (k / steps) * dx;
+                api.brush.line(item.x1 - curW, ky, item.x1 + curW, ky, { color: isDark? 0x333333 : 0xaaaaaa, width: 2*item.s1 });
             }
          }
+      }
+      else if (item.type === 'tower') {
+         const tData = towers[item.id1];
+         const baseRad = tData.r * item.s1;
+         const th = tData.h * item.s1;
+         
+         api.brush.line(item.x1, item.y1, item.x1, item.y1 - th, { color: 0x445588, width: baseRad*2, cap: 'butt' });
+         api.brush.line(item.x1 - baseRad*0.3, item.y1, item.x1 - baseRad*0.3, item.y1 - th, { color: 0xaaccff, width: baseRad*0.5, blendMode: 'add', alpha: 0.7, cap: 'butt' });
+         api.brush.line(item.x1 + baseRad*0.6, item.y1, item.x1 + baseRad*0.6, item.y1 - th, { color: 0x112244, width: baseRad*0.2, alpha: 0.8, cap: 'butt' });
+         
+         api.brush.ellipse(item.x1, item.y1 - th, baseRad, baseRad*0.3, { fill: 0x112255 });
+         api.brush.circle(item.x1, item.y1 - th, 4 * item.s1, { fill: 0xff4444, blendMode: 'add' }); // blinking aviation light
       }
       else if (item.type === 'shuttle-hyper') {
         api.brush.ellipse(item.x1, item.y1 + 10 * item.s1, 40 * item.s1, 15 * item.s1, { fill: shadowColor, alpha: shadowAlpha });
@@ -332,21 +389,36 @@ const actor: Actor = {
         api.brush.rotate(item.angle); 
         api.brush.scale(item.s1, item.s1);
 
-        const cw = 44; 
-        const ch = 18; 
+        const cw = 44; const ch = 18; 
         
-        api.brush.rect(-cw/2 - 8, -2, 10, 4, { fill: 0x333333 }); // Hitch
+        api.brush.rect(-cw/2 - 8, -2, 10, 4, { fill: 0x222222 }); // Hitch
 
-        api.brush.roundRect(-cw/2, -ch/2, cw, ch, 6, { fill: isDark ? 0x888899 : 0xcccccc });
-        api.brush.roundRect(-cw/2 + 2, -ch/2 + 2, cw - 4, ch - 4, 4, { fill: 0xdd1111 });
+        api.brush.roundRect(-cw/2, -ch/2, cw, ch, 6, { fill: 0x9999aa });
+        api.brush.roundRect(-cw/2 + 2, -ch/2 + 2, cw - 4, ch - 4, 4, { fill: 0xee2222 });
 
-        api.brush.roundRect(-cw/2 + 12, -ch/2 + 3, 6, ch - 6, 2, { fill: 0x111111 }); // Seats
+        // Seats
+        api.brush.roundRect(-cw/2 + 12, -ch/2 + 3, 6, ch - 6, 2, { fill: 0x111111 });
         api.brush.roundRect(-cw/2 + 24, -ch/2 + 3, 6, ch - 6, 2, { fill: 0x111111 });
 
-        if(item.id2 === 0) { // Nose
-           api.brush.polygon([{x: cw/2, y: -ch/2+2}, {x: cw/2+12, y: 0}, {x: cw/2, y: ch/2-2}], { fill: 0xdd1111 });
+        // Rolling Wheels!
+        const wRot = time * 20;
+        for(const wx of [-cw/2 + 8, cw/2 - 8]) {
+            for(const wy of [-ch/2 - 2, ch/2 + 2]) {
+                api.brush.circle(wx, wy, 4, { fill: 0x111111 });
+                api.brush.line(wx, wy, wx+Math.cos(wRot)*3, wy+Math.sin(wRot)*3, { color: 0x888888, width: 1.5 });
+            }
+        }
+
+        if(item.id2 === 0) { 
+           api.brush.polygon([{x: cw/2, y: -ch/2+2}, {x: cw/2+12, y: 0}, {x: cw/2, y: ch/2-2}], { fill: 0xee2222 });
            api.brush.circle(cw/2+2, -ch/2+4, 2.5, { fill: 0xffffee, blendMode: 'add' });
            api.brush.circle(cw/2+2, ch/2-4, 2.5, { fill: 0xffffee, blendMode: 'add' });
+           
+           // Volumetric Headlights
+           api.brush.polygon([{x: cw/2, y: -ch/2+4}, {x: cw/2+150, y: -ch/2-30}, {x: cw/2+150, y: ch/2+30}, {x: cw/2, y: ch/2-4}], {
+             fill: { type: 'linear', x0: 0, y0: 0.5, x1: 1, y1: 0.5, stops: [{offset:0, color: 0xffffff}, {offset:1, color: 0x000000}] },
+             alpha: 0.15, blendMode: 'add'
+           });
         }
         api.brush.popMatrix();
       }
@@ -358,32 +430,42 @@ const actor: Actor = {
         api.brush.rotate(item.angle); 
         api.brush.scale(item.s1, item.s1);
 
-        const cw = 40; 
-        const ch = 22; 
+        const cw = 40; const ch = 22; 
         
-        api.brush.rect(-cw/2 - 6, -1.5, 8, 3, { fill: 0x222222 }); // Hitch
+        api.brush.rect(-cw/2 - 6, -1.5, 8, 3, { fill: 0x222222 }); 
         api.brush.roundRect(-cw/2, -ch/2, cw, ch, 4, { fill: 0x112244 });
         
-        // Neon sides
         api.brush.rect(-cw/2 + 4, -ch/2 - 1, cw - 8, 3, { fill: 0x00aaff, blendMode: 'add' });
         api.brush.rect(-cw/2 + 4, ch/2 - 2, cw - 8, 3, { fill: 0x00aaff, blendMode: 'add' });
 
-        // Seats
         api.brush.roundRect(-cw/2 + 10, -ch/2 + 4, 8, ch - 8, 3, { fill: 0x050505 });
         api.brush.roundRect(-cw/2 + 24, -ch/2 + 4, 8, ch - 8, 3, { fill: 0x050505 });
 
-        if(item.id2 === 0) { // Nose
+        const wRot = time * -18;
+        for(const wx of [-cw/2 + 8, cw/2 - 8]) {
+            for(const wy of [-ch/2 - 2, ch/2 + 2]) {
+                api.brush.circle(wx, wy, 4, { fill: 0x111111 });
+                api.brush.line(wx, wy, wx+Math.cos(wRot)*3, wy+Math.sin(wRot)*3, { color: 0x00aaff, width: 1.5 });
+            }
+        }
+
+        if(item.id2 === 0) { 
            api.brush.roundRect(cw/2 - 2, -ch/2 + 2, 8, ch - 4, 4, { fill: 0x112244 });
            api.brush.circle(cw/2+2, -ch/2+6, 3, { fill: 0x88ddff, blendMode: 'add' });
            api.brush.circle(cw/2+2, ch/2-6, 3, { fill: 0x88ddff, blendMode: 'add' });
+           
+           api.brush.polygon([{x: cw/2, y: -ch/2+6}, {x: cw/2+120, y: -ch/2-40}, {x: cw/2+120, y: ch/2+40}, {x: cw/2, y: ch/2-6}], {
+             fill: { type: 'linear', x0: 0, y0: 0.5, x1: 1, y1: 0.5, stops: [{offset:0, color: 0xffffff}, {offset:1, color: 0x000000}] },
+             alpha: 0.12, blendMode: 'add'
+           });
         }
         api.brush.popMatrix();
       }
       else if (item.type === 'ferris-spoke') {
-         api.brush.line(item.x1, item.y1, item.x2, item.y2, { color: isDark ? 0x444455 : 0x9999aa, width: 4*item.s1 });
+         api.brush.line(item.x1, item.y1, item.x2, item.y2, { color: isDark ? 0x444466 : 0x9999aa, width: 5*item.s1 });
       }
       else if (item.type === 'ferris-cart') {
-         api.brush.rect(item.x1 - 15*item.s1, item.y1, 30*item.s1, 40*item.s1, { fill: isDark ? 0xff2255 : 0xff4466 });
+         api.brush.rect(item.x1 - 15*item.s1, item.y1, 30*item.s1, 40*item.s1, { fill: isDark ? 0xff3366 : 0xff4466, blendMode: 'add', alpha: 0.9 });
       }
       else if (item.type === 'tree') {
          const th = trees[item.id1].h * item.s1;
@@ -393,14 +475,15 @@ const actor: Actor = {
             {x: item.x1 + tw, y: item.y1},
             {x: item.x1 - tw, y: item.y1}
          ];
-         api.brush.polygon(points, { fill: isDark ? 0x0a3311 : 0x11aa44, alpha: Math.min(1, item.s1 * 0.8) });
+         api.brush.polygon(points, { fill: isDark ? 0x0a2211 : 0x11aa44, alpha: Math.min(1, item.s1 * 0.9) });
+         api.brush.ellipse(item.x1, item.y1, tw*1.2, tw*0.4, { fill: shadowColor, alpha: 0.3 });
       }
       else if (item.type === 'particle') {
          const p = particles[item.id1];
          const alpha = (Math.sin(time*2 + p.phase) * 0.5 + 0.5) * Math.min(1, item.s1);
          if (alpha > 0.05) {
              const c = item.id1 % 3 === 0 ? 0xffffff : (item.id1 % 2 === 0 ? 0x44ffff : 0xffaa44);
-             api.brush.circle(item.x1, item.y1, 2.5 * item.s1, { fill: c, alpha, blendMode: 'add' });
+             api.brush.circle(item.x1, item.y1, 3 * item.s1, { fill: c, alpha, blendMode: 'add' });
          }
       }
     }

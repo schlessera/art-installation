@@ -13,8 +13,11 @@ COPY packages/ packages/
 COPY actors/ actors/
 COPY apps/runtime/ apps/runtime/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Cache-bust: any change to actor count invalidates from here
+RUN echo "actors: $(ls -d actors/community/*/src/index.ts 2>/dev/null | wc -l) community, $(ls -d actors/builtin/*/src/index.ts 2>/dev/null | wc -l) builtin"
+
+# Install dependencies (no frozen-lockfile: community actors add workspace packages)
+RUN pnpm install --no-frozen-lockfile
 
 # Build everything (types, actor-sdk, actors, runtime)
 RUN pnpm build

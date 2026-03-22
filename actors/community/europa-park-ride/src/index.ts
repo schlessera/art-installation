@@ -347,7 +347,7 @@ const actor: Actor = {
         const sA = Math.sin(camAngle * 0.8); const cA = Math.cos(camAngle * 0.8);
         const tx = tempP1.x * cA - tempP1.z * sA;
         const tz = tempP1.x * sA + tempP1.z * cA;
-        const zH = CAM_Z + tz;
+        const zH = tz;
         if(zH > 10) {
            f.s1 = FOV_SCALE / zH;
            f.x1 = width / 2 + tx * f.s1;
@@ -387,8 +387,13 @@ const actor: Actor = {
     }
 
     // --- DRAW CYBER LAKE & GRID ---
-    const lakeScale = FOV_SCALE / CAM_Z;
-    api.brush.ellipse(width/2, height*0.55 + floorY*lakeScale, 6000*lakeScale, 2000*lakeScale, {
+    tempP1.x = 0; tempP1.y = floorY; tempP1.z = 0;
+    applyCamera(tempP1);
+    const lx = tempP1.scale! > 0 ? tempP1.projX! : width/2;
+    const ly = tempP1.scale! > 0 ? tempP1.projY! : height*0.55 + floorY*(FOV_SCALE/4500);
+    const ls = tempP1.scale! > 0 ? tempP1.scale! : FOV_SCALE/4500;
+    
+    api.brush.ellipse(lx, ly, 6000*ls, 2000*ls, {
         fill: { type: 'radial', cx: 0.5, cy: 0.5, radius: 0.5, stops: [
             {offset:0, color: 0x0088cc}, {offset:0.4, color: 0x0044bb}, {offset:1, color: 0x000000}
         ]},
@@ -396,7 +401,7 @@ const actor: Actor = {
     });
     for(let r=1; r<=4; r++) {
         const rippleR = ((time*0.4 + r*0.25) % 1.0);
-        api.brush.ellipse(width/2, height*0.55 + floorY*lakeScale, 5000*lakeScale*rippleR, 1800*lakeScale*rippleR, {
+        api.brush.ellipse(lx, ly, 5000*ls*rippleR, 1800*ls*rippleR, {
             fill: 0x00ffff, alpha: 0.15*(1-rippleR), blendMode: 'add'
         });
     }

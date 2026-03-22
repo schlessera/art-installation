@@ -184,13 +184,12 @@ const actor: Actor = {
     });
 
     const orbitAngle = time * 0.25; 
-    const ORBIT_R = 4500 + Math.sin(time*0.5)*1000;
+    const ORBIT_R = 3800 + Math.sin(time*0.5)*500;
     const camPosX = Math.sin(orbitAngle) * ORBIT_R;
     const camPosZ = Math.cos(orbitAngle) * ORBIT_R;
     const camPosY = Math.sin(time * 0.35) * 600 - 800; // Safe isometric skycam
-    const camAngle = orbitAngle + Math.sin(time*1.2)*0.05;
+    const camAngle = orbitAngle + Math.PI + Math.sin(time*1.2)*0.05; // Look at origin!
 
-    const CAM_Z = 4500;
     const FOV_SCALE = 3500;
 
     function applyCamera(p: Point3D) {
@@ -202,7 +201,7 @@ const actor: Actor = {
       const tz = p.x * sA + p.z * cA;
       p.x = tx; p.z = tz;
       
-      const zDepth = CAM_Z + p.z;
+      const zDepth = p.z;
       if (zDepth <= 10) { p.scale = -1; return; }
       p.scale = FOV_SCALE / zDepth;
       p.projX = width / 2 + p.x * p.scale;

@@ -4,7 +4,7 @@ import type { Actor, ActorSetupAPI, ActorUpdateAPI, FrameContext, ActorMetadata 
 interface Point3D { x: number; y: number; z: number; projX?: number; projY?: number; scale?: number; }
 interface Point { x: number; y: number; }
 
-type RenderItemType = 'track-line' | 'tunnel-ring' | 'shuttle-hyper' | 'shuttle-launch' | 'pillar' | 'tower' | 'firework' | 'tree' | 'particle' | 'ferris-spoke' | 'ferris-cart';
+type RenderItemType = 'track-line' | 'tunnel-ring' | 'shuttle-hyper' | 'shuttle-launch' | 'pillar' | 'tower' | 'firework' | 'tree' | 'particle' | 'ferris-spoke' | 'ferris-cart' | 'star-logo';
 
 interface RenderItem {
   type: RenderItemType;
@@ -17,13 +17,13 @@ interface RenderItem {
 
 const metadata: ActorMetadata = {
   id: 'europa-park-ride',
-  name: 'Europa Park Ride: Phase IV Zenith',
-  description: 'The absolute zenith of the 3D canvas rendering engine. Now featuring hyper-detailed launched coasters, launch tunnel rings, majestic fireworks, and a glowing cyber-lake.',
-  author: { name: 'Antigravity AI Reality', github: 'artificial' },
-  version: '9.0.0',
-  tags: ['3d', 'coaster', 'theme-park', 'zenith', 'geometry', 'award-winning', 'epic', 'synthwave'],
+  name: 'Europa Park Ride: The Final Odyssey',
+  description: 'The definitive Phase V demoscene. Unleashing a massive 3D rotating emblem, infinite sky grids, deep water reflections, launch coaster hyper-trails, and majestic fireworks over an interlocking mega-coaster.',
+  author: { name: 'Antigravity AI Odyssey', github: 'artificial' },
+  version: '10.0.0',
+  tags: ['3d', 'coaster', 'theme-park', 'zenith', 'geometry', 'award-winning', 'epic', 'synthwave', 'odyssey'],
   createdAt: new Date(),
-  preferredDuration: 200,
+  preferredDuration: 300,
   requiredContexts: ['display'],
 };
 
@@ -31,7 +31,7 @@ const metadata: ActorMetadata = {
 const NUM_TRACK_POINTS = 160; 
 const NUM_TRAINS = 3;
 const CARS_PER_TRAIN = 5;
-const NUM_TREES = 120;
+const NUM_TREES = 110;
 const NUM_PARTICLES = 100;
 const NUM_SPOKES = 18;
 const NUM_FIREWORKS = 12;
@@ -46,17 +46,22 @@ const gridP2: Point3D = {x:0, y:0, z:0};
 const tempP1: Point3D = {x:0, y:0, z:0};
 const tempP2: Point3D = {x:0, y:0, z:0};
 
+// Star Logo 3D Geometry
+interface StarPoint { x: number; y: number; z: number; }
+const starBasePoints: StarPoint[] = [];
+const starProjPoints: Point[] = [];
+
 interface Tree { x: number; z: number; h: number; }
 const trees: Tree[] = [];
 interface Particle { x: number; y: number; z: number; phase: number; speed: number; }
 const particles: Particle[] = [];
 interface Tower { x: number; z: number; h: number; r: number; }
 const towers: Tower[] = [
-  {x: 0, z: 0, h: 440, r: 85},
-  {x: 220, z: 150, h: 360, r: 65},
-  {x: -200, z: 180, h: 400, r: 65},
-  {x: 180, z: -190, h: 380, r: 65},
-  {x: -160, z: -150, h: 320, r: 65},
+  {x: 0, z: 0, h: 480, r: 90},
+  {x: 240, z: 160, h: 380, r: 70},
+  {x: -220, z: 190, h: 420, r: 70},
+  {x: 190, z: -200, h: 400, r: 70},
+  {x: -170, z: -160, h: 340, r: 70},
 ];
 
 let width = 0;
@@ -71,10 +76,13 @@ const actor: Actor = {
     height = size.height;
 
     items.length = 0;
+    renderQueue.length = 0;
     trees.length = 0;
     particles.length = 0;
+    starBasePoints.length = 0;
+    starProjPoints.length = 0;
 
-    // Allocate Tracks & Pillars & Rings
+    // Track, Pillar, Ring
     for(let t=1; t<=2; t++) {
       for(let i=0; i<NUM_TRACK_POINTS; i++) {
         items.push({type: 'track-line', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: t, id2: i, angle: 0});
@@ -87,7 +95,7 @@ const actor: Actor = {
       }
     }
     
-    // Allocate Trains
+    // Trains
     for(let tr=0; tr<NUM_TRAINS; tr++) {
         for(let c=0; c<CARS_PER_TRAIN; c++) {
             items.push({type: 'shuttle-hyper', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: 1, id2: c, angle: tr});
@@ -97,35 +105,43 @@ const actor: Actor = {
         }
     }
 
-    // Allocate Euro-Mir Towers
+    // Towers
     for(let i=0; i<towers.length; i++) {
         items.push({type: 'tower', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
     }
 
-    // Allocate Ferris Wheel
+    // Ferris Wheel
     for(let i=0; i<NUM_SPOKES; i++) {
         items.push({type: 'ferris-spoke', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
         items.push({type: 'ferris-cart', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
     }
 
-    // Allocate Trees
+    // Trees
     for(let i=0; i<NUM_TREES; i++) {
         trees.push({ x: (Math.random() - 0.5) * 6000, z: (Math.random() - 0.5) * 6000, h: 80 + Math.random() * 140 });
         items.push({type: 'tree', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
     }
 
-    // Allocate Particles
+    // Particles
     for(let i=0; i<NUM_PARTICLES; i++) {
         particles.push({ x: (Math.random() - 0.5) * 4000, y: (Math.random() - 0.5) * 2000 - 500, z: (Math.random() - 0.5) * 4000, phase: Math.random() * Math.PI * 2, speed: Math.random() * 2 + 0.5 });
         items.push({type: 'particle', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
     }
 
-    // Allocate Fireworks
+    // Fireworks
     for(let i=0; i<NUM_FIREWORKS; i++) {
         items.push({type: 'firework', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: Math.random(), angle: 0});
     }
 
-    // Stable structure
+    // The Europa Star Logo
+    for(let i=0; i<10; i++) {
+       const r = i % 2 === 0 ? 350 : 130;
+       const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+       starBasePoints.push({x: Math.cos(a)*r, y: Math.sin(a)*r, z: 0});
+       starProjPoints.push({x: 0, y: 0});
+    }
+    items.push({type: 'star-logo', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: 0, id2: 0, angle: 0});
+
     renderQueue = [...items];
   },
 
@@ -133,13 +149,11 @@ const actor: Actor = {
     const time = frame.time / 1000;
     const isDark = api.context.display.isDarkMode();
     
-    // Bg
-    api.brush.background(isDark ? 0x010103 : 0x050215);
+    api.brush.background(isDark ? 0x010103 : 0x050212);
 
-    // Dynamic Sunset Sky
-    const skyH = isDark ? 0x020208 : 0x070215;
-    const skyM = isDark ? 0x0a001a : 0x220033;
-    const skyL = isDark ? 0x041530 : 0x441133;
+    const skyH = isDark ? 0x020208 : 0x050110;
+    const skyM = isDark ? 0x0a001a : 0x1a0033;
+    const skyL = isDark ? 0x011122 : 0x331144;
     api.brush.rect(0, 0, width, height, {
       fill: {
         type: 'linear', x0: 0, y0: 0, x1: 0, y1: 1,
@@ -148,15 +162,14 @@ const actor: Actor = {
       alpha: 1.0
     });
 
-    // The Neon Horizon Sunset
     const sunY = height * 0.45;
-    api.brush.circle(width / 2, sunY, width * 0.35, {
+    api.brush.circle(width / 2, sunY, width * 0.4, {
         fill: {
             type: 'radial', cx: 0.5, cy: 0.5, radius: 0.5,
             stops: [
                 {offset: 0, color: 0xffffff},
-                {offset: 0.15, color: 0xffeebb},
-                {offset: 0.4, color: 0xff5522},
+                {offset: 0.1, color: 0xffeedd},
+                {offset: 0.35, color: 0xff4411},
                 {offset: 1, color: 0x000000}
             ]
         },
@@ -184,9 +197,8 @@ const actor: Actor = {
 
     const floorY = 450;
 
-    // --- TRACK PATH FUNCTIONS ---
     function getTrack1(norm: number, out: Point3D) {
-      const ang = norm * Math.PI * 6; // 3 loops
+      const ang = norm * Math.PI * 6;
       const r = width * 0.38 + Math.sin(norm * Math.PI * 4) * (width * 0.1);
       out.x = Math.sin(ang) * r;
       out.z = Math.cos(ang) * r;
@@ -219,7 +231,6 @@ const actor: Actor = {
             const pitem = items[itemIdx++];
             pitem.x1 = item.x1; pitem.y1 = item.y1; pitem.s1 = item.s1; pitem.z = item.z; pitem.angle = item.angle;
          }
-         
          if (i % 12 === 0 && t === 2) {
             const rItem = items[itemIdx++];
             rItem.x1 = item.x1; rItem.y1 = item.y1; rItem.s1 = item.s1; rItem.z = item.z; rItem.angle = item.angle;
@@ -310,12 +321,16 @@ const actor: Actor = {
         tempP1.x = (i - NUM_FIREWORKS/2) * 500;
         tempP1.y = floorY - fCycle * 2500; 
         tempP1.z = 2500;
-        // They rotate slightly differently to parallax deeply!
         rotateY(tempP1, camAngle * 0.8); projectInPlace(tempP1);
-        
         f.x1 = tempP1.projX!; f.y1 = tempP1.projY!; f.s1 = tempP1.scale!; f.z = tempP1.z;
         f.angle = fCycle;
     }
+
+    // Star Logo Centerpiece
+    const sLogo = items[itemIdx++];
+    tempP1.x = 0; tempP1.y = -800; tempP1.z = 1200;
+    rotateY(tempP1, camAngle); projectInPlace(tempP1);
+    sLogo.x1 = tempP1.projX!; sLogo.y1 = tempP1.projY!; sLogo.s1 = tempP1.scale!; sLogo.z = tempP1.z;
 
     // --- SORTING ---
     for (let i = 1; i < renderQueue.length; i++) {
@@ -328,54 +343,62 @@ const actor: Actor = {
       renderQueue[j + 1] = current;
     }
 
-    // --- DRAW CYBER LAKE ---
+    // --- DRAW CYBER LAKE & GRID ---
     const lakeScale = FOV_SCALE / CAM_Z;
     api.brush.ellipse(width/2, height*0.55 + floorY*lakeScale, 4000*lakeScale, 1500*lakeScale, {
         fill: { type: 'radial', cx: 0.5, cy: 0.5, radius: 0.5, stops: [
-            {offset:0, color: 0x0088ff}, {offset:0.4, color: 0x002288}, {offset:1, color: 0x000000}
+            {offset:0, color: 0x00aaff}, {offset:0.4, color: 0x0033aa}, {offset:1, color: 0x000000}
         ]},
-        alpha: 0.2, blendMode: 'screen'
+        alpha: 0.25, blendMode: 'screen'
     });
     for(let r=1; r<=4; r++) {
         const rippleR = ((time*0.4 + r*0.25) % 1.0);
         api.brush.ellipse(width/2, height*0.55 + floorY*lakeScale, 4000*lakeScale*rippleR, 1500*lakeScale*rippleR, {
-            color: 0x00ffff, width: 2.5, alpha: 0.15*(1-rippleR), blendMode: 'screen'
+            color: 0x00ffff, width: 2.5, alpha: 0.2*(1-rippleR), blendMode: 'screen'
         });
     }
 
-    // --- DRAW 3D FLOOR GRID ---
     const gridSize = 2500;
     const gridStep = 400;
     const gridCol = isDark ? 0x223344 : 0xaa00aa;
+    // Floor Grid
     for(let z=-gridSize; z<=gridSize; z+=gridStep) {
-      gridP1.x = -gridSize; gridP1.y = floorY; gridP1.z = z;
-      gridP2.x = gridSize; gridP2.y = floorY; gridP2.z = z;
-      rotateY(gridP1, camAngle); projectInPlace(gridP1);
-      rotateY(gridP2, camAngle); projectInPlace(gridP2);
-      if(gridP1.scale! > 0 && gridP2.scale! > 0) {
-         api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: gridCol, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.25 * Math.min(1, gridP1.scale!) });
-      }
+      gridP1.x = -gridSize; gridP1.y = floorY; gridP1.z = z; gridP2.x = gridSize; gridP2.y = floorY; gridP2.z = z;
+      rotateY(gridP1, camAngle); projectInPlace(gridP1); rotateY(gridP2, camAngle); projectInPlace(gridP2);
+      if(gridP1.scale! > 0 && gridP2.scale! > 0) api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: gridCol, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.25 * Math.min(1, gridP1.scale!) });
     }
+    // Sky Grid Tunnel
     for(let x=-gridSize; x<=gridSize; x+=gridStep) {
-      gridP1.x = x; gridP1.y = floorY; gridP1.z = -gridSize;
-      gridP2.x = x; gridP2.y = floorY; gridP2.z = gridSize;
-      rotateY(gridP1, camAngle); projectInPlace(gridP1);
-      rotateY(gridP2, camAngle); projectInPlace(gridP2);
-      if(gridP1.scale! > 0 && gridP2.scale! > 0) {
-         api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: gridCol, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.25 * Math.min(1, gridP1.scale!) });
-      }
+      gridP1.x = x; gridP1.y = -floorY*2; gridP1.z = -gridSize; gridP2.x = x; gridP2.y = -floorY*2; gridP2.z = gridSize;
+      rotateY(gridP1, camAngle); projectInPlace(gridP1); rotateY(gridP2, camAngle); projectInPlace(gridP2);
+      if(gridP1.scale! > 0 && gridP2.scale! > 0) api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: 0x00aaff, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.15 * Math.min(1, gridP1.scale!), blendMode: 'screen' });
     }
 
     // --- MAIN DRAWING LOOP --- //
-    const shadowColor = 0x000000;
-    const shadowAlpha = 0.4;
     for(let i = 0; i < renderQueue.length; i++) {
       const item = renderQueue[i];
 
       if(item.s1 <= 0 || item.s1 > 15) continue; 
       if((item.type === 'track-line' || item.type === 'ferris-spoke') && (item.s2 === undefined || item.s2 <= 0 || item.s2 > 15)) continue;
 
-      if(item.type === 'track-line') {
+      if (item.type === 'star-logo') {
+         const sRot = time * 0.8;
+         for(let k=0; k<10; k++) {
+             const sp = starBasePoints[k];
+             const rx = sp.x * Math.cos(sRot) - sp.z * Math.sin(sRot);
+             const ry = sp.y;
+             const rz = sp.x * Math.sin(sRot) + sp.z * Math.cos(sRot);
+             
+             tempP1.x = rx; tempP1.y = ry - 800; tempP1.z = rz + 1200;
+             rotateY(tempP1, camAngle); projectInPlace(tempP1);
+             starProjPoints[k].x = tempP1.projX!; starProjPoints[k].y = tempP1.projY!;
+         }
+         api.brush.polygon(starProjPoints, { fill: 0xffdd44, alpha: 0.85, blendMode: 'add' });
+         api.brush.polygon(starProjPoints, { fill: 0xffffff, alpha: 0.6, blendMode: 'add' });
+         // Star core glow
+         api.brush.circle(item.x1, item.y1, 100*item.s1, { fill: 0xffaa00, alpha: 0.4, blendMode: 'add' });
+      }
+      else if(item.type === 'track-line') {
         const thickness = 10 * item.s1;
         const color = isDark ? (item.id1 === 1 ? 0x662222 : 0x224466) : (item.id1 === 1 ? 0xffcccc : 0xccddee);
         api.brush.line(item.x1, item.y1, item.x2, item.y2, { color, width: thickness, alpha: 0.9, cap: 'round' });
@@ -385,27 +408,20 @@ const actor: Actor = {
         
         if (item.id2 % 2 === 0) {
             const nx = -Math.sin(item.angle); const ny = Math.cos(item.angle);
-            const tieW = 16 * item.s1;
-            api.brush.line(item.x1 + nx*tieW, item.y1 + ny*tieW, item.x1 - nx*tieW, item.y1 - ny*tieW, { color: isDark ? 0x333344 : 0x888899, width: 3 * item.s1, alpha: 0.6 });
+            api.brush.line(item.x1 + nx*16*item.s1, item.y1 + ny*16*item.s1, item.x1 - nx*16*item.s1, item.y1 - ny*16*item.s1, { color: isDark ? 0x333344 : 0x888899, width: 3 * item.s1, alpha: 0.6 });
         }
       }
       else if (item.type === 'pillar') {
-         const groundScale = FOV_SCALE / (CAM_Z + item.z); 
-         const gridFloorY = height * 0.55 + floorY * groundScale;
-         
-         const pw = 6 * item.s1;
-         const pCol = isDark ? 0x22222a : 0xaabbcc;
-         
-         const dx = 15 * item.s1;
-         api.brush.line(item.x1, item.y1, item.x1 - dx, gridFloorY, { color: pCol, width: pw, alpha: 0.8 });
-         api.brush.line(item.x1, item.y1, item.x1 + dx, gridFloorY, { color: pCol, width: pw, alpha: 0.8 });
+         const gridFloorY = height * 0.55 + floorY * (FOV_SCALE / (CAM_Z + item.z));
+         const pw = 6 * item.s1; const dx = 15 * item.s1;
+         api.brush.line(item.x1, item.y1, item.x1 - dx, gridFloorY, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
+         api.brush.line(item.x1, item.y1, item.x1 + dx, gridFloorY, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
          
          if(gridFloorY - item.y1 > 100 * item.s1) {
             const steps = Math.floor((gridFloorY - item.y1) / (70 * item.s1));
             for(let k=1; k<=steps; k++) {
                 const ky = item.y1 + k * 70 * item.s1;
-                const curW = (k / steps) * dx;
-                api.brush.line(item.x1 - curW, ky, item.x1 + curW, ky, { color: isDark? 0x333333 : 0xaaaaaa, width: 2*item.s1 });
+                api.brush.line(item.x1 - (k/steps)*dx, ky, item.x1 + (k/steps)*dx, ky, { color: isDark? 0x333333 : 0xaaaaaa, width: 2*item.s1 });
             }
          }
       }
@@ -414,49 +430,44 @@ const actor: Actor = {
          api.brush.translate(item.x1, item.y1);
          api.brush.rotate(item.angle + Math.PI/2);
          api.brush.scale(item.s1, item.s1 * 0.4); 
-         const rSize = 55;
-         
-         api.brush.ellipse(0, 0, rSize, rSize, { color: 0x00aaff, alpha: 0.8, width: 6, blendMode: 'add' }); 
-         api.brush.ellipse(0, 0, rSize, rSize, { color: 0xffffff, alpha: 0.6, width: 2, blendMode: 'add' });
-         
-         api.brush.rect(-rSize-10, rSize*0.7, 10, 20, {fill: 0x111111});
-         api.brush.rect(rSize, rSize*0.7, 10, 20, {fill: 0x111111});
+         const rs = 55;
+         api.brush.ellipse(0, 0, rs, rs, { color: 0x00aaff, alpha: 0.8, width: 6, blendMode: 'add' }); 
+         api.brush.ellipse(0, 0, rs, rs, { color: 0xffffff, alpha: 0.6, width: 2, blendMode: 'add' });
+         api.brush.rect(-rs-10, rs*0.7, 10, 20, {fill: 0x111111});
+         api.brush.rect(rs, rs*0.7, 10, 20, {fill: 0x111111});
          api.brush.popMatrix();
       }
       else if (item.type === 'tower') {
          const tData = towers[item.id1];
-         const baseRad = tData.r * item.s1;
+         const bRad = tData.r * item.s1;
          const th = tData.h * item.s1;
          
-         api.brush.line(item.x1, item.y1, item.x1, item.y1 - th, { color: 0x223355, width: baseRad*2, cap: 'butt' });
+         // Water Reflection
+         api.brush.line(item.x1, item.y1, item.x1, item.y1 + th*0.8, { color: 0x445588, width: bRad*2, alpha: 0.15, blendMode: 'add', cap: 'butt' });
          
-         // Mirror Glass Reflection
-         api.brush.line(item.x1 - baseRad*0.3, item.y1, item.x1 - baseRad*0.3, item.y1 - th, { color: 0x88ccff, width: baseRad*0.5, blendMode: 'add', alpha: 0.5, cap: 'butt' });
-         api.brush.line(item.x1 + baseRad*0.6, item.y1, item.x1 + baseRad*0.6, item.y1 - th, { color: 0x111122, width: baseRad*0.2, alpha: 0.9, cap: 'butt' });
+         api.brush.line(item.x1, item.y1, item.x1, item.y1 - th, { color: 0x223355, width: bRad*2, cap: 'butt' });
+         api.brush.line(item.x1 - bRad*0.3, item.y1, item.x1 - bRad*0.3, item.y1 - th, { color: 0x88ccff, width: bRad*0.5, blendMode: 'add', alpha: 0.5, cap: 'butt' });
+         api.brush.line(item.x1 + bRad*0.6, item.y1, item.x1 + bRad*0.6, item.y1 - th, { color: 0x111122, width: bRad*0.2, alpha: 0.9, cap: 'butt' });
          
-         api.brush.ellipse(item.x1, item.y1 - th, baseRad, baseRad*0.3, { fill: 0x111122 });
-         
-         // Pulsing Aviation Light
+         api.brush.ellipse(item.x1, item.y1 - th, bRad, bRad*0.3, { fill: 0x111122 });
          const avAlpha = (Math.sin(time * 5 + item.id1) * 0.5 + 0.5);
          api.brush.circle(item.x1, item.y1 - th, 5 * item.s1, { fill: 0xff2222, blendMode: 'add', alpha: avAlpha }); 
-         api.brush.circle(item.x1, item.y1 - th, 15 * item.s1, { fill: 0xff2222, blendMode: 'add', alpha: avAlpha * 0.2 }); 
-
-         // Antenna
          api.brush.line(item.x1, item.y1 - th, item.x1, item.y1 - th - 50*item.s1, {color: 0x888888, width: 2*item.s1 });
       }
       else if (item.type === 'shuttle-hyper') {
         const cw = 44; const ch = 18; 
         
         // Speed blur trail!
-        api.brush.pushMatrix();
-        api.brush.translate(item.x1 - Math.cos(item.angle)*15*item.s1, item.y1 - Math.sin(item.angle)*15*item.s1);
-        api.brush.rotate(item.angle);
-        api.brush.scale(item.s1*0.8, item.s1*0.8);
-        api.brush.roundRect(-cw/2, -ch/2, cw, ch, 6, { fill: 0xff2222, alpha: 0.2, blendMode: 'add' });
-        api.brush.popMatrix();
+        for(let tr=1; tr<=3; tr++) {
+           api.brush.pushMatrix();
+           api.brush.translate(item.x1 - Math.cos(item.angle)*10*item.s1*tr, item.y1 - Math.sin(item.angle)*10*item.s1*tr);
+           api.brush.rotate(item.angle);
+           api.brush.scale(item.s1*0.9, item.s1*0.9);
+           api.brush.roundRect(-cw/2, -ch/2, cw, ch, 6, { fill: 0xff2222, alpha: 0.15/tr, blendMode: 'add' });
+           api.brush.popMatrix();
+        }
 
-        // Shadow
-        api.brush.ellipse(item.x1, item.y1 + 10 * item.s1, 40 * item.s1, 15 * item.s1, { fill: shadowColor, alpha: shadowAlpha });
+        api.brush.ellipse(item.x1, item.y1 + 10 * item.s1, 40 * item.s1, 15 * item.s1, { fill: 0x000000, alpha: 0.4 });
         
         api.brush.pushMatrix();
         api.brush.translate(item.x1, item.y1);
@@ -464,10 +475,8 @@ const actor: Actor = {
         api.brush.scale(item.s1, item.s1);
         
         api.brush.rect(-cw/2 - 8, -2, 10, 4, { fill: 0x222222 }); 
-
         api.brush.roundRect(-cw/2, -ch/2, cw, ch, 6, { fill: 0x9999aa });
         api.brush.roundRect(-cw/2 + 2, -ch/2 + 2, cw - 4, ch - 4, 4, { fill: 0xee2222 });
-
         api.brush.roundRect(-cw/2 + 12, -ch/2 + 3, 6, ch - 6, 2, { fill: 0x111111 }); 
         api.brush.roundRect(-cw/2 + 24, -ch/2 + 3, 6, ch - 6, 2, { fill: 0x111111 });
 
@@ -484,9 +493,9 @@ const actor: Actor = {
            api.brush.circle(cw/2+2, -ch/2+4, 2.5, { fill: 0xffffee, blendMode: 'add' });
            api.brush.circle(cw/2+2, ch/2-4, 2.5, { fill: 0xffffee, blendMode: 'add' });
            
-           api.brush.polygon([{x: cw/2, y: -ch/2+4}, {x: cw/2+150, y: -ch/2-30}, {x: cw/2+150, y: ch/2+30}, {x: cw/2, y: ch/2-4}], {
+           api.brush.polygon([{x: cw/2, y: -ch/2+4}, {x: cw/2+200, y: -ch/2-40}, {x: cw/2+200, y: ch/2+40}, {x: cw/2, y: ch/2-4}], {
              fill: { type: 'linear', x0: 0, y0: 0.5, x1: 1, y1: 0.5, stops: [{offset:0, color: 0xffffff}, {offset:1, color: 0x000000}] },
-             alpha: 0.15, blendMode: 'screen'
+             alpha: 0.2, blendMode: 'screen'
            });
         }
         api.brush.popMatrix();
@@ -494,14 +503,17 @@ const actor: Actor = {
       else if (item.type === 'shuttle-launch') {
         const cw = 40; const ch = 22; 
         
-        api.brush.pushMatrix();
-        api.brush.translate(item.x1 - Math.cos(item.angle)*15*item.s1, item.y1 - Math.sin(item.angle)*15*item.s1);
-        api.brush.rotate(item.angle);
-        api.brush.scale(item.s1*0.8, item.s1*0.8);
-        api.brush.roundRect(-cw/2, -ch/2, cw, ch, 6, { fill: 0x44aaff, alpha: 0.2, blendMode: 'add' });
-        api.brush.popMatrix();
+        // Hyper trails
+        for(let tr=1; tr<=4; tr++) {
+           api.brush.pushMatrix();
+           api.brush.translate(item.x1 - Math.cos(item.angle)*12*item.s1*tr, item.y1 - Math.sin(item.angle)*12*item.s1*tr);
+           api.brush.rotate(item.angle);
+           api.brush.scale(item.s1*0.9, item.s1*0.9);
+           api.brush.roundRect(-cw/2, -ch/2, cw, ch, 6, { fill: 0x00aaff, alpha: 0.2/tr, blendMode: 'add' });
+           api.brush.popMatrix();
+        }
 
-        api.brush.ellipse(item.x1, item.y1 + 10 * item.s1, 40 * item.s1, 15 * item.s1, { fill: shadowColor, alpha: shadowAlpha });
+        api.brush.ellipse(item.x1, item.y1 + 10 * item.s1, 40 * item.s1, 15 * item.s1, { fill: 0x000000, alpha: 0.4 });
         
         api.brush.pushMatrix();
         api.brush.translate(item.x1, item.y1);
@@ -530,9 +542,9 @@ const actor: Actor = {
            api.brush.circle(cw/2+2, -ch/2+6, 3, { fill: 0x88ddff, blendMode: 'add' });
            api.brush.circle(cw/2+2, ch/2-6, 3, { fill: 0x88ddff, blendMode: 'add' });
            
-           api.brush.polygon([{x: cw/2, y: -ch/2+6}, {x: cw/2+120, y: -ch/2-40}, {x: cw/2+120, y: ch/2+40}, {x: cw/2, y: ch/2-6}], {
+           api.brush.polygon([{x: cw/2, y: -ch/2+6}, {x: cw/2+180, y: -ch/2-50}, {x: cw/2+180, y: ch/2+50}, {x: cw/2, y: ch/2-6}], {
              fill: { type: 'linear', x0: 0, y0: 0.5, x1: 1, y1: 0.5, stops: [{offset:0, color: 0xffffff}, {offset:1, color: 0x000000}] },
-             alpha: 0.12, blendMode: 'screen'
+             alpha: 0.15, blendMode: 'screen'
            });
         }
         api.brush.popMatrix();
@@ -541,27 +553,26 @@ const actor: Actor = {
          const fCycle = item.angle;
          if (fCycle < 0.45) {
             api.brush.circle(item.x1, item.y1, 2.5*item.s1, { fill: 0xffeebb, blendMode: 'add' });
-            api.brush.line(item.x1, item.y1, item.x1, item.y1 + 40*item.s1, { color: 0xffaa44, alpha: 0.6, blendMode: 'add', width: 1.5*item.s1 });
+            api.brush.line(item.x1, item.y1, item.x1, item.y1 + 50*item.s1, { color: 0xffaa44, alpha: 0.6, blendMode: 'add', width: 2*item.s1 });
          } else if (fCycle >= 0.45 && fCycle < 0.9) {
             const expProg = (fCycle - 0.45) / 0.45; 
             const expAlpha = 1.0 - expProg;
-            const expRadius = expProg * 140 * item.s1;
-            const numSparks = 14;
+            const expRadius = expProg * 160 * item.s1;
             const hueCol = item.id1 % 2 === 0 ? 0xff4488 : 0x4488ff;
-            for(let k=0; k<numSparks; k++) {
-               const ang = (k/numSparks)*Math.PI*2 + expProg * 0.5;
+            for(let k=0; k<16; k++) {
+               const ang = (k/16)*Math.PI*2 + expProg * 0.5;
                const sx = item.x1 + Math.cos(ang)*expRadius;
                const sy = item.y1 + Math.sin(ang)*expRadius;
                api.brush.circle(sx, sy, 2*item.s1, { fill: hueCol, alpha: expAlpha, blendMode: 'add' });
-               api.brush.line(sx, sy, item.x1 + Math.cos(ang)*expRadius*0.8, item.y1 + Math.sin(ang)*expRadius*0.8, { color: 0xffffff, alpha: expAlpha*0.7, blendMode: 'add', width: 1.5*item.s1 });
+               api.brush.line(sx, sy, item.x1 + Math.cos(ang)*expRadius*0.7, item.y1 + Math.sin(ang)*expRadius*0.7, { color: 0xffffff, alpha: expAlpha*0.7, blendMode: 'add', width: 1.5*item.s1 });
             }
          }
       }
       else if (item.type === 'ferris-spoke') {
-         api.brush.line(item.x1, item.y1, item.x2, item.y2, { color: isDark ? 0x444466 : 0x9999aa, width: 4*item.s1 });
+         api.brush.line(item.x1, item.y1, item.x2, item.y2, { color: isDark ? 0x444466 : 0x9999aa, width: 5*item.s1 });
       }
       else if (item.type === 'ferris-cart') {
-         api.brush.rect(item.x1 - 15*item.s1, item.y1, 30*item.s1, 40*item.s1, { fill: isDark ? 0xff2266 : 0xff4477, blendMode: 'add', alpha: 0.9 });
+         api.brush.rect(item.x1 - 15*item.s1, item.y1, 30*item.s1, 40*item.s1, { fill: isDark ? 0xff3366 : 0xff4477, blendMode: 'add', alpha: 0.9 });
       }
       else if (item.type === 'tree') {
          const th = trees[item.id1].h * item.s1;
@@ -572,7 +583,7 @@ const actor: Actor = {
             {x: item.x1 - tw, y: item.y1}
          ];
          api.brush.polygon(points, { fill: isDark ? 0x0a2211 : 0x11aa44, alpha: Math.min(1, item.s1 * 0.9) });
-         api.brush.ellipse(item.x1, item.y1, tw*1.2, tw*0.4, { fill: shadowColor, alpha: 0.3 });
+         api.brush.ellipse(item.x1, item.y1, tw*1.2, tw*0.4, { fill: 0x000000, alpha: 0.3 });
       }
       else if (item.type === 'particle') {
          const p = particles[item.id1];
@@ -589,6 +600,8 @@ const actor: Actor = {
     items.length = 0;
     particles.length = 0;
     trees.length = 0;
+    starBasePoints.length = 0;
+    starProjPoints.length = 0;
     renderQueue.length = 0;
   },
 };

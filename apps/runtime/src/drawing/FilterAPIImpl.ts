@@ -441,15 +441,20 @@ export class FilterAPIImpl implements FilterAPI {
     }
 
     // Update time uniform
-    const customUniforms = (filter.resources as Record<string, unknown>).customUniforms as Record<string, { value: unknown }>;
-    if (customUniforms.uTime) {
-      customUniforms.uTime.value = performance.now() / 1000;
-    }
+    // In Pixi.js v8, filter.resources.customUniforms is a UniformGroup instance.
+    // Values live at uniformGroup.uniforms.name, not uniformGroup.name.value.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const uniformGroup = (filter.resources as any).customUniforms;
+    if (uniformGroup?.uniforms) {
+      if (uniformGroup.uniforms.uTime !== undefined) {
+        uniformGroup.uniforms.uTime = performance.now() / 1000;
+      }
 
-    // Update user uniforms
-    for (const [name, value] of Object.entries(uniforms)) {
-      if (customUniforms[name]) {
-        customUniforms[name].value = value;
+      // Update user uniforms
+      for (const [name, value] of Object.entries(uniforms)) {
+        if (uniformGroup.uniforms[name] !== undefined) {
+          uniformGroup.uniforms[name] = value;
+        }
       }
     }
   }
@@ -480,17 +485,17 @@ export class FilterAPIImpl implements FilterAPI {
 
     try {
       // Access the uniforms through the filter's resources
+      // In Pixi.js v8, resources.customUniforms is a UniformGroup — values at .uniforms.name
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const resources = filter.resources as any;
-      if (resources.customUniforms) {
+      const uniformGroup = (filter.resources as any).customUniforms;
+      if (uniformGroup?.uniforms) {
         for (const [name, value] of Object.entries(uniforms)) {
-          if (resources.customUniforms[name]) {
-            resources.customUniforms[name].value = value;
+          if (uniformGroup.uniforms[name] !== undefined) {
+            uniformGroup.uniforms[name] = value;
           }
         }
-        // Update time uniform
-        if (resources.customUniforms.uTime) {
-          resources.customUniforms.uTime.value = performance.now() / 1000;
+        if (uniformGroup.uniforms.uTime !== undefined) {
+          uniformGroup.uniforms.uTime = performance.now() / 1000;
         }
       }
     } catch (error) {

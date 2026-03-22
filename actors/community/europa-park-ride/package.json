@@ -1,0 +1,24 @@
+{
+  "name": "@art/actor-europa-park-ride",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Europa Park Ride actor for the art installation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "npx open-cli http://localhost:3000?actor=europa-park-ride",
+    "build": "vite build",
+    "validate": "tsx ../../../packages/actor-devtools/bin/validate-actor.ts src/index.ts"
+  },
+  "dependencies": {
+    "@art/types": "workspace:*",
+    "@art/actor-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@art/actor-devtools": "workspace:*",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.0"
+  }
+}

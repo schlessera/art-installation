@@ -57,11 +57,11 @@ interface Particle { x: number; y: number; z: number; phase: number; speed: numb
 const particles: Particle[] = [];
 interface Tower { x: number; z: number; h: number; r: number; }
 const towers: Tower[] = [
-  {x: 800, z: 800, h: 680, r: 150},
-  {x: -800, z: 800, h: 580, r: 120},
-  {x: 800, z: -800, h: 720, r: 150},
-  {x: -800, z: -800, h: 600, r: 120},
-  {x: 0, z: 0, h: 950, r: 350}, 
+  {x: 800, z: 800, h: 580, r: 90},
+  {x: -800, z: 800, h: 500, r: 80},
+  {x: 800, z: -800, h: 620, r: 90},
+  {x: -800, z: -800, h: 480, r: 80},
+  {x: 0, z: 0, h: 750, r: 120}, 
 ];
 
 let width = 0;
@@ -184,10 +184,10 @@ const actor: Actor = {
     });
 
     const orbitAngle = time * 0.25; 
-    const ORBIT_R = 3000 + Math.sin(time*0.5)*1000;
+    const ORBIT_R = 4500 + Math.sin(time*0.5)*1000;
     const camPosX = Math.sin(orbitAngle) * ORBIT_R;
     const camPosZ = Math.cos(orbitAngle) * ORBIT_R;
-    const camPosY = Math.sin(time * 0.35) * 800 - 300; 
+    const camPosY = Math.sin(time * 0.35) * 600 - 800; // Safe isometric skycam
     const camAngle = orbitAngle + Math.sin(time*1.2)*0.05;
 
     const CAM_Z = 4500;
@@ -213,14 +213,14 @@ const actor: Actor = {
 
     function getTrack1(norm: number, out: Point3D) {
       const ang = norm * Math.PI * 8; 
-      const r = 1600 + Math.sin(norm * Math.PI * 4) * 400;
+      const r = 1000 + Math.sin(norm * Math.PI * 4) * 250;
       out.x = Math.sin(ang) * r;
       out.z = Math.cos(ang) * r;
       out.y = Math.cos(norm * Math.PI * 2) * 500 - 300; 
     }
     function getTrack2(norm: number, out: Point3D) {
       const ang = norm * Math.PI * 12; 
-      const r = 1200;
+      const r = 700;
       out.x = Math.cos(ang) * r;
       out.z = Math.sin(ang) * r;
       out.y = Math.sin(norm * Math.PI * 4) * 600 - 100; 
@@ -352,7 +352,7 @@ const actor: Actor = {
         if(zH > 10) {
            f.s1 = FOV_SCALE / zH;
            f.x1 = width / 2 + tx * f.s1;
-           f.y1 = height * 0.55 + tempP1.y * f.s1; 
+           f.y1 = height * 0.55 + (tempP1.y - camPosY * 0.2) * f.s1; 
            f.z = tz;
         } else {
            f.s1 = -1;
@@ -480,7 +480,7 @@ const actor: Actor = {
         }
       }
       else if (item.type === 'pillar') {
-         const gridFloorY = height * 0.55 + floorY * (FOV_SCALE / (CAM_Z + item.z));
+         const gridFloorY = height * 0.55 + (floorY - camPosY) * item.s1;
          const pw = 6 * item.s1; const dx = 15 * item.s1;
          api.brush.line(item.x1, item.y1, item.x1 - dx, gridFloorY, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
          api.brush.line(item.x1, item.y1, item.x1 + dx, gridFloorY, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });

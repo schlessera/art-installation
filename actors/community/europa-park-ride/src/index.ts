@@ -4,7 +4,7 @@ import type { Actor, ActorSetupAPI, ActorUpdateAPI, FrameContext, ActorMetadata 
 interface Point3D { x: number; y: number; z: number; projX?: number; projY?: number; scale?: number; }
 interface Point { x: number; y: number; }
 
-type RenderItemType = 'track-line' | 'tunnel-ring' | 'shuttle-hyper' | 'shuttle-launch' | 'pillar' | 'tower' | 'euro-sat' | 'firework' | 'tree' | 'particle' | 'ferris-spoke' | 'ferris-cart' | 'star-logo';
+type RenderItemType = 'track-line' | 'tunnel-ring' | 'shuttle-hyper' | 'shuttle-launch' | 'pillar' | 'tower' | 'euro-sat' | 'firework' | 'tree' | 'particle' | 'ferris-spoke' | 'ferris-cart' | 'star-logo' | 'monolith';
 
 interface RenderItem {
   type: RenderItemType;
@@ -17,10 +17,10 @@ interface RenderItem {
 
 const metadata: ActorMetadata = {
   id: 'europa-park-ride',
-  name: 'Europa Park Ride: Phase VI Simulation',
-  description: 'The ultimate Democene simulation. Pushing canvas to theoretical limits with cinematic drone camera tracking, skytracker laser sweeps, Euro-Sat geodesics, massive water reflections, and extreme coaster speeds.',
-  author: { name: 'Antigravity AI Democene', github: 'artificial' },
-  version: '11.0.0',
+  name: 'Europa Park Ride: Phase VII Hyper-Drone',
+  description: 'A 3000-unit sweeping drone flight over massive glowing architecture. Experience Phase VII: floating monoliths, absolute scaling, orbital tracking cameras, and thick neon hyper-tracks.',
+  author: { name: 'Antigravity AI Reality', github: 'artificial' },
+  version: '12.0.0',
   tags: ['3d', 'coaster', 'theme-park', 'zenith', 'geometry', 'award-winning', 'epic', 'synthwave', 'odyssey'],
   createdAt: new Date(),
   preferredDuration: 300,
@@ -57,11 +57,11 @@ interface Particle { x: number; y: number; z: number; phase: number; speed: numb
 const particles: Particle[] = [];
 interface Tower { x: number; z: number; h: number; r: number; }
 const towers: Tower[] = [
-  {x: 0, z: 0, h: 480, r: 90},
-  {x: 240, z: 160, h: 380, r: 70},
-  {x: -220, z: 190, h: 420, r: 70},
-  {x: 190, z: -200, h: 400, r: 70},
-  {x: -170, z: -160, h: 340, r: 70},
+  {x: 800, z: 800, h: 680, r: 150},
+  {x: -800, z: 800, h: 580, r: 120},
+  {x: 800, z: -800, h: 720, r: 150},
+  {x: -800, z: -800, h: 600, r: 120},
+  {x: 0, z: 0, h: 950, r: 350}, 
 ];
 
 let width = 0;
@@ -133,14 +133,18 @@ const actor: Actor = {
         items.push({type: 'firework', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: Math.random(), angle: 0});
     }
 
-    // The Europa Star Logo
+    // The Europa Star & Monoliths
     for(let i=0; i<10; i++) {
-       const r = i % 2 === 0 ? 350 : 130;
+       const r = i % 2 === 0 ? 400 : 150;
        const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
        starBasePoints.push({x: Math.cos(a)*r, y: Math.sin(a)*r, z: 0});
        starProjPoints.push({x: 0, y: 0});
     }
     items.push({type: 'star-logo', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: 0, id2: 0, angle: 0});
+
+    for(let i=0; i<4; i++) {
+       items.push({type: 'monolith', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
+    }
 
     renderQueue = [...items];
   },
@@ -176,15 +180,20 @@ const actor: Actor = {
         blendMode: 'add', alpha: 0.8
     });
 
-    const camAngle = time * 0.15; 
-    const camPanX = Math.cos(time * 0.1) * 800;
-    const camPanZ = Math.sin(time * 0.2) * 1500;
+    const orbitAngle = time * 0.25; 
+    const ORBIT_R = 3000 + Math.sin(time*0.5)*1000;
+    const camPosX = Math.sin(orbitAngle) * ORBIT_R;
+    const camPosZ = Math.cos(orbitAngle) * ORBIT_R;
+    const camPosY = Math.sin(time * 0.35) * 800 - 300; 
+    const camAngle = orbitAngle + Math.sin(time*1.2)*0.05;
+
     const CAM_Z = 4500;
     const FOV_SCALE = 3500;
 
     function applyCamera(p: Point3D) {
-      p.x -= camPanX;
-      p.z -= camPanZ;
+      p.x -= camPosX;
+      p.y -= camPosY;
+      p.z -= camPosZ;
       const sA = Math.sin(camAngle); const cA = Math.cos(camAngle);
       const tx = p.x * cA - p.z * sA;
       const tz = p.x * sA + p.z * cA;
@@ -200,18 +209,18 @@ const actor: Actor = {
     const floorY = 450;
 
     function getTrack1(norm: number, out: Point3D) {
-      const ang = norm * Math.PI * 6;
-      const r = width * 0.38 + Math.sin(norm * Math.PI * 4) * (width * 0.1);
+      const ang = norm * Math.PI * 8; 
+      const r = 1600 + Math.sin(norm * Math.PI * 4) * 400;
       out.x = Math.sin(ang) * r;
       out.z = Math.cos(ang) * r;
-      out.y = Math.cos(norm * Math.PI * 2) * (height * 0.35) - height * 0.15; 
+      out.y = Math.cos(norm * Math.PI * 2) * 500 - 300; 
     }
     function getTrack2(norm: number, out: Point3D) {
-      const ang = norm * Math.PI * 10; 
-      const r = width * 0.22;
+      const ang = norm * Math.PI * 12; 
+      const r = 1200;
       out.x = Math.cos(ang) * r;
       out.z = Math.sin(ang) * r;
-      out.y = Math.sin(norm * Math.PI * 4) * (height * 0.45); 
+      out.y = Math.sin(norm * Math.PI * 4) * 600 - 100; 
     }
 
     let itemIdx = 0;
@@ -332,7 +341,7 @@ const actor: Actor = {
         tempP1.y = floorY - fCycle * 2500; 
         tempP1.z = 2500;
         // Deep background logic
-        tempP1.x -= camPanX * 0.2; tempP1.z -= camPanZ * 0.2; 
+        tempP1.x -= camPosX * 0.2; tempP1.z -= camPosZ * 0.2; 
         const sA = Math.sin(camAngle * 0.8); const cA = Math.cos(camAngle * 0.8);
         const tx = tempP1.x * cA - tempP1.z * sA;
         const tz = tempP1.x * sA + tempP1.z * cA;
@@ -353,6 +362,16 @@ const actor: Actor = {
     tempP1.x = 0; tempP1.y = -800; tempP1.z = 1200;
     applyCamera(tempP1);
     sLogo.x1 = tempP1.projX!; sLogo.y1 = tempP1.projY!; sLogo.s1 = tempP1.scale!; sLogo.z = tempP1.z;
+
+    // Levitation Monoliths
+    for(let i=0; i<4; i++) {
+       const m = items[itemIdx++];
+       const th = i * Math.PI/2 + time*0.5;
+       tempP1.x = Math.cos(th)*1800; tempP1.z = Math.sin(th)*1800;
+       tempP1.y = -800 + Math.sin(time*1.5 + i)*200;
+       applyCamera(tempP1);
+       m.x1 = tempP1.projX!; m.y1 = tempP1.projY!; m.s1 = tempP1.scale!; m.z = tempP1.z; m.angle = tempP1.x; 
+    }
 
     // --- SORTING ---
     for (let i = 1; i < renderQueue.length; i++) {
@@ -419,6 +438,18 @@ const actor: Actor = {
          api.brush.polygon(starProjPoints, { fill: 0xffffff, alpha: 0.6, blendMode: 'add' });
          // Star core glow
          api.brush.circle(item.x1, item.y1, 100*item.s1, { fill: 0xff8800, alpha: 0.4, blendMode: 'add' });
+      }
+      else if (item.type === 'monolith') {
+         const mRot = time + item.id1;
+         const crW = 120 * item.s1 * Math.abs(Math.cos(mRot));
+         const crH = 250 * item.s1;
+         
+         api.brush.polygon([
+            {x: item.x1, y: item.y1 + crH},
+            {x: item.x1 - crW, y: item.y1},
+            {x: item.x1 + crW, y: item.y1}
+         ], { fill: 0xaa22ff, alpha: 0.8, blendMode: 'screen' });
+         api.brush.circle(item.x1, item.y1 + crH*0.2, 40*item.s1, { fill: 0xffffff, alpha: Math.sin(time*5+item.id1)*0.5+0.5, blendMode: 'add' });
       }
       else if (item.type === 'euro-sat') {
          const rad = 450 * item.s1;

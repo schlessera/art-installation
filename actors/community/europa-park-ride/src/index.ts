@@ -183,11 +183,11 @@ const actor: Actor = {
         blendMode: 'add', alpha: 0.8
     });
 
-    const orbitAngle = time * 0.25; 
-    const ORBIT_R = 4000 + Math.sin(time*0.5)*800;
+    const orbitAngle = time * 0.15; 
+    const ORBIT_R = 4500 + Math.sin(time*0.1)*2000;
     const camPosX = Math.sin(orbitAngle) * ORBIT_R;
     const camPosZ = Math.cos(orbitAngle) * ORBIT_R;
-    const camPosY = Math.sin(time * 0.35) * 775 - 425; // Swoops from high sky to just above ground level
+    const camPosY = Math.sin(time * 0.2) * 700 - 500; // Swoops elegantly from high sky to track level
     const camAngle = orbitAngle + Math.PI + Math.sin(time*1.2)*0.05; 
     const pitchAngle = Math.atan2(-camPosY, ORBIT_R); // Locks focus onto the ground zero origin physically!
 

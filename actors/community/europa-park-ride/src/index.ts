@@ -17,10 +17,10 @@ interface RenderItem {
 
 const metadata: ActorMetadata = {
   id: 'europa-park-ride',
-  name: 'Europa Park Ride: Phase VIII Singularity',
-  description: 'The ultimate canvas limit. Featuring Phase VIII: sweeping drone choreography, racing electrical current tracks, animated deep-warp grids, and a massive dual-spinning Star centerpiece.',
+  name: 'Europa Park Ride: Phase IX Transcendence',
+  description: 'Welcome to the mathematical absolute. Featuring Phase IX: towering continuous Torus-knot roller coaster inversions, dynamic warp-speed focal tracking, and deeply shaded 3D mesh volumes.',
   author: { name: 'Antigravity AI Reality', github: 'artificial' },
-  version: '15.0.0',
+  version: '16.0.0',
   tags: ['3d', 'coaster', 'theme-park', 'zenith', 'geometry', 'award-winning', 'epic', 'synthwave', 'odyssey'],
   createdAt: new Date(),
   preferredDuration: 300,
@@ -188,10 +188,11 @@ const actor: Actor = {
     const camPosX = Math.sin(orbitAngle) * ORBIT_R;
     const camPosZ = Math.cos(orbitAngle) * ORBIT_R;
     const camPosY = Math.sin(time * 0.2) * 700 - 500; // Swoops elegantly from high sky to track level
-    const camAngle = orbitAngle + Math.PI + Math.sin(time * 1.2) * 0.05;
+    const camAngle = orbitAngle + Math.PI + Math.sin(time*1.2)*0.05; 
     const pitchAngle = Math.atan2(-camPosY, ORBIT_R); // Locks focus onto the ground zero origin physically!
 
-    const FOV_SCALE = 1800;
+    const droneVelocity = Math.abs(Math.cos(time * 0.1));
+    const FOV_SCALE = 1600 + droneVelocity * 1000; // Dynamic cinematic warp-zoom!
 
     function applyCamera(p: Point3D) {
       p.x -= camPosX;
@@ -219,18 +220,21 @@ const actor: Actor = {
     const floorY = 450;
 
     function getTrack1(norm: number, out: Point3D) {
-      const ang = norm * Math.PI * 8;
-      const r = 1000 + Math.sin(norm * Math.PI * 4) * 250;
-      out.x = Math.sin(ang) * r;
-      out.z = Math.cos(ang) * r;
-      out.y = Math.cos(norm * Math.PI * 2) * 500 - 300;
+      const t = norm * Math.PI * 2;
+      const p = 3; const q = 4; const r = 650;
+      // 3D Torus Knot (Massive intertwining loops)
+      out.x = r * (2 + Math.cos(q * t)) * Math.cos(p * t);
+      out.z = r * (2 + Math.cos(q * t)) * Math.sin(p * t);
+      out.y = r * 1.8 * Math.sin(q * t) - 600; 
     }
+
     function getTrack2(norm: number, out: Point3D) {
-      const ang = norm * Math.PI * 12;
-      const r = 700;
-      out.x = Math.cos(ang) * r;
-      out.z = Math.sin(ang) * r;
-      out.y = Math.sin(norm * Math.PI * 4) * 600 - 100;
+      const t = norm * Math.PI * 2;
+      const p = 5; const q = 2; const r = 550;
+      // Penta-knot sweeping inside the main track
+      out.x = r * (2 + Math.cos(q * t)) * Math.cos(p * t);
+      out.z = r * (2 + Math.cos(q * t)) * Math.sin(p * t);
+      out.y = r * 1.5 * Math.sin(q * t) - 400;
     }
 
     let itemIdx = 0;
@@ -735,7 +739,13 @@ const actor: Actor = {
         const alpha = (Math.sin(time * 2 + p.phase) * 0.5 + 0.5) * Math.min(1, item.s1);
         if (alpha > 0.05) {
           const c = item.id1 % 3 === 0 ? 0xffffff : (item.id1 % 2 === 0 ? 0x44ffff : 0xffaa44);
-          api.brush.circle(item.x1, item.y1, 3 * item.s1, { fill: c, alpha, blendMode: 'add' });
+          
+          // Warp Speed Streaks!
+          const dx = (item.x1 - width/2) * 0.08 * droneVelocity;
+          const dy = (item.y1 - height/2) * 0.08 * droneVelocity;
+          
+          api.brush.line(item.x1, item.y1, item.x1 + dx, item.y1 + dy, { color: c, width: 3 * item.s1, alpha: alpha, blendMode: 'add', cap: 'round' });
+          api.brush.circle(item.x1, item.y1, 6 * item.s1, { fill: c, alpha: alpha * 0.4, blendMode: 'add' });
         }
       }
     }

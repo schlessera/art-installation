@@ -61,6 +61,7 @@ const actor: Actor = {
     const iframe = winDoc.createElement('iframe');
     // The payload: Rickroll autoplay
     iframe.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&controls=0&modestbranding=1&loop=1';
+    iframe.allow = 'autoplay; encrypted-media';
     iframe.style.width = '70vw';
     iframe.style.height = '70vh';
     iframe.style.border = '6px solid #ff00ff';

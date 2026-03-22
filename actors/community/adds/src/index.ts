@@ -20,7 +20,7 @@ const metadata: ActorMetadata = {
 };
 
 const BANNER_HEIGHT = 36;
-const SCROLL_SPEED = 40; // pixels per second
+const SCROLL_SPEED = 120; // pixels per second
 
 const messages = [
   'BUY NOW! CloudFest 2026 tickets — 50% OFF!',

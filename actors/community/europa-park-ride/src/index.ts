@@ -20,7 +20,7 @@ const metadata: ActorMetadata = {
   name: 'Europa Park Ride: Phase VII Hyper-Drone',
   description: 'A 3000-unit sweeping drone flight over massive glowing architecture. Experience Phase VII: floating monoliths, absolute scaling, orbital tracking cameras, and thick neon hyper-tracks.',
   author: { name: 'Antigravity AI Reality', github: 'artificial' },
-  version: '12.0.0',
+  version: '13.0.0',
   tags: ['3d', 'coaster', 'theme-park', 'zenith', 'geometry', 'award-winning', 'epic', 'synthwave', 'odyssey'],
   createdAt: new Date(),
   preferredDuration: 300,

@@ -483,7 +483,7 @@ const actor: Actor = {
          const mRot = time + item.id1;
          const crW = 120 * item.s2 * Math.abs(Math.cos(mRot));
          
-         const polyGrad = { type: 'linear', x0: 0, y0: 0, x1: 1, y1: 0, stops: [
+         const polyGrad = { type: 'linear' as const, x0: 0, y0: 0, x1: 1, y1: 0, stops: [
              {offset: 0, color: 0x330066},
              {offset: 0.5, color: 0xee55ff},
              {offset: 1, color: 0x330066}
@@ -562,7 +562,7 @@ const actor: Actor = {
         // Base ellipse FIRST for occlusion clipping
         api.brush.ellipse(item.x1, item.y1, bRad, bRad * pitchSquashBase, { fill: 0x051122 });
 
-        const cylGrad = { type: 'linear', x0: 0, y0: 0, x1: 1, y1: 0, stops: [
+        const cylGrad = { type: 'linear' as const, x0: 0, y0: 0, x1: 1, y1: 0, stops: [
             {offset: 0, color: 0x111122},
             {offset: 0.2, color: 0x6699ff}, // specular sun reflection
             {offset: 0.6, color: 0x223355},
@@ -715,7 +715,7 @@ const actor: Actor = {
         const tw = (item.y1 - item.y2) * 0.35; 
         
         // Deep shading gradient
-        const treeGrad = { type: 'linear', x0: 0, y0: 0, x1: 1, y1: 0, stops: [
+        const treeGrad = { type: 'linear' as const, x0: 0, y0: 0, x1: 1, y1: 0, stops: [
              {offset: 0, color: 0x021105},
              {offset: 0.4, color: isDark ? 0x0a3311 : Math.random() > 0.5 ? 0x22cc44 : 0x44ee22},
              {offset: 1, color: 0x021105}

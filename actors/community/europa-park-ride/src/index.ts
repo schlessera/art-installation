@@ -4,7 +4,7 @@ import type { Actor, ActorSetupAPI, ActorUpdateAPI, FrameContext, ActorMetadata 
 interface Point3D { x: number; y: number; z: number; projX?: number; projY?: number; scale?: number; }
 interface Point { x: number; y: number; }
 
-type RenderItemType = 'track-line' | 'tunnel-ring' | 'shuttle-hyper' | 'shuttle-launch' | 'pillar' | 'tower' | 'firework' | 'tree' | 'particle' | 'ferris-spoke' | 'ferris-cart' | 'star-logo';
+type RenderItemType = 'track-line' | 'sphere' | 'cube' | 'pillar' | 'tree' | 'particle' | 'ferris-spoke' | 'ferris-cart';
 
 interface RenderItem {
   type: RenderItemType;
@@ -17,52 +17,38 @@ interface RenderItem {
 
 const metadata: ActorMetadata = {
   id: 'europa-park-ride',
-  name: 'Europa Park Ride: The Final Odyssey',
-  description: 'The definitive Phase V demoscene. Unleashing a massive 3D rotating emblem, infinite sky grids, deep water reflections, launch coaster hyper-trails, and majestic fireworks over an interlocking mega-coaster.',
-  author: { name: 'Antigravity AI Odyssey', github: 'artificial' },
-  version: '10.0.0',
-  tags: ['3d', 'coaster', 'theme-park', 'zenith', 'geometry', 'award-winning', 'epic', 'synthwave', 'odyssey'],
+  name: 'Europa Park Ride: The Ultimate 3D Park',
+  description: 'A masterpiece 3D theme park featuring true camera projection, massive coaster tracks, a Ferris wheel, pine trees, and trains.',
+  author: { name: 'Antigravity AI Master', github: 'artificial' },
+  version: '5.1.0',
+  tags: ['3d', 'coaster', 'theme-park', 'masterpiece', 'geometry', 'epic'],
   createdAt: new Date(),
-  preferredDuration: 300,
+  preferredDuration: 120,
   requiredContexts: ['display'],
 };
 
-// --- SCENE CONFIGURATION ---
-const NUM_TRACK_POINTS = 160; 
+const NUM_TRACK_POINTS = 140; 
 const NUM_TRAINS = 3;
 const CARS_PER_TRAIN = 5;
-const NUM_TREES = 110;
-const NUM_PARTICLES = 100;
-const NUM_SPOKES = 18;
-const NUM_FIREWORKS = 12;
+const NUM_TREES = 300;
+const NUM_PARTICLES = 300;
+const NUM_SPOKES = 12;
 
-// Buffers
 const items: RenderItem[] = [];
-let renderQueue: RenderItem[] = [];
-
-// Environment Data
-const gridP1: Point3D = {x:0, y:0, z:0};
-const gridP2: Point3D = {x:0, y:0, z:0};
 const tempP1: Point3D = {x:0, y:0, z:0};
 const tempP2: Point3D = {x:0, y:0, z:0};
+const gridP1: Point3D = {x:0, y:0, z:0};
+const gridP2: Point3D = {x:0, y:0, z:0};
 
-// Star Logo 3D Geometry
-interface StarPoint { x: number; y: number; z: number; }
-const starBasePoints: StarPoint[] = [];
-const starProjPoints: Point[] = [];
+const s = 14; 
+const topFace: Point[] = [{x:0, y:-s}, {x:s, y:-s/2}, {x:0, y:0}, {x:-s, y:-s/2}];
+const rightFace: Point[] = [{x:0, y:0}, {x:s, y:-s/2}, {x:s, y:s/2}, {x:0, y:s}];
+const leftFace: Point[] = [{x:0, y:0}, {x:0, y:s}, {x:-s, y:s/2}, {x:-s, y:-s/2}];
 
 interface Tree { x: number; z: number; h: number; }
 const trees: Tree[] = [];
 interface Particle { x: number; y: number; z: number; phase: number; speed: number; }
 const particles: Particle[] = [];
-interface Tower { x: number; z: number; h: number; r: number; }
-const towers: Tower[] = [
-  {x: 0, z: 0, h: 480, r: 90},
-  {x: 240, z: 160, h: 380, r: 70},
-  {x: -220, z: 190, h: 420, r: 70},
-  {x: 190, z: -200, h: 400, r: 70},
-  {x: -170, z: -160, h: 340, r: 70},
-];
 
 let width = 0;
 let height = 0;
@@ -75,24 +61,50 @@ const actor: Actor = {
     width = size.width;
     height = size.height;
 
-    items.length = 0;
-    renderQueue.length = 0;
-    trees.length = 0;
-    particles.length = 0;
-    starBasePoints.length = 0;
-    starProjPoints.length = 0;
-
-    // Track, Pillar, Ring
+    // Allocate Tracks & Pillars
     for(let t=1; t<=2; t++) {
       for(let i=0; i<NUM_TRACK_POINTS; i++) {
         items.push({type: 'track-line', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: t, id2: i, angle: 0});
         if (i % 5 === 0) {
             items.push({type: 'pillar', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: t, id2: i, angle: 0});
         }
-        if (i % 12 === 0 && t === 2) {
-            items.push({type: 'tunnel-ring', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: t, id2: i, angle: 0});
-        }
       }
+    }
+    
+    // Allocate Trains
+    for(let tr=0; tr<NUM_TRAINS; tr++) {
+        for(let c=0; c<CARS_PER_TRAIN; c++) {
+            items.push({type: 'sphere', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: 1, id2: c, angle: tr});
+            items.push({type: 'cube', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: 2, id2: c, angle: tr});
+        }
+    }
+
+    // Allocate Ferris Wheel
+    for(let i=0; i<NUM_SPOKES; i++) {
+        items.push({type: 'ferris-spoke', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
+        items.push({type: 'ferris-cart', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
+    }
+
+    // Allocate Trees (Spread far and wide)
+    for(let i=0; i<NUM_TREES; i++) {
+        trees.push({
+            x: (Math.random() - 0.5) * 5000,
+            z: (Math.random() - 0.5) * 5000,
+            h: 80 + Math.random() * 120
+        });
+        items.push({type: 'tree', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
+    }
+
+    // Allocate Particles
+    for(let i=0; i<NUM_PARTICLES; i++) {
+        particles.push({
+            x: (Math.random() - 0.5) * 4000,
+            y: (Math.random() - 0.5) * 2000 - 500,
+            z: (Math.random() - 0.5) * 4000,
+            phase: Math.random() * Math.PI * 2,
+            speed: Math.random() * 2 + 0.5
+        });
+        items.push({type: 'particle', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
     }
     
     // Trains
@@ -149,36 +161,31 @@ const actor: Actor = {
     const time = frame.time / 1000;
     const isDark = api.context.display.isDarkMode();
     
-    api.brush.background(isDark ? 0x010103 : 0x050212);
+    const bgPulse = isDark ? 0x05050a : 0x0a1122;
+    api.brush.background(bgPulse);
 
-    const skyH = isDark ? 0x020208 : 0x050110;
-    const skyM = isDark ? 0x0a001a : 0x1a0033;
-    const skyL = isDark ? 0x011122 : 0x331144;
+    // Sky horizon
+    const skyH = isDark ? 0x050a1a : 0xaa22bb;
+    const skyM = isDark ? 0x111122 : 0x551155;
+    const skyL = isDark ? 0x010204 : 0x110022;
     api.brush.rect(0, 0, width, height, {
       fill: {
         type: 'linear', x0: 0, y0: 0, x1: 0, y1: 1,
-        stops: [{offset: 0, color: skyH}, {offset: 0.6, color: skyM}, {offset: 1, color: skyL}]
+        stops: [
+          {offset: 0, color: skyH},
+          {offset: 0.6, color: skyM},
+          {offset: 1, color: skyL}
+        ]
       },
-      alpha: 1.0
+      alpha: 0.8
     });
 
-    const sunY = height * 0.45;
-    api.brush.circle(width / 2, sunY, width * 0.4, {
-        fill: {
-            type: 'radial', cx: 0.5, cy: 0.5, radius: 0.5,
-            stops: [
-                {offset: 0, color: 0xffffff},
-                {offset: 0.1, color: 0xffeedd},
-                {offset: 0.35, color: 0xff4411},
-                {offset: 1, color: 0x000000}
-            ]
-        },
-        blendMode: 'add', alpha: 0.8
-    });
-
-    const camAngle = time * 0.12; 
-    const CAM_Z = 4500;
-    const FOV_SCALE = 3500;
+    const camAngle = time * 0.1; 
+    
+    // SAFE CAMERA CONFIG: 
+    // Dist pushes everything further away, focal length zooms it back in.
+    const CAM_DIST = 5000;
+    const CAM_FOCAL = 3500;
 
     function rotateY(p: Point3D, ang: number) {
       const sA = Math.sin(ang); const cA = Math.cos(ang);
@@ -187,34 +194,37 @@ const actor: Actor = {
       p.x = tx; p.z = tz;
     }
     function projectInPlace(p: Point3D) {
-      const zDepth = CAM_Z + p.z;
-      if (zDepth <= 10) { p.scale = -1; return; }
-      const scale = FOV_SCALE / zDepth;
+      // Safe divisor check
+      const zDepth = CAM_DIST + p.z;
+      if (zDepth <= 10) { p.scale = -1; return; } // Behind camera
+      const scale = CAM_FOCAL / zDepth;
       p.scale = scale;
       p.projX = width / 2 + p.x * scale;
-      p.projY = height * 0.55 + p.y * scale; 
+      p.projY = height * 0.65 + p.y * scale; 
     }
 
-    const floorY = 450;
+    const floorY = 400;
 
+    // --- TRACK PATH FUNCTIONS ---
     function getTrack1(norm: number, out: Point3D) {
-      const ang = norm * Math.PI * 6;
-      const r = width * 0.38 + Math.sin(norm * Math.PI * 4) * (width * 0.1);
+      const ang = norm * Math.PI * 6; 
+      const r = width * 0.35 + Math.sin(norm * Math.PI * 4) * (width * 0.15);
       out.x = Math.sin(ang) * r;
       out.z = Math.cos(ang) * r;
-      out.y = Math.cos(norm * Math.PI * 2) * (height * 0.35) - height * 0.15; 
+      out.y = Math.cos(norm * Math.PI * 2) * (height * 0.4) - height * 0.15; 
     }
     function getTrack2(norm: number, out: Point3D) {
       const ang = norm * Math.PI * 10; 
-      const r = width * 0.22;
+      const r = width * 0.20;
       out.x = Math.cos(ang) * r;
       out.z = Math.sin(ang) * r;
-      out.y = Math.sin(norm * Math.PI * 4) * (height * 0.45); 
+      out.y = Math.sin(norm * Math.PI * 4) * (height * 0.5); 
     }
 
     let itemIdx = 0;
 
-    // Build Tracks & Pillars & Rings
+    // --- POPULATE ITEMS ---
+    // Tracks & Pillars
     for(let t=1; t<=2; t++) {
       for(let i=0; i<NUM_TRACK_POINTS; i++) {
          const getTrack = t===1 ? getTrack1 : getTrack2;
@@ -227,18 +237,15 @@ const actor: Actor = {
          item.z = (tempP1.z + tempP2.z) / 2;
          item.angle = Math.atan2(item.y2 - item.y1, item.x2 - item.x1);
 
+         // Pillar
          if (i % 5 === 0) {
             const pitem = items[itemIdx++];
             pitem.x1 = item.x1; pitem.y1 = item.y1; pitem.s1 = item.s1; pitem.z = item.z; pitem.angle = item.angle;
          }
-         if (i % 12 === 0 && t === 2) {
-            const rItem = items[itemIdx++];
-            rItem.x1 = item.x1; rItem.y1 = item.y1; rItem.s1 = item.s1; rItem.z = item.z; rItem.angle = item.angle;
-         }
       }
     }
 
-    // Build Trains
+    // Trains
     for(let tr=0; tr<NUM_TRAINS; tr++) {
       const gOffset = tr * 0.333; 
       const tSpeed1 = time * 0.08 + gOffset;
@@ -254,8 +261,8 @@ const actor: Actor = {
 
       const tSpeed2 = time * 0.06 + gOffset;
       for(let c=0; c<CARS_PER_TRAIN; c++) {
-        const tt1 = (tSpeed2 - c * 0.014) % 1.0;
-        const tt2 = (tSpeed2 - c * 0.014 + 0.005) % 1.0;
+        const tt1 = (tSpeed2 - c * 0.012) % 1.0;
+        const tt2 = (tSpeed2 - c * 0.012 + 0.005) % 1.0;
         getTrack2(tt1 < 0 ? tt1 + 1 : tt1, tempP1); rotateY(tempP1, camAngle); projectInPlace(tempP1);
         getTrack2(tt2 < 0 ? tt2 + 1 : tt2, tempP2); rotateY(tempP2, camAngle); projectInPlace(tempP2);
         const item = items[itemIdx++];
@@ -264,19 +271,10 @@ const actor: Actor = {
       }
     }
 
-    // Euro-Mir Towers
-    for(let i=0; i<towers.length; i++) {
-        const tObj = towers[i];
-        tempP1.x = tObj.x; tempP1.y = floorY; tempP1.z = tObj.z;
-        rotateY(tempP1, camAngle); projectInPlace(tempP1);
-        const item = items[itemIdx++];
-        item.x1 = tempP1.projX!; item.y1 = tempP1.projY!; item.s1 = tempP1.scale!; item.z = tempP1.z;
-    }
-
     // Ferris Wheel
-    const wheelX = -1000;
+    const wheelX = -1200;
     const wheelZ = 1600;
-    const wheelY = -200;
+    const wheelY = -400;
     const wheelR = 600;
     const wheelRot = time * 0.3;
     for(let i=0; i<NUM_SPOKES; i++) {
@@ -314,91 +312,48 @@ const actor: Actor = {
         item.x1 = tempP1.projX!; item.y1 = tempP1.projY!; item.s1 = tempP1.scale!; item.z = tempP1.z;
     }
 
-    // Fireworks
-    for(let i=0; i<NUM_FIREWORKS; i++) {
-        const f = items[itemIdx++];
-        const fCycle = (time * 0.35 + f.id2) % 1.0;
-        tempP1.x = (i - NUM_FIREWORKS/2) * 500;
-        tempP1.y = floorY - fCycle * 2500; 
-        tempP1.z = 2500;
-        rotateY(tempP1, camAngle * 0.8); projectInPlace(tempP1);
-        f.x1 = tempP1.projX!; f.y1 = tempP1.projY!; f.s1 = tempP1.scale!; f.z = tempP1.z;
-        f.angle = fCycle;
-    }
-
-    // Star Logo Centerpiece
-    const sLogo = items[itemIdx++];
-    tempP1.x = 0; tempP1.y = -800; tempP1.z = 1200;
-    rotateY(tempP1, camAngle); projectInPlace(tempP1);
-    sLogo.x1 = tempP1.projX!; sLogo.y1 = tempP1.projY!; sLogo.s1 = tempP1.scale!; sLogo.z = tempP1.z;
-
     // --- SORTING ---
-    for (let i = 1; i < renderQueue.length; i++) {
-      let current = renderQueue[i];
+    for (let i = 1; i < itemIdx; i++) {
+      let current = items[i];
       let j = i - 1;
-      while (j >= 0 && renderQueue[j].z < current.z) {
-        renderQueue[j + 1] = renderQueue[j];
+      while (j >= 0 && items[j].z < current.z) {
+        items[j + 1] = items[j];
         j--;
       }
-      renderQueue[j + 1] = current;
+      items[j + 1] = current;
     }
 
-    // --- DRAW CYBER LAKE & GRID ---
-    const lakeScale = FOV_SCALE / CAM_Z;
-    api.brush.ellipse(width/2, height*0.55 + floorY*lakeScale, 4000*lakeScale, 1500*lakeScale, {
-        fill: { type: 'radial', cx: 0.5, cy: 0.5, radius: 0.5, stops: [
-            {offset:0, color: 0x00aaff}, {offset:0.4, color: 0x0033aa}, {offset:1, color: 0x000000}
-        ]},
-        alpha: 0.25, blendMode: 'screen'
-    });
-    for(let r=1; r<=4; r++) {
-        const rippleR = ((time*0.4 + r*0.25) % 1.0);
-        api.brush.ellipse(width/2, height*0.55 + floorY*lakeScale, 4000*lakeScale*rippleR, 1500*lakeScale*rippleR, {
-            color: 0x00ffff, width: 2.5, alpha: 0.2*(1-rippleR), blendMode: 'screen'
-        });
-    }
-
+    // --- DRAW 3D FLOOR GRID ---
     const gridSize = 2500;
     const gridStep = 400;
     const gridCol = isDark ? 0x223344 : 0xaa00aa;
-    // Floor Grid
     for(let z=-gridSize; z<=gridSize; z+=gridStep) {
-      gridP1.x = -gridSize; gridP1.y = floorY; gridP1.z = z; gridP2.x = gridSize; gridP2.y = floorY; gridP2.z = z;
-      rotateY(gridP1, camAngle); projectInPlace(gridP1); rotateY(gridP2, camAngle); projectInPlace(gridP2);
-      if(gridP1.scale! > 0 && gridP2.scale! > 0) api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: gridCol, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.25 * Math.min(1, gridP1.scale!) });
+      gridP1.x = -gridSize; gridP1.y = floorY; gridP1.z = z;
+      gridP2.x = gridSize; gridP2.y = floorY; gridP2.z = z;
+      rotateY(gridP1, camAngle); projectInPlace(gridP1);
+      rotateY(gridP2, camAngle); projectInPlace(gridP2);
+      if(gridP1.scale! > 0 && gridP2.scale! > 0) {
+         api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: gridCol, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.25 * Math.min(1, gridP1.scale!) });
+      }
     }
-    // Sky Grid Tunnel
     for(let x=-gridSize; x<=gridSize; x+=gridStep) {
-      gridP1.x = x; gridP1.y = -floorY*2; gridP1.z = -gridSize; gridP2.x = x; gridP2.y = -floorY*2; gridP2.z = gridSize;
-      rotateY(gridP1, camAngle); projectInPlace(gridP1); rotateY(gridP2, camAngle); projectInPlace(gridP2);
-      if(gridP1.scale! > 0 && gridP2.scale! > 0) api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: 0x00aaff, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.15 * Math.min(1, gridP1.scale!), blendMode: 'screen' });
+      gridP1.x = x; gridP1.y = floorY; gridP1.z = -gridSize;
+      gridP2.x = x; gridP2.y = floorY; gridP2.z = gridSize;
+      rotateY(gridP1, camAngle); projectInPlace(gridP1);
+      rotateY(gridP2, camAngle); projectInPlace(gridP2);
+      if(gridP1.scale! > 0 && gridP2.scale! > 0) {
+         api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: gridCol, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.25 * Math.min(1, gridP1.scale!) });
+      }
     }
 
     // --- MAIN DRAWING LOOP --- //
-    for(let i = 0; i < renderQueue.length; i++) {
-      const item = renderQueue[i];
+    const shadowColor = isDark ? 0x000000 : 0x000000;
+    for(let i = 0; i < itemIdx; i++) {
+      const item = items[i];
 
-      if(item.s1 <= 0 || item.s1 > 15) continue; 
-      if((item.type === 'track-line' || item.type === 'ferris-spoke') && (item.s2 === undefined || item.s2 <= 0 || item.s2 > 15)) continue;
+      if(item.s1 <= 0 || item.s1 > 50) continue; 
 
-      if (item.type === 'star-logo') {
-         const sRot = time * 0.8;
-         for(let k=0; k<10; k++) {
-             const sp = starBasePoints[k];
-             const rx = sp.x * Math.cos(sRot) - sp.z * Math.sin(sRot);
-             const ry = sp.y;
-             const rz = sp.x * Math.sin(sRot) + sp.z * Math.cos(sRot);
-             
-             tempP1.x = rx; tempP1.y = ry - 800; tempP1.z = rz + 1200;
-             rotateY(tempP1, camAngle); projectInPlace(tempP1);
-             starProjPoints[k].x = tempP1.projX!; starProjPoints[k].y = tempP1.projY!;
-         }
-         api.brush.polygon(starProjPoints, { fill: 0xffdd44, alpha: 0.85, blendMode: 'add' });
-         api.brush.polygon(starProjPoints, { fill: 0xffffff, alpha: 0.6, blendMode: 'add' });
-         // Star core glow
-         api.brush.circle(item.x1, item.y1, 100*item.s1, { fill: 0xffaa00, alpha: 0.4, blendMode: 'add' });
-      }
-      else if(item.type === 'track-line') {
+      if(item.type === 'track-line') {
         const thickness = 10 * item.s1;
         const color = isDark ? (item.id1 === 1 ? 0x662222 : 0x224466) : (item.id1 === 1 ? 0xffcccc : 0xccddee);
         api.brush.line(item.x1, item.y1, item.x2, item.y2, { color, width: thickness, alpha: 0.9, cap: 'round' });
@@ -408,171 +363,80 @@ const actor: Actor = {
         
         if (item.id2 % 2 === 0) {
             const nx = -Math.sin(item.angle); const ny = Math.cos(item.angle);
-            api.brush.line(item.x1 + nx*16*item.s1, item.y1 + ny*16*item.s1, item.x1 - nx*16*item.s1, item.y1 - ny*16*item.s1, { color: isDark ? 0x333344 : 0x888899, width: 3 * item.s1, alpha: 0.6 });
+            const tieW = 16 * item.s1;
+            api.brush.line(item.x1 + nx*tieW, item.y1 + ny*tieW, item.x1 - nx*tieW, item.y1 - ny*tieW, { color: isDark ? 0x555566 : 0x888899, width: 3 * item.s1, alpha: 0.8 });
         }
       }
       else if (item.type === 'pillar') {
-         const gridFloorY = height * 0.55 + floorY * (FOV_SCALE / (CAM_Z + item.z));
-         const pw = 6 * item.s1; const dx = 15 * item.s1;
-         api.brush.line(item.x1, item.y1, item.x1 - dx, gridFloorY, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
-         api.brush.line(item.x1, item.y1, item.x1 + dx, gridFloorY, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
+         const groundScale = CAM_FOCAL / (CAM_DIST + item.z); 
+         const gridFloorY = height * 0.65 + floorY * groundScale;
          
+         const pw = 12 * item.s1;
+         const pCol = isDark ? 0x22222a : 0xaabbcc;
+         api.brush.line(item.x1, item.y1, item.x1, gridFloorY, { color: pCol, width: pw, alpha: 0.8 });
          if(gridFloorY - item.y1 > 100 * item.s1) {
-            const steps = Math.floor((gridFloorY - item.y1) / (70 * item.s1));
+            const steps = Math.floor((gridFloorY - item.y1) / (80 * item.s1));
             for(let k=1; k<=steps; k++) {
-                const ky = item.y1 + k * 70 * item.s1;
-                api.brush.line(item.x1 - (k/steps)*dx, ky, item.x1 + (k/steps)*dx, ky, { color: isDark? 0x333333 : 0xaaaaaa, width: 2*item.s1 });
+                const ky = item.y1 + k * 80 * item.s1;
+                api.brush.line(item.x1 - pw*1.5, ky, item.x1 + pw*1.5, ky, { color: isDark? 0x333333 : 0xaaaaaa, width: 2*item.s1 });
             }
          }
       }
-      else if (item.type === 'tunnel-ring') {
-         api.brush.pushMatrix();
-         api.brush.translate(item.x1, item.y1);
-         api.brush.rotate(item.angle + Math.PI/2);
-         api.brush.scale(item.s1, item.s1 * 0.4); 
-         const rs = 55;
-         api.brush.ellipse(0, 0, rs, rs, { color: 0x00aaff, alpha: 0.8, width: 6, blendMode: 'add' }); 
-         api.brush.ellipse(0, 0, rs, rs, { color: 0xffffff, alpha: 0.6, width: 2, blendMode: 'add' });
-         api.brush.rect(-rs-10, rs*0.7, 10, 20, {fill: 0x111111});
-         api.brush.rect(rs, rs*0.7, 10, 20, {fill: 0x111111});
-         api.brush.popMatrix();
-      }
-      else if (item.type === 'tower') {
-         const tData = towers[item.id1];
-         const bRad = tData.r * item.s1;
-         const th = tData.h * item.s1;
-         
-         // Water Reflection
-         api.brush.line(item.x1, item.y1, item.x1, item.y1 + th*0.8, { color: 0x445588, width: bRad*2, alpha: 0.15, blendMode: 'add', cap: 'butt' });
-         
-         api.brush.line(item.x1, item.y1, item.x1, item.y1 - th, { color: 0x223355, width: bRad*2, cap: 'butt' });
-         api.brush.line(item.x1 - bRad*0.3, item.y1, item.x1 - bRad*0.3, item.y1 - th, { color: 0x88ccff, width: bRad*0.5, blendMode: 'add', alpha: 0.5, cap: 'butt' });
-         api.brush.line(item.x1 + bRad*0.6, item.y1, item.x1 + bRad*0.6, item.y1 - th, { color: 0x111122, width: bRad*0.2, alpha: 0.9, cap: 'butt' });
-         
-         api.brush.ellipse(item.x1, item.y1 - th, bRad, bRad*0.3, { fill: 0x111122 });
-         const avAlpha = (Math.sin(time * 5 + item.id1) * 0.5 + 0.5);
-         api.brush.circle(item.x1, item.y1 - th, 5 * item.s1, { fill: 0xff2222, blendMode: 'add', alpha: avAlpha }); 
-         api.brush.line(item.x1, item.y1 - th, item.x1, item.y1 - th - 50*item.s1, {color: 0x888888, width: 2*item.s1 });
-      }
-      else if (item.type === 'shuttle-hyper') {
-        const cw = 44; const ch = 18; 
-        
-        // Speed blur trail!
-        for(let tr=1; tr<=3; tr++) {
-           api.brush.pushMatrix();
-           api.brush.translate(item.x1 - Math.cos(item.angle)*10*item.s1*tr, item.y1 - Math.sin(item.angle)*10*item.s1*tr);
-           api.brush.rotate(item.angle);
-           api.brush.scale(item.s1*0.9, item.s1*0.9);
-           api.brush.roundRect(-cw/2, -ch/2, cw, ch, 6, { fill: 0xff2222, alpha: 0.15/tr, blendMode: 'add' });
-           api.brush.popMatrix();
-        }
-
-        api.brush.ellipse(item.x1, item.y1 + 10 * item.s1, 40 * item.s1, 15 * item.s1, { fill: 0x000000, alpha: 0.4 });
+      else if (item.type === 'sphere') {
+        const rad = 28 * item.s1;
+        const gridFloorY = height * 0.65 + floorY * item.s1;
+        api.brush.ellipse(item.x1, gridFloorY, rad * 2, rad * 0.6, { fill: shadowColor, alpha: shadowAlpha });
         
         api.brush.pushMatrix();
         api.brush.translate(item.x1, item.y1);
         api.brush.rotate(item.angle); 
         api.brush.scale(item.s1, item.s1);
+
+        const leadAlpha = item.id2 === 0 ? 1 : Math.max(0.4, 1 - item.id2 * 0.12);
+        api.brush.ellipse(0, 18, 24, 10, { fill: 0x222222, alpha: leadAlpha * 0.9 });
         
-        api.brush.rect(-cw/2 - 8, -2, 10, 4, { fill: 0x222222 }); 
-        api.brush.roundRect(-cw/2, -ch/2, cw, ch, 6, { fill: 0x9999aa });
-        api.brush.roundRect(-cw/2 + 2, -ch/2 + 2, cw - 4, ch - 4, 4, { fill: 0xee2222 });
-        api.brush.roundRect(-cw/2 + 12, -ch/2 + 3, 6, ch - 6, 2, { fill: 0x111111 }); 
-        api.brush.roundRect(-cw/2 + 24, -ch/2 + 3, 6, ch - 6, 2, { fill: 0x111111 });
-
-        const wRot = time * 20;
-        for(const wx of [-cw/2 + 8, cw/2 - 8]) {
-            for(const wy of [-ch/2 - 2, ch/2 + 2]) {
-                api.brush.circle(wx, wy, 4, { fill: 0x111111 });
-                api.brush.line(wx, wy, wx+Math.cos(wRot)*3, wy+Math.sin(wRot)*3, { color: 0x888888, width: 1.5 });
-            }
-        }
-
-        if(item.id2 === 0) { 
-           api.brush.polygon([{x: cw/2, y: -ch/2+2}, {x: cw/2+12, y: 0}, {x: cw/2, y: ch/2-2}], { fill: 0xee2222 });
-           api.brush.circle(cw/2+2, -ch/2+4, 2.5, { fill: 0xffffee, blendMode: 'add' });
-           api.brush.circle(cw/2+2, ch/2-4, 2.5, { fill: 0xffffee, blendMode: 'add' });
-           
-           api.brush.polygon([{x: cw/2, y: -ch/2+4}, {x: cw/2+200, y: -ch/2-40}, {x: cw/2+200, y: ch/2+40}, {x: cw/2, y: ch/2-4}], {
-             fill: { type: 'linear', x0: 0, y0: 0.5, x1: 1, y1: 0.5, stops: [{offset:0, color: 0xffffff}, {offset:1, color: 0x000000}] },
-             alpha: 0.2, blendMode: 'screen'
-           });
-        }
+        api.brush.circle(0, 0, 28, {
+          fill: {
+            type: 'radial', cx: 0.3, cy: 0.3, radius: 0.6,
+            stops: [
+               {offset: 0, color: item.id2===0 ? 0xffffff : 0xff4444},
+               {offset: 0.5, color: 0xcc0000},
+               {offset: 1, color: 0x440000}
+            ]
+          },
+          alpha: leadAlpha
+        });
+        if(item.id2 === 0) api.brush.circle(15, -5, 8, { fill: 0xffffee, blendMode: 'add' });
         api.brush.popMatrix();
       }
-      else if (item.type === 'shuttle-launch') {
-        const cw = 40; const ch = 22; 
+      else if (item.type === 'cube') {
+        const rad = 32 * item.s1;
+        const gridFloorY = height * 0.65 + floorY * item.s1;
+        api.brush.ellipse(item.x1, gridFloorY, rad * 2, rad * 0.6, { fill: shadowColor, alpha: shadowAlpha });
         
-        // Hyper trails
-        for(let tr=1; tr<=4; tr++) {
-           api.brush.pushMatrix();
-           api.brush.translate(item.x1 - Math.cos(item.angle)*12*item.s1*tr, item.y1 - Math.sin(item.angle)*12*item.s1*tr);
-           api.brush.rotate(item.angle);
-           api.brush.scale(item.s1*0.9, item.s1*0.9);
-           api.brush.roundRect(-cw/2, -ch/2, cw, ch, 6, { fill: 0x00aaff, alpha: 0.2/tr, blendMode: 'add' });
-           api.brush.popMatrix();
-        }
-
-        api.brush.ellipse(item.x1, item.y1 + 10 * item.s1, 40 * item.s1, 15 * item.s1, { fill: 0x000000, alpha: 0.4 });
-        
+        const leadAlpha = item.id2 === 0 ? 1 : Math.max(0.4, 1 - item.id2 * 0.12);
         api.brush.pushMatrix();
         api.brush.translate(item.x1, item.y1);
-        api.brush.rotate(item.angle); 
+        api.brush.rotate(item.angle);
         api.brush.scale(item.s1, item.s1);
         
-        api.brush.rect(-cw/2 - 6, -1.5, 8, 3, { fill: 0x222222 }); 
-        api.brush.roundRect(-cw/2, -ch/2, cw, ch, 4, { fill: 0x112244 });
+        api.brush.ellipse(0, 18, 24, 10, { fill: 0x222222, alpha: leadAlpha * 0.9 });
+
+        const tColor = item.id2 === 0 ? 0xffffff : 0x4488ff;
+        const rColor = item.id2 === 0 ? 0x88ccff : 0x0044cc;
+        const lColor = item.id2 === 0 ? 0x4488ff : 0x002288;
         
-        api.brush.rect(-cw/2 + 4, -ch/2 - 1, cw - 8, 3, { fill: 0x00aaff, blendMode: 'add' });
-        api.brush.rect(-cw/2 + 4, ch/2 - 2, cw - 8, 3, { fill: 0x00aaff, blendMode: 'add' });
-
-        api.brush.roundRect(-cw/2 + 10, -ch/2 + 4, 8, ch - 8, 3, { fill: 0x050505 });
-        api.brush.roundRect(-cw/2 + 24, -ch/2 + 4, 8, ch - 8, 3, { fill: 0x050505 });
-
-        const wRot = time * -18;
-        for(const wx of [-cw/2 + 8, cw/2 - 8]) {
-            for(const wy of [-ch/2 - 2, ch/2 + 2]) {
-                api.brush.circle(wx, wy, 4, { fill: 0x111111 });
-                api.brush.line(wx, wy, wx+Math.cos(wRot)*3, wy+Math.sin(wRot)*3, { color: 0x00aaff, width: 1.5 });
-            }
-        }
-
-        if(item.id2 === 0) { 
-           api.brush.roundRect(cw/2 - 2, -ch/2 + 2, 8, ch - 4, 4, { fill: 0x112244 });
-           api.brush.circle(cw/2+2, -ch/2+6, 3, { fill: 0x88ddff, blendMode: 'add' });
-           api.brush.circle(cw/2+2, ch/2-6, 3, { fill: 0x88ddff, blendMode: 'add' });
-           
-           api.brush.polygon([{x: cw/2, y: -ch/2+6}, {x: cw/2+180, y: -ch/2-50}, {x: cw/2+180, y: ch/2+50}, {x: cw/2, y: ch/2-6}], {
-             fill: { type: 'linear', x0: 0, y0: 0.5, x1: 1, y1: 0.5, stops: [{offset:0, color: 0xffffff}, {offset:1, color: 0x000000}] },
-             alpha: 0.15, blendMode: 'screen'
-           });
-        }
+        api.brush.polygon(topFace, { fill: tColor, alpha: leadAlpha });
+        api.brush.polygon(rightFace, { fill: rColor, alpha: leadAlpha });
+        api.brush.polygon(leftFace, { fill: lColor, alpha: leadAlpha });
+        if(item.id2 === 0) api.brush.circle(15, -5, 8, { fill: 0xffffee, blendMode: 'add' });
         api.brush.popMatrix();
-      }
-      else if (item.type === 'firework') {
-         const fCycle = item.angle;
-         if (fCycle < 0.45) {
-            api.brush.circle(item.x1, item.y1, 2.5*item.s1, { fill: 0xffeebb, blendMode: 'add' });
-            api.brush.line(item.x1, item.y1, item.x1, item.y1 + 50*item.s1, { color: 0xffaa44, alpha: 0.6, blendMode: 'add', width: 2*item.s1 });
-         } else if (fCycle >= 0.45 && fCycle < 0.9) {
-            const expProg = (fCycle - 0.45) / 0.45; 
-            const expAlpha = 1.0 - expProg;
-            const expRadius = expProg * 160 * item.s1;
-            const hueCol = item.id1 % 2 === 0 ? 0xff4488 : 0x4488ff;
-            for(let k=0; k<16; k++) {
-               const ang = (k/16)*Math.PI*2 + expProg * 0.5;
-               const sx = item.x1 + Math.cos(ang)*expRadius;
-               const sy = item.y1 + Math.sin(ang)*expRadius;
-               api.brush.circle(sx, sy, 2*item.s1, { fill: hueCol, alpha: expAlpha, blendMode: 'add' });
-               api.brush.line(sx, sy, item.x1 + Math.cos(ang)*expRadius*0.7, item.y1 + Math.sin(ang)*expRadius*0.7, { color: 0xffffff, alpha: expAlpha*0.7, blendMode: 'add', width: 1.5*item.s1 });
-            }
-         }
       }
       else if (item.type === 'ferris-spoke') {
-         api.brush.line(item.x1, item.y1, item.x2, item.y2, { color: isDark ? 0x444466 : 0x9999aa, width: 5*item.s1 });
+         api.brush.line(item.x1, item.y1, item.x2, item.y2, { color: isDark ? 0x444455 : 0x9999aa, width: 4*item.s1 });
       }
       else if (item.type === 'ferris-cart') {
-         api.brush.rect(item.x1 - 15*item.s1, item.y1, 30*item.s1, 40*item.s1, { fill: isDark ? 0xff3366 : 0xff4477, blendMode: 'add', alpha: 0.9 });
+         api.brush.rect(item.x1 - 15*item.s1, item.y1, 30*item.s1, 40*item.s1, { fill: isDark ? 0xff2255 : 0xff4466 });
       }
       else if (item.type === 'tree') {
          const th = trees[item.id1].h * item.s1;
@@ -582,15 +446,14 @@ const actor: Actor = {
             {x: item.x1 + tw, y: item.y1},
             {x: item.x1 - tw, y: item.y1}
          ];
-         api.brush.polygon(points, { fill: isDark ? 0x0a2211 : 0x11aa44, alpha: Math.min(1, item.s1 * 0.9) });
-         api.brush.ellipse(item.x1, item.y1, tw*1.2, tw*0.4, { fill: 0x000000, alpha: 0.3 });
+         api.brush.polygon(points, { fill: isDark ? 0x0a3311 : 0x11aa44, alpha: Math.min(1, item.s1 * 0.8) });
       }
       else if (item.type === 'particle') {
          const p = particles[item.id1];
          const alpha = (Math.sin(time*2 + p.phase) * 0.5 + 0.5) * Math.min(1, item.s1);
          if (alpha > 0.05) {
              const c = item.id1 % 3 === 0 ? 0xffffff : (item.id1 % 2 === 0 ? 0x44ffff : 0xffaa44);
-             api.brush.circle(item.x1, item.y1, 3 * item.s1, { fill: c, alpha, blendMode: 'add' });
+             api.brush.circle(item.x1, item.y1, 2.5 * item.s1, { fill: c, alpha, blendMode: 'add' });
          }
       }
     }
@@ -598,11 +461,7 @@ const actor: Actor = {
 
   async teardown(): Promise<void> {
     items.length = 0;
-    particles.length = 0;
-    trees.length = 0;
-    starBasePoints.length = 0;
-    starProjPoints.length = 0;
-    renderQueue.length = 0;
+    dusts.length = 0;
   },
 };
 

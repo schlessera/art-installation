@@ -190,7 +190,7 @@ const actor: Actor = {
     const camPosY = Math.sin(time * 0.35) * 600 - 800; // Safe isometric skycam
     const camAngle = orbitAngle + Math.PI + Math.sin(time*1.2)*0.05; // Look at origin!
 
-    const FOV_SCALE = 3500;
+    const FOV_SCALE = 1800; // Wide cinematic angle!
 
     function applyCamera(p: Point3D) {
       p.x -= camPosX;

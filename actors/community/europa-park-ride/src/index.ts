@@ -4,7 +4,7 @@ import type { Actor, ActorSetupAPI, ActorUpdateAPI, FrameContext, ActorMetadata 
 interface Point3D { x: number; y: number; z: number; projX?: number; projY?: number; scale?: number; }
 interface Point { x: number; y: number; }
 
-type RenderItemType = 'track-line' | 'tunnel-ring' | 'shuttle-hyper' | 'shuttle-launch' | 'pillar' | 'tower' | 'firework' | 'tree' | 'particle' | 'ferris-spoke' | 'ferris-cart' | 'star-logo';
+type RenderItemType = 'track-line' | 'tunnel-ring' | 'shuttle-hyper' | 'shuttle-launch' | 'pillar' | 'tower' | 'euro-sat' | 'firework' | 'tree' | 'particle' | 'ferris-spoke' | 'ferris-cart' | 'star-logo' | 'monolith';
 
 interface RenderItem {
   type: RenderItemType;
@@ -17,10 +17,10 @@ interface RenderItem {
 
 const metadata: ActorMetadata = {
   id: 'europa-park-ride',
-  name: 'Europa Park Ride: The Final Odyssey',
-  description: 'The definitive Phase V demoscene. Unleashing a massive 3D rotating emblem, infinite sky grids, deep water reflections, launch coaster hyper-trails, and majestic fireworks over an interlocking mega-coaster.',
-  author: { name: 'Antigravity AI Odyssey', github: 'artificial' },
-  version: '10.0.0',
+  name: 'Europa Park Ride: Phase VII Hyper-Drone',
+  description: 'A 3000-unit sweeping drone flight over massive glowing architecture. Experience Phase VII: floating monoliths, absolute scaling, orbital tracking cameras, and thick neon hyper-tracks.',
+  author: { name: 'Antigravity AI Reality', github: 'artificial' },
+  version: '13.0.0',
   tags: ['3d', 'coaster', 'theme-park', 'zenith', 'geometry', 'award-winning', 'epic', 'synthwave', 'odyssey'],
   createdAt: new Date(),
   preferredDuration: 300,
@@ -57,11 +57,11 @@ interface Particle { x: number; y: number; z: number; phase: number; speed: numb
 const particles: Particle[] = [];
 interface Tower { x: number; z: number; h: number; r: number; }
 const towers: Tower[] = [
-  {x: 0, z: 0, h: 480, r: 90},
-  {x: 240, z: 160, h: 380, r: 70},
-  {x: -220, z: 190, h: 420, r: 70},
-  {x: 190, z: -200, h: 400, r: 70},
-  {x: -170, z: -160, h: 340, r: 70},
+  {x: 800, z: 800, h: 580, r: 90},
+  {x: -800, z: 800, h: 500, r: 80},
+  {x: 800, z: -800, h: 620, r: 90},
+  {x: -800, z: -800, h: 480, r: 80},
+  {x: 0, z: 0, h: 750, r: 120}, 
 ];
 
 let width = 0;
@@ -110,6 +110,9 @@ const actor: Actor = {
         items.push({type: 'tower', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
     }
 
+    // Euro-Sat Dome
+    items.push({type: 'euro-sat', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: 0, id2: 0, angle: 0});
+
     // Ferris Wheel
     for(let i=0; i<NUM_SPOKES; i++) {
         items.push({type: 'ferris-spoke', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
@@ -133,14 +136,18 @@ const actor: Actor = {
         items.push({type: 'firework', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: Math.random(), angle: 0});
     }
 
-    // The Europa Star Logo
+    // The Europa Star & Monoliths
     for(let i=0; i<10; i++) {
-       const r = i % 2 === 0 ? 350 : 130;
+       const r = i % 2 === 0 ? 400 : 150;
        const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
        starBasePoints.push({x: Math.cos(a)*r, y: Math.sin(a)*r, z: 0});
        starProjPoints.push({x: 0, y: 0});
     }
     items.push({type: 'star-logo', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: 0, id2: 0, angle: 0});
+
+    for(let i=0; i<4; i++) {
+       items.push({type: 'monolith', z:0, x1:0, y1:0, s1:0, x2:0, y2:0, s2:0, id1: i, id2: 0, angle: 0});
+    }
 
     renderQueue = [...items];
   },
@@ -176,40 +183,54 @@ const actor: Actor = {
         blendMode: 'add', alpha: 0.8
     });
 
-    const camAngle = time * 0.12; 
-    const CAM_Z = 4500;
-    const FOV_SCALE = 3500;
+    const orbitAngle = time * 0.15; 
+    const ORBIT_R = 4500 + Math.sin(time*0.1)*2000;
+    const camPosX = Math.sin(orbitAngle) * ORBIT_R;
+    const camPosZ = Math.cos(orbitAngle) * ORBIT_R;
+    const camPosY = Math.sin(time * 0.2) * 700 - 500; // Swoops elegantly from high sky to track level
+    const camAngle = orbitAngle + Math.PI + Math.sin(time*1.2)*0.05; 
+    const pitchAngle = Math.atan2(-camPosY, ORBIT_R); // Locks focus onto the ground zero origin physically!
 
-    function rotateY(p: Point3D, ang: number) {
-      const sA = Math.sin(ang); const cA = Math.cos(ang);
+    const FOV_SCALE = 1800; 
+
+    function applyCamera(p: Point3D) {
+      p.x -= camPosX;
+      p.y -= camPosY;
+      p.z -= camPosZ;
+      
+      const sA = Math.sin(camAngle); const cA = Math.cos(camAngle);
       const tx = p.x * cA - p.z * sA;
       const tz = p.x * sA + p.z * cA;
-      p.x = tx; p.z = tz;
-    }
-    function projectInPlace(p: Point3D) {
-      const zDepth = CAM_Z + p.z;
+      
+      const sP = Math.sin(pitchAngle); const cP = Math.cos(pitchAngle);
+      const ty = p.y * cP - tz * sP;
+      const tzz = p.y * sP + tz * cP;
+
+      p.x = tx; p.y = ty; p.z = tzz;
+      
+      const zDepth = p.z;
       if (zDepth <= 10) { p.scale = -1; return; }
-      const scale = FOV_SCALE / zDepth;
-      p.scale = scale;
-      p.projX = width / 2 + p.x * scale;
-      p.projY = height * 0.55 + p.y * scale; 
+      p.scale = FOV_SCALE / zDepth;
+      
+      p.projX = width / 2 + p.x * p.scale;
+      p.projY = height * 0.55 + p.y * p.scale; 
     }
 
     const floorY = 450;
 
     function getTrack1(norm: number, out: Point3D) {
-      const ang = norm * Math.PI * 6;
-      const r = width * 0.38 + Math.sin(norm * Math.PI * 4) * (width * 0.1);
+      const ang = norm * Math.PI * 8; 
+      const r = 1000 + Math.sin(norm * Math.PI * 4) * 250;
       out.x = Math.sin(ang) * r;
       out.z = Math.cos(ang) * r;
-      out.y = Math.cos(norm * Math.PI * 2) * (height * 0.35) - height * 0.15; 
+      out.y = Math.cos(norm * Math.PI * 2) * 500 - 300; 
     }
     function getTrack2(norm: number, out: Point3D) {
-      const ang = norm * Math.PI * 10; 
-      const r = width * 0.22;
+      const ang = norm * Math.PI * 12; 
+      const r = 700;
       out.x = Math.cos(ang) * r;
       out.z = Math.sin(ang) * r;
-      out.y = Math.sin(norm * Math.PI * 4) * (height * 0.45); 
+      out.y = Math.sin(norm * Math.PI * 4) * 600 - 100; 
     }
 
     let itemIdx = 0;
@@ -218,8 +239,13 @@ const actor: Actor = {
     for(let t=1; t<=2; t++) {
       for(let i=0; i<NUM_TRACK_POINTS; i++) {
          const getTrack = t===1 ? getTrack1 : getTrack2;
-         getTrack(i / NUM_TRACK_POINTS, tempP1); rotateY(tempP1, camAngle); projectInPlace(tempP1);
-         getTrack((i+1) / NUM_TRACK_POINTS, tempP2); rotateY(tempP2, camAngle); projectInPlace(tempP2);
+         
+         getTrack(i / NUM_TRACK_POINTS, tempP1); 
+         const origX = tempP1.x; const origY = tempP1.y; const origZ = tempP1.z;
+         applyCamera(tempP1);
+         
+         getTrack((i+1) / NUM_TRACK_POINTS, tempP2); 
+         applyCamera(tempP2);
          
          const item = items[itemIdx++];
          item.x1 = tempP1.projX!; item.y1 = tempP1.projY!; item.s1 = tempP1.scale!;
@@ -229,7 +255,11 @@ const actor: Actor = {
 
          if (i % 5 === 0) {
             const pitem = items[itemIdx++];
-            pitem.x1 = item.x1; pitem.y1 = item.y1; pitem.s1 = item.s1; pitem.z = item.z; pitem.angle = item.angle;
+            pitem.x1 = tempP1.projX!; pitem.y1 = tempP1.projY!; pitem.s1 = tempP1.scale!; pitem.z = tempP1.z; pitem.angle = item.angle;
+            
+            tempP2.x = origX; tempP2.y = 2000; tempP2.z = origZ; // Plunge to ocean floor
+            applyCamera(tempP2);
+            pitem.x2 = tempP2.projX!; pitem.y2 = tempP2.projY!; pitem.s2 = tempP2.scale!;
          }
          if (i % 12 === 0 && t === 2) {
             const rItem = items[itemIdx++];
@@ -245,8 +275,8 @@ const actor: Actor = {
       for(let c=0; c<CARS_PER_TRAIN; c++) {
         const tt1 = (tSpeed1 - c * 0.012) % 1.0;
         const tt2 = (tSpeed1 - c * 0.012 + 0.005) % 1.0;
-        getTrack1(tt1 < 0 ? tt1 + 1 : tt1, tempP1); rotateY(tempP1, camAngle); projectInPlace(tempP1);
-        getTrack1(tt2 < 0 ? tt2 + 1 : tt2, tempP2); rotateY(tempP2, camAngle); projectInPlace(tempP2);
+        getTrack1(tt1 < 0 ? tt1 + 1 : tt1, tempP1); applyCamera(tempP1);
+        getTrack1(tt2 < 0 ? tt2 + 1 : tt2, tempP2); applyCamera(tempP2);
         const item = items[itemIdx++];
         item.x1 = tempP1.projX!; item.y1 = tempP1.projY!; item.s1 = tempP1.scale!; item.z = tempP1.z;
         item.angle = Math.atan2(tempP2.projY! - tempP1.projY!, tempP2.projX! - tempP1.projX!);
@@ -256,8 +286,8 @@ const actor: Actor = {
       for(let c=0; c<CARS_PER_TRAIN; c++) {
         const tt1 = (tSpeed2 - c * 0.014) % 1.0;
         const tt2 = (tSpeed2 - c * 0.014 + 0.005) % 1.0;
-        getTrack2(tt1 < 0 ? tt1 + 1 : tt1, tempP1); rotateY(tempP1, camAngle); projectInPlace(tempP1);
-        getTrack2(tt2 < 0 ? tt2 + 1 : tt2, tempP2); rotateY(tempP2, camAngle); projectInPlace(tempP2);
+        getTrack2(tt1 < 0 ? tt1 + 1 : tt1, tempP1); applyCamera(tempP1);
+        getTrack2(tt2 < 0 ? tt2 + 1 : tt2, tempP2); applyCamera(tempP2);
         const item = items[itemIdx++];
         item.x1 = tempP1.projX!; item.y1 = tempP1.projY!; item.s1 = tempP1.scale!; item.z = tempP1.z;
         item.angle = Math.atan2(tempP2.projY! - tempP1.projY!, tempP2.projX! - tempP1.projX!);
@@ -268,9 +298,17 @@ const actor: Actor = {
     for(let i=0; i<towers.length; i++) {
         const tObj = towers[i];
         tempP1.x = tObj.x; tempP1.y = floorY; tempP1.z = tObj.z;
-        rotateY(tempP1, camAngle); projectInPlace(tempP1);
+        applyCamera(tempP1);
         const item = items[itemIdx++];
         item.x1 = tempP1.projX!; item.y1 = tempP1.projY!; item.s1 = tempP1.scale!; item.z = tempP1.z;
+    }
+    
+    // Euro-Sat Dome
+    {
+        const eSat = items[itemIdx++];
+        tempP1.x = 1400; tempP1.y = floorY - 300; tempP1.z = 2000;
+        applyCamera(tempP1);
+        eSat.x1 = tempP1.projX!; eSat.y1 = tempP1.projY!; eSat.s1 = tempP1.scale!; eSat.z = tempP1.z;
     }
 
     // Ferris Wheel
@@ -282,10 +320,10 @@ const actor: Actor = {
     for(let i=0; i<NUM_SPOKES; i++) {
         const ang = wheelRot + (i/NUM_SPOKES)*Math.PI*2;
         tempP1.x = wheelX; tempP1.y = wheelY; tempP1.z = wheelZ;
-        rotateY(tempP1, camAngle); projectInPlace(tempP1);
+        applyCamera(tempP1);
         
         tempP2.x = wheelX + Math.cos(ang)*wheelR; tempP2.y = wheelY + Math.sin(ang)*wheelR; tempP2.z = wheelZ;
-        rotateY(tempP2, camAngle); projectInPlace(tempP2);
+        applyCamera(tempP2);
 
         const sItem = items[itemIdx++];
         sItem.x1 = tempP1.projX!; sItem.y1 = tempP1.projY!; sItem.s1 = tempP1.scale!;
@@ -300,7 +338,7 @@ const actor: Actor = {
     for(let i=0; i<NUM_TREES; i++) {
         const tr = trees[i];
         tempP1.x = tr.x; tempP1.y = floorY; tempP1.z = tr.z;
-        rotateY(tempP1, camAngle); projectInPlace(tempP1);
+        applyCamera(tempP1);
         const item = items[itemIdx++];
         item.x1 = tempP1.projX!; item.y1 = tempP1.projY!; item.s1 = tempP1.scale!; item.z = tempP1.z;
     }
@@ -309,28 +347,47 @@ const actor: Actor = {
     for(let i=0; i<NUM_PARTICLES; i++) {
         const p = particles[i];
         tempP1.x = p.x; tempP1.y = p.y + Math.sin(time * p.speed + p.phase) * 150; tempP1.z = p.z;
-        rotateY(tempP1, camAngle); projectInPlace(tempP1);
+        applyCamera(tempP1);
         const item = items[itemIdx++];
         item.x1 = tempP1.projX!; item.y1 = tempP1.projY!; item.s1 = tempP1.scale!; item.z = tempP1.z;
     }
 
-    // Fireworks
+    // Fireworks natively bound to global physical space
     for(let i=0; i<NUM_FIREWORKS; i++) {
         const f = items[itemIdx++];
         const fCycle = (time * 0.35 + f.id2) % 1.0;
-        tempP1.x = (i - NUM_FIREWORKS/2) * 500;
-        tempP1.y = floorY - fCycle * 2500; 
-        tempP1.z = 2500;
-        rotateY(tempP1, camAngle * 0.8); projectInPlace(tempP1);
-        f.x1 = tempP1.projX!; f.y1 = tempP1.projY!; f.s1 = tempP1.scale!; f.z = tempP1.z;
+        const a = (i/NUM_FIREWORKS) * Math.PI * 2;
+        const R = 8000; 
+        tempP1.x = Math.sin(a) * R; 
+        tempP1.y = floorY - fCycle * 3500; 
+        tempP1.z = Math.cos(a) * R;
+        applyCamera(tempP1);
+        if(tempP1.scale! > 0) {
+           f.s1 = tempP1.scale!;
+           f.x1 = tempP1.projX!;
+           f.y1 = tempP1.projY!; 
+           f.z = tempP1.z;
+        } else {
+           f.s1 = -1;
+        }
         f.angle = fCycle;
     }
 
     // Star Logo Centerpiece
     const sLogo = items[itemIdx++];
     tempP1.x = 0; tempP1.y = -800; tempP1.z = 1200;
-    rotateY(tempP1, camAngle); projectInPlace(tempP1);
+    applyCamera(tempP1);
     sLogo.x1 = tempP1.projX!; sLogo.y1 = tempP1.projY!; sLogo.s1 = tempP1.scale!; sLogo.z = tempP1.z;
+
+    // Levitation Monoliths
+    for(let i=0; i<4; i++) {
+       const m = items[itemIdx++];
+       const th = i * Math.PI/2 + time*0.5;
+       tempP1.x = Math.cos(th)*1800; tempP1.z = Math.sin(th)*1800;
+       tempP1.y = -800 + Math.sin(time*1.5 + i)*200;
+       applyCamera(tempP1);
+       m.x1 = tempP1.projX!; m.y1 = tempP1.projY!; m.s1 = tempP1.scale!; m.z = tempP1.z; m.angle = tempP1.x; 
+    }
 
     // --- SORTING ---
     for (let i = 1; i < renderQueue.length; i++) {
@@ -344,34 +401,42 @@ const actor: Actor = {
     }
 
     // --- DRAW CYBER LAKE & GRID ---
-    const lakeScale = FOV_SCALE / CAM_Z;
-    api.brush.ellipse(width/2, height*0.55 + floorY*lakeScale, 4000*lakeScale, 1500*lakeScale, {
-        fill: { type: 'radial', cx: 0.5, cy: 0.5, radius: 0.5, stops: [
-            {offset:0, color: 0x00aaff}, {offset:0.4, color: 0x0033aa}, {offset:1, color: 0x000000}
-        ]},
-        alpha: 0.25, blendMode: 'screen'
-    });
-    for(let r=1; r<=4; r++) {
-        const rippleR = ((time*0.4 + r*0.25) % 1.0);
-        api.brush.ellipse(width/2, height*0.55 + floorY*lakeScale, 4000*lakeScale*rippleR, 1500*lakeScale*rippleR, {
-            color: 0x00ffff, width: 2.5, alpha: 0.2*(1-rippleR), blendMode: 'screen'
-        });
+    tempP1.x = 0; tempP1.y = floorY; tempP1.z = 0;
+    applyCamera(tempP1);
+    if(tempP1.scale! > 0) {
+      const lx = tempP1.projX!;
+      const ly = tempP1.projY!;
+      const ls = tempP1.scale!;
+      const pitchSquash = Math.max(0.1, Math.abs(Math.sin(pitchAngle)));
+      
+      api.brush.ellipse(lx, ly, 6000*ls, 6000*ls*pitchSquash, {
+          fill: { type: 'radial', cx: 0.5, cy: 0.5, radius: 0.5, stops: [
+              {offset:0, color: 0x0088cc}, {offset:0.4, color: 0x0044bb}, {offset:1, color: 0x000000}
+          ]},
+          alpha: 0.25, blendMode: 'add'
+      });
+      for(let r=1; r<=4; r++) {
+          const rippleR = ((time*0.4 + r*0.25) % 1.0);
+          api.brush.ellipse(lx, ly, 5000*ls*rippleR, 5000*ls*pitchSquash*rippleR, {
+              fill: 0x00ffff, alpha: 0.15*(1-rippleR), blendMode: 'add'
+          });
+      }
     }
 
     const gridSize = 2500;
     const gridStep = 400;
-    const gridCol = isDark ? 0x223344 : 0xaa00aa;
+    const gridCol = isDark ? 0x223355 : 0xaa00aa;
     // Floor Grid
     for(let z=-gridSize; z<=gridSize; z+=gridStep) {
       gridP1.x = -gridSize; gridP1.y = floorY; gridP1.z = z; gridP2.x = gridSize; gridP2.y = floorY; gridP2.z = z;
-      rotateY(gridP1, camAngle); projectInPlace(gridP1); rotateY(gridP2, camAngle); projectInPlace(gridP2);
-      if(gridP1.scale! > 0 && gridP2.scale! > 0) api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: gridCol, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.25 * Math.min(1, gridP1.scale!) });
+      applyCamera(gridP1); applyCamera(gridP2);
+      if(gridP1.scale! > 0 && gridP2.scale! > 0) api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: gridCol, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.2 * Math.min(1, gridP1.scale!) });
     }
     // Sky Grid Tunnel
     for(let x=-gridSize; x<=gridSize; x+=gridStep) {
       gridP1.x = x; gridP1.y = -floorY*2; gridP1.z = -gridSize; gridP2.x = x; gridP2.y = -floorY*2; gridP2.z = gridSize;
-      rotateY(gridP1, camAngle); projectInPlace(gridP1); rotateY(gridP2, camAngle); projectInPlace(gridP2);
-      if(gridP1.scale! > 0 && gridP2.scale! > 0) api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: 0x00aaff, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.15 * Math.min(1, gridP1.scale!), blendMode: 'screen' });
+      applyCamera(gridP1); applyCamera(gridP2);
+      if(gridP1.scale! > 0 && gridP2.scale! > 0) api.brush.line(gridP1.projX!, gridP1.projY!, gridP2.projX!, gridP2.projY!, { color: 0x00aaff, width: Math.max(0.5, 3*gridP1.scale!), alpha: 0.1 * Math.min(1, gridP1.scale!), blendMode: 'add' });
     }
 
     // --- MAIN DRAWING LOOP --- //
@@ -390,13 +455,37 @@ const actor: Actor = {
              const rz = sp.x * Math.sin(sRot) + sp.z * Math.cos(sRot);
              
              tempP1.x = rx; tempP1.y = ry - 800; tempP1.z = rz + 1200;
-             rotateY(tempP1, camAngle); projectInPlace(tempP1);
+             applyCamera(tempP1);
              starProjPoints[k].x = tempP1.projX!; starProjPoints[k].y = tempP1.projY!;
          }
          api.brush.polygon(starProjPoints, { fill: 0xffdd44, alpha: 0.85, blendMode: 'add' });
          api.brush.polygon(starProjPoints, { fill: 0xffffff, alpha: 0.6, blendMode: 'add' });
          // Star core glow
-         api.brush.circle(item.x1, item.y1, 100*item.s1, { fill: 0xffaa00, alpha: 0.4, blendMode: 'add' });
+         api.brush.circle(item.x1, item.y1, 100*item.s1, { fill: 0xff8800, alpha: 0.4, blendMode: 'add' });
+      }
+      else if (item.type === 'monolith') {
+         const mRot = time + item.id1;
+         const crW = 120 * item.s1 * Math.abs(Math.cos(mRot));
+         const crH = 250 * item.s1;
+         
+         api.brush.polygon([
+            {x: item.x1, y: item.y1 + crH},
+            {x: item.x1 - crW, y: item.y1},
+            {x: item.x1 + crW, y: item.y1}
+         ], { fill: 0xaa22ff, alpha: 0.8, blendMode: 'screen' });
+         api.brush.circle(item.x1, item.y1 + crH*0.2, 40*item.s1, { fill: 0xffffff, alpha: Math.sin(time*5+item.id1)*0.5+0.5, blendMode: 'add' });
+      }
+      else if (item.type === 'euro-sat') {
+         const rad = 450 * item.s1;
+         api.brush.circle(item.x1, item.y1 + rad, rad, { fill: 0x112244, alpha: 0.35, blendMode: 'add' }); // Lake reflection
+         api.brush.circle(item.x1, item.y1, rad, { fill: 0x99aacc });
+         api.brush.circle(item.x1, item.y1, rad, { fill: { type: 'radial', cx: 0.3, cy: 0.3, radius: 0.65, stops: [{offset:0, color: 0xffffff}, {offset:1, color: 0x444455}] }, blendMode: 'screen' });
+         const rs1 = rad;
+         for(let lat=1; lat<=4; lat++) {
+             const rLat = rad * (lat/5);
+             api.brush.ellipse(item.x1, item.y1, rs1, rLat, { fill: 0x334455, alpha: 0.7 });
+             api.brush.ellipse(item.x1, item.y1, rLat, rs1, { fill: 0x334455, alpha: 0.7 });
+         }
       }
       else if(item.type === 'track-line') {
         const thickness = 10 * item.s1;
@@ -412,15 +501,15 @@ const actor: Actor = {
         }
       }
       else if (item.type === 'pillar') {
-         const gridFloorY = height * 0.55 + floorY * (FOV_SCALE / (CAM_Z + item.z));
+         if (item.s1 <= 0 || item.s2 <= 0) continue;
          const pw = 6 * item.s1; const dx = 15 * item.s1;
-         api.brush.line(item.x1, item.y1, item.x1 - dx, gridFloorY, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
-         api.brush.line(item.x1, item.y1, item.x1 + dx, gridFloorY, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
+         api.brush.line(item.x1, item.y1, item.x2 - dx, item.y2, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
+         api.brush.line(item.x1, item.y1, item.x2 + dx, item.y2, { color: isDark ? 0x22222a : 0xaabbcc, width: pw, alpha: 0.8 });
          
-         if(gridFloorY - item.y1 > 100 * item.s1) {
-            const steps = Math.floor((gridFloorY - item.y1) / (70 * item.s1));
+         if(item.y2 - item.y1 > 100 * item.s1) {
+            const steps = Math.floor((item.y2 - item.y1) / (70 * item.s1));
             for(let k=1; k<=steps; k++) {
-                const ky = item.y1 + k * 70 * item.s1;
+                const ky = item.y1 + (item.y2 - item.y1) * (k/steps);
                 api.brush.line(item.x1 - (k/steps)*dx, ky, item.x1 + (k/steps)*dx, ky, { color: isDark? 0x333333 : 0xaaaaaa, width: 2*item.s1 });
             }
          }
@@ -431,8 +520,8 @@ const actor: Actor = {
          api.brush.rotate(item.angle + Math.PI/2);
          api.brush.scale(item.s1, item.s1 * 0.4); 
          const rs = 55;
-         api.brush.ellipse(0, 0, rs, rs, { color: 0x00aaff, alpha: 0.8, width: 6, blendMode: 'add' }); 
-         api.brush.ellipse(0, 0, rs, rs, { color: 0xffffff, alpha: 0.6, width: 2, blendMode: 'add' });
+         api.brush.ellipse(0, 0, rs, rs, { fill: 0x00aaff, alpha: 0.8, blendMode: 'add' }); 
+         api.brush.ellipse(0, 0, rs*0.9, rs*0.9, { fill: 0xffffff, alpha: 0.6, blendMode: 'add' });
          api.brush.rect(-rs-10, rs*0.7, 10, 20, {fill: 0x111111});
          api.brush.rect(rs, rs*0.7, 10, 20, {fill: 0x111111});
          api.brush.popMatrix();
@@ -451,8 +540,15 @@ const actor: Actor = {
          
          api.brush.ellipse(item.x1, item.y1 - th, bRad, bRad*0.3, { fill: 0x111122 });
          const avAlpha = (Math.sin(time * 5 + item.id1) * 0.5 + 0.5);
-         api.brush.circle(item.x1, item.y1 - th, 5 * item.s1, { fill: 0xff2222, blendMode: 'add', alpha: avAlpha }); 
-         api.brush.line(item.x1, item.y1 - th, item.x1, item.y1 - th - 50*item.s1, {color: 0x888888, width: 2*item.s1 });
+         api.brush.circle(item.x1, item.y1 - th, 8 * item.s1, { fill: 0xff2222, blendMode: 'add', alpha: avAlpha }); 
+         api.brush.line(item.x1, item.y1 - th, item.x1, item.y1 - th - 50*item.s1, {color: 0xffffff, width: 2*item.s1 });
+         
+         // Skytracker Laser sweeps!
+         const beamAng = time * 0.5 + item.id1;
+         const lx = item.x1 + Math.cos(beamAng) * 2000 * item.s1;
+         const ly = (item.y1 - th) - 2000 * item.s1; 
+         api.brush.line(item.x1, item.y1-th, lx, ly, { color: 0x00ffcc, width: 3.5*item.s1, alpha: 0.8, blendMode: 'screen' });
+         api.brush.line(item.x1, item.y1-th, lx, ly, { color: 0xffffff, width: 1.5*item.s1, alpha: 0.9, blendMode: 'add' });
       }
       else if (item.type === 'shuttle-hyper') {
         const cw = 44; const ch = 18; 
